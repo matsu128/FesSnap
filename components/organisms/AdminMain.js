@@ -177,8 +177,7 @@ export default function AdminMain() {
             <img src={qrJpegUrl} alt="QRコード" className="w-64 h-64 object-contain bg-white rounded-lg" />
           )}
           <div className="flex gap-4 mt-4">
-            <Button onClick={handleDownloadJpeg} className="bg-slate-700 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />保存</Button>
-            <Button onClick={handleShare} className="bg-slate-700 flex items-center gap-1"><Icon type="share" className="w-5 h-5" />共有</Button>
+            <Button onClick={handleShare} className="bg-slate-700 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />保存</Button>
           </div>
           {isIOS() && (
             <div className="mt-3 text-xs text-gray-500 text-center">iPhoneの方は画像を長押しして「写真に追加」してください</div>
