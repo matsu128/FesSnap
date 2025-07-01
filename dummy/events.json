@@ -1,0 +1,28 @@
+[
+  {
+    "id": "1",
+    "title": "サマー音楽フェス2024",
+    "date": "2024-08-10",
+    "location": "東京ドーム",
+    "category": "音楽フェス",
+    "description": "夏の定番！有名アーティストが集結する音楽フェス。",
+    "price": 5000,
+    "capacity": 10000,
+    "images": ["event1-1.jpg", "event1-2.jpg"],
+    "pastEvents": [
+      {"date": "2023-08-10", "location": "東京ドーム", "images": ["event1-past1.jpg", "event1-past2.jpg", "event1-past3.jpg"]}
+    ]
+  },
+  {
+    "id": "2",
+    "title": "秋の文化祭2024",
+    "date": "2024-10-05",
+    "location": "大阪城ホール",
+    "category": "文化祭",
+    "description": "地域の学生が主役の文化祭。ワークショップや展示も充実。",
+    "price": 2000,
+    "capacity": 3000,
+    "images": ["event2-1.jpg", "event2-2.jpg"],
+    "pastEvents": []
+  }
+] 

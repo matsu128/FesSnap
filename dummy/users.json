@@ -1,0 +1,6 @@
+[
+  {"id": "user1", "name": "山田太郎", "role": "user"},
+  {"id": "user2", "name": "佐藤花子", "role": "user"},
+  {"id": "user3", "name": "鈴木一郎", "role": "user"},
+  {"id": "admin1", "name": "主催者A", "role": "admin"}
+] 

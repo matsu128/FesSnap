@@ -1,0 +1,15 @@
+[
+  {
+    "eventId": "1",
+    "images": [
+      {"id": "img1", "url": "/event1-1.jpg", "user": "user1", "date": "2024-08-10"},
+      {"id": "img2", "url": "/event1-2.jpg", "user": "user2", "date": "2024-08-10"}
+    ]
+  },
+  {
+    "eventId": "2",
+    "images": [
+      {"id": "img3", "url": "/event2-1.jpg", "user": "user3", "date": "2024-10-05"}
+    ]
+  }
+] 

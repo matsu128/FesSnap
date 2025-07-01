@@ -24,3 +24,67 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes gradient-stops {
+  0% {
+    background: linear-gradient(90deg, #38bdf8 0%, #0ea5e9 60%, #1e3a8a 100%);
+  }
+  25% {
+    background: linear-gradient(90deg, #0ea5e9 10%, #38bdf8 50%, #1e3a8a 90%);
+  }
+  50% {
+    background: linear-gradient(90deg, #1e3a8a 0%, #38bdf8 60%, #0ea5e9 100%);
+  }
+  75% {
+    background: linear-gradient(90deg, #38bdf8 20%, #1e3a8a 60%, #0ea5e9 100%);
+  }
+  100% {
+    background: linear-gradient(90deg, #38bdf8 0%, #0ea5e9 60%, #1e3a8a 100%);
+  }
+}
+
+.animated-gradient {
+  animation: gradient-stops 5s ease-in-out infinite;
+  background-size: 200% 200%;
+  background-clip: border-box;
+}
+
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.flowing-gradient {
+  background: linear-gradient(
+    270deg,
+    #38bdf8 0%,
+    #0ea5e9 25%,
+    #1e3a8a 50%,
+    #0ea5e9 75%,
+    #38bdf8 100%
+  );
+  background-size: 400% 400%;
+  animation: gradient-flow 8s linear infinite;
+}
+
+@keyframes flowing-text-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.text-flowing-gradient {
+  background: linear-gradient(270deg, #38bdf8, #0ea5e9, #1e3a8a, #38bdf8);
+  background-size: 400% 400%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: flowing-text-gradient 8s linear infinite;
+}
