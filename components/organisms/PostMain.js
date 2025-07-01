@@ -7,12 +7,22 @@ import Button from '../atoms/Button';
 import Modal from '../atoms/Modal';
 import Icon from '../atoms/Icon';
 import { useRouter, useParams } from 'next/navigation';
+import CustomCameraModal from './CustomCameraModal';
 
 const PAGE_SIZE = 15;
 
 function isIOS() {
   if (typeof window === 'undefined') return false;
   return /iP(hone|od|ad)/.test(window.navigator.userAgent);
+}
+
+function isAndroid() {
+  if (typeof window === 'undefined') return false;
+  return /Android/i.test(window.navigator.userAgent);
+}
+
+function isMobile() {
+  return isIOS() || isAndroid();
 }
 
 export default function PostMain() {
@@ -29,6 +39,7 @@ export default function PostMain() {
   const [capturedImage, setCapturedImage] = useState(null);
   const fileInputRef = useRef();
   const [showCameraAlert, setShowCameraAlert] = useState(false);
+  const [showCameraModal, setShowCameraModal] = useState(false);
 
   // 画像データ取得
   useEffect(() => {
@@ -56,23 +67,12 @@ export default function PostMain() {
   };
   // 画像投稿ボタンでカメラ起動 or 注意
   const handlePostImage = () => {
-    if (isCameraSupported()) {
-      fileInputRef.current.click();
-    } else {
-      setShowCameraAlert(true);
-    }
+    setShowCameraModal(true);
   };
-  // 撮影画像をstateにセット
-  const handleCapture = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setCapturedImage(ev.target.result);
-        setShowImageModal(true);
-      };
-      reader.readAsDataURL(file);
-    }
+  // カスタムカメラで撮影画像を受け取る
+  const handleCustomCapture = (dataUrl) => {
+    setCapturedImage(dataUrl);
+    setShowImageModal(true);
   };
   // 投稿処理
   const handlePost = () => {
@@ -103,8 +103,8 @@ export default function PostMain() {
     a.download = 'fesnap-image.jpg';
     a.click();
   };
-  // 共有API
-  const handleShare = async () => {
+  // 共有API（スマホ用保存）
+  const handleShareSave = async () => {
     if (navigator.share && selectedImage?.url) {
       try {
         const res = await fetch(selectedImage.url);
@@ -112,10 +112,10 @@ export default function PostMain() {
         const file = new File([blob], 'fesnap-image.jpg', { type: blob.type });
         await navigator.share({ files: [file], title: 'FesSnap画像', text: 'FesSnapで投稿された画像です' });
       } catch (e) {
-        alert('共有に失敗しました');
+        // 失敗時は何もしない
       }
     } else {
-      alert('この端末では共有機能が利用できません');
+      alert('この端末では保存・共有機能が利用できません');
     }
   };
 
@@ -134,10 +134,9 @@ export default function PostMain() {
           </div>
         </div>
       )}
-      {/* 画像投稿ボタン＋input */}
+      {/* 画像投稿ボタン＋input（inputは廃止） */}
       <div className="w-full max-w-[400px] flex justify-end mt-24 mb-2 px-2 sm:px-0">
         <Button onClick={handlePostImage} className="text-base py-3 px-6 bg-slate-700">画像投稿</Button>
-        <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCapture} />
       </div>
       {/* カメラ非対応端末向け注意モーダル */}
       <Modal isOpen={showCameraAlert} onClose={() => setShowCameraAlert(false)}>
@@ -176,11 +175,14 @@ export default function PostMain() {
             <>
               <img src={selectedImage.url} alt="拡大画像" className="w-40 h-40 sm:w-56 sm:h-56 object-cover rounded-lg mb-2" />
               <div className="flex gap-4 mt-2">
-                <Button onClick={handleDownload} className="bg-slate-700 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />保存</Button>
-                <Button onClick={handleShare} className="bg-slate-700 flex items-center gap-1"><Icon type="share" className="w-5 h-5" />共有</Button>
+                {isMobile() ? (
+                  <Button onClick={handleShareSave} className="bg-slate-700 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />保存</Button>
+                ) : (
+                  <Button onClick={handleDownload} className="bg-slate-700 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />保存</Button>
+                )}
               </div>
               {isIOS() && (
-                <div className="mt-3 text-xs text-gray-500 text-center">iPhoneの方は画像を長押しして「写真に追加」してください</div>
+                <div className="mt-3 text-xs text-gray-500 text-center">iPhoneの方は画像を長押しして「写真に追加」もご利用いただけます</div>
               )}
             </>
           ) : null}
@@ -194,6 +196,8 @@ export default function PostMain() {
       </div>
       {/* 戻るボタン */}
       <Button onClick={handleBack} className="mb-8 mt-2 px-8 py-3 bg-slate-700 w-full max-w-[400px]">イベント詳細ページへ戻る</Button>
+      {/* カスタムカメラモーダル */}
+      <CustomCameraModal isOpen={showCameraModal} onClose={() => setShowCameraModal(false)} onCapture={handleCustomCapture} />
     </div>
   );
 } 
