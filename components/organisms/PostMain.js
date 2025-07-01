@@ -65,14 +65,25 @@ export default function PostMain() {
       typeof navigator.mediaDevices.getUserMedia === 'function'
     );
   };
-  // 画像投稿ボタンでカメラ起動 or 注意
+  // 画像投稿ボタンでカメラ起動 or エラー
   const handlePostImage = () => {
-    setShowCameraModal(true);
+    if (isMobile()) {
+      fileInputRef.current.click();
+    } else {
+      setShowCameraAlert(true);
+    }
   };
-  // カスタムカメラで撮影画像を受け取る
-  const handleCustomCapture = (dataUrl) => {
-    setCapturedImage(dataUrl);
-    setShowImageModal(true);
+  // input/captureで撮影画像をstateにセット
+  const handleCapture = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setCapturedImage(ev.target.result);
+        setShowImageModal(true);
+      };
+      reader.readAsDataURL(file);
+    }
   };
   // 投稿処理
   const handlePost = () => {
@@ -122,6 +133,12 @@ export default function PostMain() {
   // 戻るボタン
   const handleBack = () => router.push(`/events/${eventId}`);
 
+  // カスタムカメラで撮影画像を受け取る
+  const handleCustomCapture = (dataUrl) => {
+    setCapturedImage(dataUrl);
+    setShowImageModal(true);
+  };
+
   return (
     <div className="w-full min-h-screen bg-white flex flex-col items-center px-2 sm:px-0">
       {/* ヘッダー（ハンバーガーメニュー） */}
@@ -134,14 +151,15 @@ export default function PostMain() {
           </div>
         </div>
       )}
-      {/* 画像投稿ボタン＋input（inputは廃止） */}
+      {/* 画像投稿ボタン＋input（スマホ用input/capture復活） */}
       <div className="w-full max-w-[400px] flex justify-end mt-24 mb-2 px-2 sm:px-0">
         <Button onClick={handlePostImage} className="text-base py-3 px-6 bg-slate-700">画像投稿</Button>
+        <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCapture} />
       </div>
       {/* カメラ非対応端末向け注意モーダル */}
       <Modal isOpen={showCameraAlert} onClose={() => setShowCameraAlert(false)}>
         <div className="flex flex-col items-center p-4">
-          <div className="mb-2 text-lg font-bold text-red-600">この端末では撮影が不可です</div>
+          <div className="mb-2 text-lg font-bold text-red-600">カメラ撮影不可端末です</div>
           <div className="text-gray-600 text-sm mb-4">スマートフォンやカメラ対応端末でご利用ください。</div>
           <Button onClick={() => setShowCameraAlert(false)} className="w-32 bg-slate-700">閉じる</Button>
         </div>
@@ -196,8 +214,6 @@ export default function PostMain() {
       </div>
       {/* 戻るボタン */}
       <Button onClick={handleBack} className="mb-8 mt-2 px-8 py-3 bg-slate-700 w-full max-w-[400px]">イベント詳細ページへ戻る</Button>
-      {/* カスタムカメラモーダル */}
-      <CustomCameraModal isOpen={showCameraModal} onClose={() => setShowCameraModal(false)} onCapture={handleCustomCapture} />
     </div>
   );
 } 
