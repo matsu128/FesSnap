@@ -6,7 +6,8 @@ import Button from '../atoms/Button';
 import Modal from '../atoms/Modal';
 import Input from '../atoms/Input';
 import Icon from '../atoms/Icon';
-import QRCode from 'qrcode.react';
+// import QRCode from 'qrcode.react';
+import QRCode from 'react-qr-code';
 
 export default function AdminMain() {
   const [events, setEvents] = useState([]);
@@ -63,19 +64,32 @@ export default function AdminMain() {
     const qrValue = `http://localhost:3000/events/${selectedEvent?.id || ''}`;
     setQr(qrValue);
   };
-  // QRダウンロード
+  // QRダウンロード（SVG→PNG変換）
   const handleDownload = () => {
-    const canvas = qrRef.current?.querySelector('canvas');
-    if (canvas) {
+    const svg = qrRef.current?.querySelector('svg');
+    if (!svg) {
+      alert('QRコードが見つかりません');
+      return;
+    }
+    const serializer = new XMLSerializer();
+    const svgStr = serializer.serializeToString(svg);
+    const img = new window.Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 180;
+      canvas.height = 180;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       const url = canvas.toDataURL('image/png');
       const a = document.createElement('a');
       a.href = url;
       a.download = 'event-qr.png';
       a.click();
-    } else {
-      // SVG→PNG変換処理が必要な場合はここに追加
-      alert('この環境ではQRコードの画像ダウンロードは未対応です');
-    }
+    };
+    img.onerror = () => alert('画像変換に失敗しました');
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
   };
 
   return (
@@ -122,7 +136,7 @@ export default function AdminMain() {
       {/* QRコード表示＋ダウンロードボタン */}
       {qr && (
         <div className="w-full max-w-[400px] flex flex-col items-center mb-8 px-2 sm:px-0" ref={qrRef}>
-          <QRCode value={qr} size={180} bgColor="#fff" fgColor="#1e3a8a" includeMargin={true} />
+          <QRCode value={qr} size={180} bgColor="#fff" fgColor="#1e3a8a" />
           <Button onClick={handleDownload} className="mt-4 w-40 bg-slate-700">ダウンロード</Button>
         </div>
       )}
