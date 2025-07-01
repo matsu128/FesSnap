@@ -9,6 +9,11 @@ import Icon from '../atoms/Icon';
 // import QRCode from 'qrcode.react';
 import QRCode from 'react-qr-code';
 
+function isIOS() {
+  if (typeof window === 'undefined') return false;
+  return /iP(hone|od|ad)/.test(window.navigator.userAgent);
+}
+
 export default function AdminMain() {
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -24,6 +29,8 @@ export default function AdminMain() {
   const [capacity, setCapacity] = useState('');
   const [qr, setQr] = useState('');
   const qrRef = useRef();
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrJpegUrl, setQrJpegUrl] = useState('');
 
   // イベントデータ取得
   useEffect(() => {
@@ -61,11 +68,11 @@ export default function AdminMain() {
     // 本番用（コメントアウト）
     // const qrValue = `https://fes-snap.com/events/${selectedEvent?.id || ''}`;
     // ローカル用
-    const qrValue = `http://localhost:3000/events/${selectedEvent?.id || ''}`;
+    const qrValue = `https://fes-snap.vercel.app/events/${selectedEvent?.id || ''}`;
     setQr(qrValue);
   };
-  // QRダウンロード（SVG→PNG変換）
-  const handleDownload = () => {
+  // QRコードをSVG→JPEG変換し、URLをセット
+  const handleQrToJpeg = () => {
     const svg = qrRef.current?.querySelector('svg');
     if (!svg) {
       alert('QRコードが見つかりません');
@@ -76,20 +83,41 @@ export default function AdminMain() {
     const img = new window.Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = 180;
-      canvas.height = 180;
+      canvas.width = 400;
+      canvas.height = 400;
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#fff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const url = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'event-qr.png';
-      a.click();
+      const url = canvas.toDataURL('image/jpeg');
+      setQrJpegUrl(url);
+      setShowQrModal(true);
     };
     img.onerror = () => alert('画像変換に失敗しました');
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
+  };
+  // QRダウンロード（JPEG）
+  const handleDownloadJpeg = () => {
+    if (!qrJpegUrl) return;
+    const a = document.createElement('a');
+    a.href = qrJpegUrl;
+    a.download = 'event-qr.jpg';
+    a.click();
+  };
+  // 共有API
+  const handleShare = async () => {
+    if (navigator.share && qrJpegUrl) {
+      try {
+        const res = await fetch(qrJpegUrl);
+        const blob = await res.blob();
+        const file = new File([blob], 'event-qr.jpg', { type: 'image/jpeg' });
+        await navigator.share({ files: [file], title: 'イベントQRコード', text: 'イベント参加用QRコードです' });
+      } catch (e) {
+        alert('共有に失敗しました');
+      }
+    } else {
+      alert('この端末では共有機能が利用できません');
+    }
   };
 
   return (
@@ -136,10 +164,27 @@ export default function AdminMain() {
       {/* QRコード表示＋ダウンロードボタン */}
       {qr && (
         <div className="w-full max-w-[400px] flex flex-col items-center mb-8 px-2 sm:px-0" ref={qrRef}>
-          <QRCode value={qr} size={180} bgColor="#fff" fgColor="#1e3a8a" />
-          <Button onClick={handleDownload} className="mt-4 w-40 bg-slate-700">ダウンロード</Button>
+          <div className="cursor-pointer" onClick={handleQrToJpeg}>
+            <QRCode value={qr} size={180} bgColor="#fff" fgColor="#1e3a8a" />
+          </div>
+          <div className="text-xs text-gray-400 mt-1">タップで拡大・保存</div>
         </div>
       )}
+      {/* QR拡大モーダル */}
+      <Modal isOpen={showQrModal} onClose={() => setShowQrModal(false)}>
+        <div className="flex flex-col items-center">
+          {qrJpegUrl && (
+            <img src={qrJpegUrl} alt="QRコード" className="w-64 h-64 object-contain bg-white rounded-lg" />
+          )}
+          <div className="flex gap-4 mt-4">
+            <Button onClick={handleDownloadJpeg} className="bg-slate-700 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />保存</Button>
+            <Button onClick={handleShare} className="bg-slate-700 flex items-center gap-1"><Icon type="share" className="w-5 h-5" />共有</Button>
+          </div>
+          {isIOS() && (
+            <div className="mt-3 text-xs text-gray-500 text-center">iPhoneの方は画像を長押しして「写真に追加」してください</div>
+          )}
+        </div>
+      </Modal>
       {/* イベント切り替えモーダル */}
       <Modal isOpen={showEventModal} onClose={() => setShowEventModal(false)}>
         <div className="flex flex-col items-center">

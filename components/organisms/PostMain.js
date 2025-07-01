@@ -10,6 +10,11 @@ import { useRouter, useParams } from 'next/navigation';
 
 const PAGE_SIZE = 15;
 
+function isIOS() {
+  if (typeof window === 'undefined') return false;
+  return /iP(hone|od|ad)/.test(window.navigator.userAgent);
+}
+
 export default function PostMain() {
   const [images, setImages] = useState([]);
   const [showMenu, setShowMenu] = useState(false);
@@ -90,6 +95,30 @@ export default function PostMain() {
   };
   const handleCloseImageModal = () => setShowImageModal(false);
 
+  // 画像ダウンロード
+  const handleDownload = () => {
+    if (!selectedImage?.url) return;
+    const a = document.createElement('a');
+    a.href = selectedImage.url;
+    a.download = 'fesnap-image.jpg';
+    a.click();
+  };
+  // 共有API
+  const handleShare = async () => {
+    if (navigator.share && selectedImage?.url) {
+      try {
+        const res = await fetch(selectedImage.url);
+        const blob = await res.blob();
+        const file = new File([blob], 'fesnap-image.jpg', { type: blob.type });
+        await navigator.share({ files: [file], title: 'FesSnap画像', text: 'FesSnapで投稿された画像です' });
+      } catch (e) {
+        alert('共有に失敗しました');
+      }
+    } else {
+      alert('この端末では共有機能が利用できません');
+    }
+  };
+
   // 戻るボタン
   const handleBack = () => router.push(`/events/${eventId}`);
 
@@ -146,9 +175,13 @@ export default function PostMain() {
           ) : selectedImage ? (
             <>
               <img src={selectedImage.url} alt="拡大画像" className="w-40 h-40 sm:w-56 sm:h-56 object-cover rounded-lg mb-2" />
-              <a href={selectedImage.url} download target="_blank" rel="noopener noreferrer" className="w-32">
-                <Button className="w-full bg-slate-700">ダウンロード</Button>
-              </a>
+              <div className="flex gap-4 mt-2">
+                <Button onClick={handleDownload} className="bg-slate-700 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />保存</Button>
+                <Button onClick={handleShare} className="bg-slate-700 flex items-center gap-1"><Icon type="share" className="w-5 h-5" />共有</Button>
+              </div>
+              {isIOS() && (
+                <div className="mt-3 text-xs text-gray-500 text-center">iPhoneの方は画像を長押しして「写真に追加」してください</div>
+              )}
             </>
           ) : null}
         </div>
