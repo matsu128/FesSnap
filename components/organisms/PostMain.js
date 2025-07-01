@@ -40,6 +40,8 @@ export default function PostMain() {
   const fileInputRef = useRef();
   const [showCameraAlert, setShowCameraAlert] = useState(false);
   const [showCameraModal, setShowCameraModal] = useState(false);
+  const [modalImageIndex, setModalImageIndex] = useState(null);
+  const [showSelectModal, setShowSelectModal] = useState(false);
 
   // 画像データ取得
   useEffect(() => {
@@ -65,10 +67,10 @@ export default function PostMain() {
       typeof navigator.mediaDevices.getUserMedia === 'function'
     );
   };
-  // 画像投稿ボタンでカメラ起動 or エラー
+  // 画像投稿ボタンでカメラ起動 or エラー or 選択モーダル
   const handlePostImage = () => {
     if (isMobile()) {
-      fileInputRef.current.click();
+      setShowSelectModal(true);
     } else {
       setShowCameraAlert(true);
     }
@@ -85,6 +87,20 @@ export default function PostMain() {
       reader.readAsDataURL(file);
     }
   };
+  // 撮影選択
+  const handleSelectCapture = () => {
+    setShowSelectModal(false);
+    fileInputRef.current.setAttribute('capture', 'environment');
+    fileInputRef.current.value = '';
+    fileInputRef.current.click();
+  };
+  // アップロード選択
+  const handleSelectUpload = () => {
+    setShowSelectModal(false);
+    fileInputRef.current.removeAttribute('capture');
+    fileInputRef.current.value = '';
+    fileInputRef.current.click();
+  };
   // 投稿処理
   const handlePost = () => {
     if (!capturedImage) return;
@@ -98,13 +114,38 @@ export default function PostMain() {
     setCapturedImage(null);
     setShowImageModal(false);
   };
+  // 撮影後「この写真を使用」ボタン押下で即投稿
+  const handleUsePhoto = () => {
+    handlePost();
+    // モーダルは開かず投稿一覧に戻る
+  };
 
   // 画像拡大モーダル
   const handleImageClick = (img) => {
+    const idx = filteredImages.findIndex(i => i.id === img.id);
     setSelectedImage(img);
+    setModalImageIndex(idx);
     setShowImageModal(true);
   };
-  const handleCloseImageModal = () => setShowImageModal(false);
+  const handlePrevImage = () => {
+    if (modalImageIndex > 0) {
+      const prevIdx = modalImageIndex - 1;
+      setSelectedImage(filteredImages[prevIdx]);
+      setModalImageIndex(prevIdx);
+    }
+  };
+  const handleNextImage = () => {
+    if (modalImageIndex < filteredImages.length - 1) {
+      const nextIdx = modalImageIndex + 1;
+      setSelectedImage(filteredImages[nextIdx]);
+      setModalImageIndex(nextIdx);
+    }
+  };
+  const handleCloseImageModal = () => {
+    setShowImageModal(false);
+    setCapturedImage(null);
+    setModalImageIndex(null);
+  };
 
   // 画像ダウンロード
   const handleDownload = () => {
@@ -154,8 +195,16 @@ export default function PostMain() {
       {/* 画像投稿ボタン＋input（スマホ用input/capture復活） */}
       <div className="w-full max-w-[400px] flex justify-end mt-24 mb-2 px-2 sm:px-0">
         <Button onClick={handlePostImage} className="text-base py-3 px-6 bg-slate-700">画像投稿</Button>
-        <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCapture} />
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleCapture} />
       </div>
+      {/* 撮影/アップロード選択モーダル */}
+      <Modal isOpen={showSelectModal} onClose={() => setShowSelectModal(false)}>
+        <div className="flex flex-col items-center p-4">
+          <div className="mb-4 text-lg font-bold">画像の追加方法を選択</div>
+          <Button onClick={handleSelectCapture} className="w-40 mb-2 bg-slate-700">写真を撮影</Button>
+          <Button onClick={handleSelectUpload} className="w-40 bg-slate-700">画像をアップロード</Button>
+        </div>
+      </Modal>
       {/* カメラ非対応端末向け注意モーダル */}
       <Modal isOpen={showCameraAlert} onClose={() => setShowCameraAlert(false)}>
         <div className="flex flex-col items-center p-4">
@@ -182,29 +231,48 @@ export default function PostMain() {
         ))}
       </div>
       {/* 画像拡大モーダル（撮影時 or 通常） */}
-      <Modal isOpen={showImageModal} onClose={() => { setShowImageModal(false); setCapturedImage(null); }}>
-        <div className="flex flex-col items-center">
-          {capturedImage ? (
-            <>
-              <img src={capturedImage} alt="撮影画像" className="w-40 h-40 sm:w-56 sm:h-56 object-cover rounded-lg mb-2" />
-              <Button onClick={handlePost} className="w-32 bg-slate-700">投稿</Button>
-            </>
-          ) : selectedImage ? (
-            <>
-              <img src={selectedImage.url} alt="拡大画像" className="w-40 h-40 sm:w-56 sm:h-56 object-cover rounded-lg mb-2" />
-              <div className="flex gap-4 mt-2">
-                {isMobile() ? (
-                  <Button onClick={handleShareSave} className="bg-slate-700 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />保存</Button>
-                ) : (
-                  <Button onClick={handleDownload} className="bg-slate-700 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />保存</Button>
-                )}
-              </div>
-              {isIOS() && (
-                <div className="mt-3 text-xs text-gray-500 text-center">iPhoneの方は画像を長押しして「写真に追加」もご利用いただけます</div>
+      <Modal isOpen={showImageModal} onClose={handleCloseImageModal} fullScreen>
+        {capturedImage ? (
+          <div className="fixed inset-0 bg-black z-50 flex flex-col justify-between items-center">
+            {/* 上部バツボタン */}
+            <div className="w-full flex justify-end p-4">
+              <button onClick={handleCloseImageModal} className="text-white text-3xl font-bold">×</button>
+            </div>
+            {/* 画像本体 */}
+            <div className="flex-1 flex items-center justify-center w-full">
+              <img src={capturedImage} alt="撮影画像" className="max-w-full max-h-full object-contain" />
+            </div>
+            {/* 下部「この写真を使用」ボタン */}
+            <div className="w-full flex justify-center p-4 fixed bottom-0 left-0 bg-black bg-opacity-80 z-50">
+              <Button onClick={handleUsePhoto} className="w-64 bg-slate-700 text-lg py-3">この写真を使用</Button>
+            </div>
+          </div>
+        ) : selectedImage ? (
+          <div className="fixed inset-0 bg-black z-50 flex flex-col justify-between items-center">
+            {/* 上部バツボタン */}
+            <div className="w-full flex justify-end p-4">
+              <button onClick={handleCloseImageModal} className="text-white text-3xl font-bold">×</button>
+            </div>
+            {/* 画像本体＋左右ボタン */}
+            <div className="flex-1 flex items-center justify-center w-full relative">
+              {modalImageIndex > 0 && (
+                <button onClick={handlePrevImage} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white text-3xl rounded-full w-12 h-12 flex items-center justify-center z-10">&#60;</button>
               )}
-            </>
-          ) : null}
-        </div>
+              <img src={selectedImage.url} alt="拡大画像" className="max-w-full max-h-full object-contain" />
+              {modalImageIndex < filteredImages.length - 1 && (
+                <button onClick={handleNextImage} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white text-3xl rounded-full w-12 h-12 flex items-center justify-center z-10">&#62;</button>
+              )}
+            </div>
+            {/* 下部保存ボタン */}
+            <div className="w-full flex justify-center p-4 fixed bottom-0 left-0 bg-black bg-opacity-80 z-50">
+              {isMobile() ? (
+                <Button onClick={handleShareSave} className="w-64 bg-slate-700 text-lg py-3 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />保存</Button>
+              ) : (
+                <Button onClick={handleDownload} className="w-64 bg-slate-700 text-lg py-3 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />保存</Button>
+              )}
+            </div>
+          </div>
+        ) : null}
       </Modal>
       {/* ページネーション */}
       <div className="flex gap-2 mb-8 w-full max-w-[400px] px-2 sm:px-0">
