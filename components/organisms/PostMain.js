@@ -42,6 +42,8 @@ export default function PostMain() {
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [modalImageIndex, setModalImageIndex] = useState(null);
   const [showSelectModal, setShowSelectModal] = useState(false);
+  const [eventDate, setEventDate] = useState(null);
+  const [showPostError, setShowPostError] = useState(false);
 
   // 画像データ取得
   useEffect(() => {
@@ -52,6 +54,35 @@ export default function PostMain() {
         setImages(eventImages);
       });
   }, [eventId]);
+
+  // イベント日付取得
+  useEffect(() => {
+    if (!eventId) return;
+    fetch('/api/events')
+      .then(res => res.json())
+      .then(data => {
+        const event = data.find(e => e.id === eventId);
+        setEventDate(event?.date || null);
+      });
+  }, [eventId]);
+
+  // JSTで今日の日付を取得
+  function getTodayJST() {
+    const now = new Date();
+    const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    return jst.toISOString().slice(0, 10);
+  }
+
+  // 投稿許可判定
+  const isPostAllowed = (() => {
+    if (!eventDate) return false;
+    const event = new Date(eventDate);
+    const nextDay = new Date(eventDate);
+    nextDay.setDate(event.getDate() + 1);
+    const yyyyMMdd = d => d.toISOString().slice(0, 10);
+    const todayJST = getTodayJST();
+    return todayJST === yyyyMMdd(event) || todayJST === yyyyMMdd(nextDay);
+  })();
 
   // 投稿画像の絞り込み（ダミー：ユーザーIDで分岐）
   const filteredImages = images.filter(img => tab === 'mine' ? img.user === 'user1' : img.user !== 'user1');
@@ -69,6 +100,10 @@ export default function PostMain() {
   };
   // 画像投稿ボタンでカメラ起動 or エラー or 選択モーダル
   const handlePostImage = () => {
+    if (!isPostAllowed) {
+      setShowPostError(true);
+      return;
+    }
     if (isMobile()) {
       setShowSelectModal(true);
     } else {
@@ -189,6 +224,18 @@ export default function PostMain() {
     setShowImageModal(true);
   };
 
+  // 日付を日本語表記に変換する関数
+  function formatJPDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  }
+  function getNextDay(dateStr) {
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  }
+
   return (
     <div className="w-full min-h-screen bg-white flex flex-col items-center px-2 sm:px-0">
       {/* ヘッダー（ハンバーガーメニュー） */}
@@ -206,6 +253,16 @@ export default function PostMain() {
         <Button onClick={handlePostImage} className="text-base py-3 px-6 bg-slate-700">画像投稿</Button>
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleCapture} multiple />
       </div>
+      {/* 投稿不可エラーモーダル */}
+      <Modal isOpen={showPostError} onClose={() => setShowPostError(false)}>
+        <div className="flex flex-col items-center p-6">
+          <div className="font-bold text-lg text-red-600 mb-2">投稿できません</div>
+          <div className="text-base text-gray-700 mb-2">このイベントの投稿受付期間は</div>
+          <div className="text-base font-bold mb-2">{formatJPDate(eventDate)} ～ {formatJPDate(getNextDay(eventDate))}</div>
+          <div className="text-sm text-red-400 mb-4">※期間外は画像投稿できません</div>
+          <Button onClick={() => setShowPostError(false)} className="w-32 bg-slate-700">閉じる</Button>
+        </div>
+      </Modal>
       {/* 撮影/アップロード選択モーダル */}
       <Modal isOpen={showSelectModal} onClose={() => setShowSelectModal(false)}>
         <div className="flex flex-col items-center p-4">
@@ -248,7 +305,7 @@ export default function PostMain() {
               <button onClick={handleCloseImageModal} className="text-white text-3xl font-bold">×</button>
             </div>
             {/* 画像本体＋左右ボタン */}
-            <div className="flex-1 flex items-center justify-center w-full relative">
+            <div className="flex-1 flex items-center justify-center w-full relative min-h-[400px]">
               {modalImageIndex > 0 && (
                 <button onClick={handlePrevImage} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white text-3xl rounded-full w-12 h-20 flex items-center justify-center z-10">&#60;</button>
               )}
