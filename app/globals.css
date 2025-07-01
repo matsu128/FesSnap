@@ -1,4 +1,8 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
 
 :root {
   --background: #ffffff;
@@ -87,4 +91,8 @@ body {
   -webkit-background-clip: text;
   color: transparent;
   animation: flowing-text-gradient 8s linear infinite;
+  font-family: 'Poppins', 'Montserrat', 'Quicksand', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  filter: drop-shadow(0 2px 8px rgba(30,58,138,0.18));
 }
