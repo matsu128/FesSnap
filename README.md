@@ -5,11 +5,6 @@
 
 ![レイアウト](https://github.com/matsu128/FesSnap/issues/1#issue-3188583688)
 
-
-# FesSnap
-
-イベント参加者限定のリアルタイム写真共有サービス
-
 ---
 
 ## ディレクトリ構成
