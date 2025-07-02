@@ -8,6 +8,7 @@ import Modal from '../atoms/Modal';
 import Icon from '../atoms/Icon';
 import { useRouter, useParams } from 'next/navigation';
 import CustomCameraModal from './CustomCameraModal';
+import { supabase } from '../../lib/supabaseClient';
 
 const PAGE_SIZE = 15;
 
@@ -47,13 +48,18 @@ export default function PostMain() {
 
   // 画像データ取得
   useEffect(() => {
-    fetch('/api/images')
-      .then(res => res.json())
-      .then(data => {
-        const eventImages = data.find(e => e.eventId === eventId)?.images || [];
-        setImages(eventImages);
-      });
+    if (!eventId) return;
+    fetchImages();
   }, [eventId]);
+
+  const fetchImages = async () => {
+    const { data, error } = await supabase
+      .from('images')
+      .select('*')
+      .eq('eventId', eventId)
+      .order('created_at', { ascending: false });
+    if (!error) setImages(data);
+  };
 
   // イベント日付取得
   useEffect(() => {
@@ -236,6 +242,27 @@ export default function PostMain() {
     return d.toISOString().slice(0, 10);
   }
 
+  const handleUpload = async (file) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${eventId}_${Date.now()}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from('event-image')
+      .upload(fileName, file, { contentType: file.type });
+    if (uploadError) {
+      alert('アップロード失敗');
+      return;
+    }
+    const { publicUrl } = supabase.storage.from('event-image').getPublicUrl(fileName).data;
+    const { error: dbError } = await supabase
+      .from('images')
+      .insert([{ eventId, url: publicUrl, user: 'anonymous', date: new Date().toISOString().slice(0, 10) }]);
+    if (dbError) {
+      alert('DB保存失敗');
+      return;
+    }
+    fetchImages();
+  };
+
   return (
     <div className="w-full min-h-screen bg-white flex flex-col items-center px-2 sm:px-0">
       {/* ヘッダー（ハンバーガーメニュー） */}
@@ -251,7 +278,9 @@ export default function PostMain() {
       {/* 画像投稿ボタン＋input（スマホ用input/capture復活） */}
       <div className="w-full max-w-[400px] flex justify-end mt-24 mb-2 px-2 sm:px-0">
         <Button onClick={handlePostImage} className="text-base py-3 px-6 bg-slate-700">画像投稿</Button>
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleCapture} multiple />
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={e => {
+          if (e.target.files[0]) handleUpload(e.target.files[0]);
+        }} />
       </div>
       {/* 投稿不可エラーモーダル */}
       <Modal isOpen={showPostError} onClose={() => setShowPostError(false)}>
@@ -286,13 +315,12 @@ export default function PostMain() {
       </div>
       {/* 画像グリッド */}
       <div className="w-full max-w-[400px] grid grid-cols-3 gap-2 mb-4 px-2 sm:px-0">
-        {pagedImages.map(img => (
+        {images.length === 0 && (
+          <div className="w-full text-center text-gray-400 py-12">画像を投稿しよう！</div>
+        )}
+        {images.map(img => (
           <div key={img.id} className="aspect-square bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 rounded-lg flex items-center justify-center cursor-pointer" onClick={() => handleImageClick(img)}>
-            {img.url.startsWith('data:') ? (
-              <img src={img.url} alt="投稿画像" className="w-full h-full object-cover rounded-lg" />
-            ) : (
-              <span className="text-xs sm:text-sm text-black">画像を追加！</span>
-            )}
+            <img src={img.url} alt="投稿画像" className="w-full h-full object-cover rounded-lg" />
           </div>
         ))}
       </div>
