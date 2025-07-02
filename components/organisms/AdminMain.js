@@ -14,6 +14,7 @@ import { ja } from 'date-fns/locale';
 import LPMain from './LPMain';
 import Logo from '../atoms/Logo';
 import html2canvas from 'html2canvas';
+import { useRouter } from 'next/navigation';
 
 function isIOS() {
   if (typeof window === 'undefined') return false;
@@ -46,6 +47,8 @@ export default function AdminMain() {
   const [regionError, setRegionError] = useState('');
   const [missingFields, setMissingFields] = useState([]);
   const [qrTouched, setQrTouched] = useState(false);
+  const [qrEventId, setQrEventId] = useState(null);
+  const router = useRouter();
 
   // イベントデータ取得
   useEffect(() => {
@@ -79,7 +82,7 @@ export default function AdminMain() {
   };
 
   // QRコード生成
-  const handleGenerateQr = () => {
+  const handleGenerateQr = async () => {
     setQrTouched(true);
     setQrError('');
     const newMissing = [];
@@ -90,13 +93,37 @@ export default function AdminMain() {
       setQr('');
       return;
     }
-    const qrValue = `https://fes-snap.vercel.app/events/${selectedEvent?.id || ''}`;
-    setQr(qrValue);
-    setTimeout(() => {
-      if (qrAreaRef.current) {
-        qrAreaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    try {
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: selectedEvent?.title,
+          date,
+          region,
+          category,
+          desc,
+          price: price ? Number(price) : null,
+          capacity: capacity ? Number(capacity) : null
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setQrError(data.error || 'イベント作成に失敗しました');
+        return;
       }
-    }, 100);
+      // 返却IDでQRコードURL生成
+      const qrValue = `https://fes-snap.vercel.app/events/${data.id}`;
+      setQr(qrValue);
+      setQrEventId(data.id);
+      setTimeout(() => {
+        if (qrAreaRef.current) {
+          qrAreaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    } catch (e) {
+      setQrError('サーバーエラーが発生しました :(');
+    }
   };
 
   // 入力値の変化でmissingFieldsを自動で更新（QRボタン押下後のみ）
@@ -233,7 +260,9 @@ export default function AdminMain() {
         </div>
       </div>
       {/* エラー表示（QRボタン直上） */}
-      {qrError && <div className="w-full max-w-[400px] text-center text-red-500 text-base mb-2 font-bold">{qrError}</div>}
+      {qrError && (
+        <div className="w-full max-w-[400px] text-center text-red-500 text-base mb-2 font-bold">{qrError}</div>
+      )}
       {missingFields.length > 0 && (
         <div className="w-full max-w-[400px] text-center text-red-400 text-sm mb-2 font-semibold tracking-wide">
           {missingFields.includes('title') && !missingFields.includes('date') && 'タイトルが未入力です'}
@@ -253,6 +282,11 @@ export default function AdminMain() {
           </div>
           <div className="text-xs text-gray-400 mt-1">タップで拡大・保存</div>
           <Button onClick={() => alert('投稿処理（ダミー）')} className="w-full mt-6 text-base py-4 bg-slate-700">投稿</Button>
+          {qrEventId && (
+            <Button onClick={() => router.push(`/events/${qrEventId}`)} className="w-full mt-2 text-base py-4 bg-blue-600">
+              イベントページへ
+            </Button>
+          )}
         </div>
       )}
       {/* QR拡大モーダル */}

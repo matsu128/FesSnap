@@ -7,6 +7,7 @@ import ServiceVideo from '../molecules/ServiceVideo';
 import HorizontalEventSlider from '../molecules/HorizontalEventSlider';
 import EmphasizedNavButton from '../molecules/EmphasizedNavButton';
 import { useRouter } from 'next/navigation';
+import Logo from '../atoms/Logo';
 
 export default function LPMain() {
   // イベントデータの状態管理
@@ -31,7 +32,7 @@ export default function LPMain() {
       <Header type="default" />
       {/* タイトル */}
       <div className="mt-24 mb-4 text-center max-w-[400px] w-full px-4">
-        <h1 className="text-flowing-gradient text-3xl sm:text-4xl font-extrabold drop-shadow-lg animate-fadein">FesSnap</h1>
+        <h1 className="drop-shadow-lg animate-fadein"><Logo size="text-3xl sm:text-4xl" /></h1>
         <p className="mt-2 text-base sm:text-lg text-gray-600 animate-fadein delay-100">イベント参加者限定のリアルタイム写真共有サービス</p>
       </div>
       {/* サービス紹介動画エリア */}

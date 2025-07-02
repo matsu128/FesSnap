@@ -4,6 +4,7 @@ import Button from '../atoms/Button';
 import Icon from '../atoms/Icon';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import Logo from '../atoms/Logo';
 
 export default function Header({ type = 'default', onMenuClick, onLoginClick }) {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function Header({ type = 'default', onMenuClick, onLoginClick }) 
       {/* ロゴ部分（タップで/に遷移） */}
       <motion.div initial={{ x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
         <button onClick={() => router.push('/')} className="focus:outline-none">
-          <span className="text-flowing-gradient text-xl font-extrabold tracking-wide select-none">FesSnap</span>
+          <Logo size="text-xl" />
         </button>
       </motion.div>
       {/* 右側のボタンやメニュー */}

@@ -71,14 +71,17 @@ export default function EventListMain() {
       </div>
       {/* イベントカードリスト */}
       <div className="w-full max-w-[400px] flex flex-col gap-3 mt-2 mb-4 px-2 sm:px-0">
+        {pagedEvents.length === 0 && (
+          <div className="w-full text-center text-gray-400 py-12">イベントがありません</div>
+        )}
         {pagedEvents.map(event => (
           <Card key={event.id} className="cursor-pointer hover:scale-105 transition-transform" onClick={() => handleEventClick(event.id)}>
             <div className="font-bold text-lg sm:text-xl text-gray-700 mb-1">{event.title}</div>
             <div className="text-xs sm:text-sm text-gray-500 flex justify-between">
               <span>{event.date}</span>
-              <span>{event.location}</span>
+              <span>{event.region}</span>
             </div>
-            <div className="text-xs sm:text-sm text-gray-400 mt-1">{event.category}</div>
+            {/* <div className="text-xs sm:text-sm text-gray-400 mt-1">{event.category}</div> */}
           </Card>
         ))}
       </div>
