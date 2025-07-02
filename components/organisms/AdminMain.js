@@ -15,6 +15,7 @@ import LPMain from './LPMain';
 import Logo from '../atoms/Logo';
 import html2canvas from 'html2canvas';
 import { useRouter } from 'next/navigation';
+import { supabase } from '../../lib/supabaseClient';
 
 function isIOS() {
   if (typeof window === 'undefined') return false;
@@ -116,6 +117,53 @@ export default function AdminMain() {
       const qrValue = `https://fes-snap.vercel.app/events/${data.id}`;
       setQr(qrValue);
       setQrEventId(data.id);
+      // --- ここからQR画像アップロード＆DB保存 ---
+      setTimeout(async () => {
+        // QRコードSVGをcanvasに描画→PNG化
+        const svg = qrRef.current?.querySelector('svg');
+        if (!svg) return;
+        const serializer = new XMLSerializer();
+        const svgStr = serializer.serializeToString(svg);
+        const img = new window.Image();
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 400;
+          canvas.height = 400;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(async (blob) => {
+            if (!blob) return;
+            const filePath = `${data.id}.png`;
+            // Storageにアップロード
+            const { error: uploadError } = await supabase.storage
+              .from('event-qrcodes')
+              .upload(filePath, blob, { contentType: 'image/png', upsert: true });
+            if (uploadError) {
+              setQrError('QR画像のアップロードに失敗しました');
+              return;
+            }
+            // 公開URL取得
+            const { data: urlData } = supabase.storage.from('event-qrcodes').getPublicUrl(filePath);
+            const qrUrl = urlData?.publicUrl;
+            if (!qrUrl) {
+              setQrError('QR画像URLの取得に失敗しました');
+              return;
+            }
+            // qrcodesテーブルにinsert
+            const { error: dbError } = await supabase
+              .from('qrcodes')
+              .insert([{ eventId: data.id, qrUrl }]);
+            if (dbError) {
+              setQrError('QR画像URLの保存に失敗しました');
+              return;
+            }
+          }, 'image/png');
+        };
+        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
+      }, 300);
+      // --- ここまで追加 ---
       setTimeout(() => {
         if (qrAreaRef.current) {
           qrAreaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -281,7 +329,6 @@ export default function AdminMain() {
             <QRCode value={qr} size={180} bgColor="#fff" fgColor="#1e3a8a" />
           </div>
           <div className="text-xs text-gray-400 mt-1">タップで拡大・保存</div>
-          <Button onClick={() => alert('投稿処理（ダミー）')} className="w-full mt-6 text-base py-4 bg-slate-700">投稿</Button>
           {qrEventId && (
             <Button onClick={() => router.push(`/events/${qrEventId}`)} className="w-full mt-2 text-base py-4 bg-blue-600">
               イベントページへ

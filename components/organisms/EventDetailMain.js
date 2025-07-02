@@ -7,10 +7,12 @@ import Card from '../atoms/Card';
 import Button from '../atoms/Button';
 import Icon from '../atoms/Icon';
 import { useRouter, useParams } from 'next/navigation';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function EventDetailMain() {
   const [event, setEvent] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [qrUrl, setQrUrl] = useState("");
   const router = useRouter();
   const params = useParams();
   const eventId = params?.eventId;
@@ -20,6 +22,17 @@ export default function EventDetailMain() {
     fetch('/api/events')
       .then(res => res.json())
       .then(data => setEvent(data.find(e => e.id === eventId)));
+    // QR画像URL取得
+    const fetchQrUrl = async () => {
+      if (!eventId) return;
+      const { data, error } = await supabase
+        .from('qrcodes')
+        .select('qrUrl')
+        .eq('eventId', eventId)
+        .single();
+      if (!error && data?.qrUrl) setQrUrl(data.qrUrl);
+    };
+    fetchQrUrl();
   }, [eventId]);
 
   if (!event) return <div className="mt-32 text-center text-gray-400">Loading...</div>;
@@ -62,7 +75,11 @@ export default function EventDetailMain() {
       {/* QRコード＋画像投稿ボタン */}
       <div className="flex w-full max-w-[400px] gap-4 mb-4 px-2 sm:px-0">
         <Card className="flex-1 flex items-center justify-center p-2">
-          <Icon type="qr" className="w-12 h-12 text-gray-400" />
+          {qrUrl ? (
+            <img src={qrUrl} alt="QRコード" className="w-16 h-16 object-contain" />
+          ) : (
+            <Icon type="qr" className="w-12 h-12 text-gray-400" />
+          )}
         </Card>
         <Button onClick={handlePost} className="flex-1 text-base py-4 bg-slate-700">画像投稿</Button>
       </div>

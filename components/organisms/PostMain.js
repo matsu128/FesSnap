@@ -45,6 +45,9 @@ export default function PostMain() {
   const [showSelectModal, setShowSelectModal] = useState(false);
   const [eventDate, setEventDate] = useState(null);
   const [showPostError, setShowPostError] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [eventTitle, setEventTitle] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // 追加: ログイン状態（仮実装）
 
   // 画像データ取得
   useEffect(() => {
@@ -69,6 +72,7 @@ export default function PostMain() {
       .then(data => {
         const event = data.find(e => e.id === eventId);
         setEventDate(event?.date || null);
+        setEventTitle(event?.title || "");
       });
   }, [eventId]);
 
@@ -222,7 +226,7 @@ export default function PostMain() {
   };
 
   // 戻るボタン
-  const handleBack = () => router.push(`/events/${eventId}`);
+  const handleBack = () => router.push('/events');
 
   // カスタムカメラで撮影画像を受け取る
   const handleCustomCapture = (dataUrl) => {
@@ -244,9 +248,11 @@ export default function PostMain() {
 
   const handleUpload = async (file) => {
     try {
+      setIsUploading(true); // アップロード開始
       console.log('アップロード開始', file);
       if (!file) {
         alert('ファイルが選択されていません');
+        setIsUploading(false);
         return;
       }
       const fileExt = file.name.split('.').pop();
@@ -261,12 +267,14 @@ export default function PostMain() {
       if (uploadError) {
         console.error('アップロード失敗:', uploadError.message, uploadError);
         alert('アップロード失敗: ' + uploadError.message);
+        setIsUploading(false);
         return;
       }
       const { publicUrl } = supabase.storage.from('event-image').getPublicUrl(fileName).data;
       if (!publicUrl) {
         console.error('画像URL取得失敗');
         alert('画像URL取得失敗');
+        setIsUploading(false);
         return;
       }
       const { error: dbError } = await supabase
@@ -275,12 +283,15 @@ export default function PostMain() {
       if (dbError) {
         console.error('DB保存失敗:', dbError.message, dbError);
         alert('DB保存失敗: ' + dbError.message);
+        setIsUploading(false);
         return;
       }
       fetchImages();
+      setIsUploading(false); // アップロード完了
     } catch (e) {
       console.error('予期せぬエラー:', e);
       alert('予期せぬエラー: ' + e.message);
+      setIsUploading(false);
     }
   };
 
@@ -296,13 +307,34 @@ export default function PostMain() {
           </div>
         </div>
       )}
-      {/* 画像投稿ボタン＋input（スマホ用input/capture復活） */}
-      <div className="w-full max-w-[400px] flex justify-end mt-24 mb-2 px-2 sm:px-0">
-        <Button onClick={handlePostImage} className="text-base py-3 px-6 bg-slate-700">画像投稿</Button>
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={e => {
-          if (e.target.files[0]) handleUpload(e.target.files[0]);
-        }} />
+      {/* 画像投稿ボタン＋タイトル＋input（スマホ用input/capture復活） */}
+      <div className="w-full max-w-[400px] flex flex-col items-center mt-24 mb-2 px-2 sm:px-0 gap-2">
+        <div
+          className="truncate font-extrabold text-lg sm:text-xl w-full text-center bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent drop-shadow-md shadow-pink-200"
+          style={{ fontFamily: "'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif" }}
+          title={eventTitle}
+        >
+          {eventTitle}
+        </div>
+        <div className="w-full flex justify-end items-center gap-2">
+          <Button onClick={handlePostImage} className="text-base py-3 px-6 bg-slate-700" disabled={isUploading}>画像投稿</Button>
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={e => {
+            if (e.target.files[0]) handleUpload(e.target.files[0]);
+          }} />
+        </div>
       </div>
+      {/* アップロード中ローディング表示 */}
+      {isUploading && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-40">
+          <div className="flex flex-col items-center bg-white rounded-xl px-8 py-6 shadow-lg">
+            <svg className="animate-spin h-8 w-8 text-slate-700 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <div className="text-slate-700 font-bold text-lg">アップロード中…</div>
+          </div>
+        </div>
+      )}
       {/* 投稿不可エラーモーダル */}
       <Modal isOpen={showPostError} onClose={() => setShowPostError(false)}>
         <div className="flex flex-col items-center p-6">
@@ -329,11 +361,13 @@ export default function PostMain() {
           <Button onClick={() => setShowCameraAlert(false)} className="w-32 bg-slate-700">閉じる</Button>
         </div>
       </Modal>
-      {/* 自分/友達の投稿切替 */}
-      <div className="w-full max-w-[400px] flex justify-between mb-2 px-2 sm:px-0">
-        <Button onClick={() => setTab('mine')} active={tab === 'mine'} className={`flex-1 mr-1`}>自分の投稿</Button>
-        <Button onClick={() => setTab('friends')} active={tab === 'friends'} className={`flex-1 ml-1`}>友達の投稿</Button>
-      </div>
+      {/* 自分/友達の投稿切替（ログイン時のみ表示） */}
+      {isLoggedIn && (
+        <div className="w-full max-w-[400px] flex justify-between mb-2 px-2 sm:px-0">
+          <Button onClick={() => setTab('mine')} active={tab === 'mine'} className={`flex-1 mr-1`}>自分の投稿</Button>
+          <Button onClick={() => setTab('friends')} active={tab === 'friends'} className={`flex-1 ml-1`}>友達の投稿</Button>
+        </div>
+      )}
       {/* 画像グリッド */}
       <div className="w-full max-w-[400px] grid grid-cols-3 gap-2 mb-4 px-2 sm:px-0">
         {images.length === 0 && (
@@ -345,6 +379,22 @@ export default function PostMain() {
           </div>
         ))}
       </div>
+      {/* ページネーション（画像下中央） */}
+      {totalPages > 1 && (
+        <div className="flex gap-2 mb-8 w-full max-w-[400px] px-2 sm:px-0 justify-center items-center">
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => setPage(i + 1)}
+              className={`px-3 py-1 rounded-full border transition-all duration-150 text-sm sm:text-base font-bold focus:outline-none
+                ${page === i + 1 ? 'bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white scale-110 shadow-lg border-transparent' : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-100'}`}
+              style={{ minWidth: 36 }}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      )}
       {/* 画像拡大モーダル（撮影時 or 通常） */}
       <Modal isOpen={showImageModal} onClose={handleCloseImageModal} fullScreen>
         {selectedImage ? (
@@ -374,19 +424,6 @@ export default function PostMain() {
           </div>
         ) : null}
       </Modal>
-      {/* ページネーション */}
-      <div className="flex gap-2 mb-8 w-full max-w-[400px] px-2 sm:px-0 justify-center">
-        {Array.from({ length: totalPages }, (_, i) => (
-          <Button
-            key={i}
-            onClick={() => setPage(i + 1)}
-            active={page === i + 1}
-            className={`px-3 py-1 text-sm sm:text-base ${page === i + 1 ? 'text-white bg-slate-700 font-bold' : 'text-slate-500 bg-white'}`}
-          >
-            {i + 1}
-          </Button>
-        ))}
-      </div>
       {/* 戻るボタン */}
       <Button onClick={handleBack} className="mb-8 mt-2 px-8 py-3 bg-slate-700 w-full max-w-[400px]">イベント詳細ページへ戻る</Button>
     </div>
