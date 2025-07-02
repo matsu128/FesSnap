@@ -226,7 +226,7 @@ export default function PostMain() {
   };
 
   // 戻るボタン
-  const handleBack = () => router.push('/events');
+  const handleBack = () => router.push(`/events/${eventId}`);
 
   // カスタムカメラで撮影画像を受け取る
   const handleCustomCapture = (dataUrl) => {
@@ -246,48 +246,39 @@ export default function PostMain() {
     return d.toISOString().slice(0, 10);
   }
 
-  const handleUpload = async (file) => {
+  // 複数ファイル対応
+  const handleUpload = async (files) => {
     try {
-      setIsUploading(true); // アップロード開始
-      console.log('アップロード開始', file);
-      if (!file) {
-        alert('ファイルが選択されていません');
-        setIsUploading(false);
-        return;
-      }
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${eventId}_${Date.now()}.${fileExt}`;
-      console.log('バケット名: event-image');
-      console.log('ファイル名:', fileName);
-      console.log('Content-Type:', file.type);
-      console.log('ファイルサイズ:', file.size);
-      const { error: uploadError } = await supabase.storage
-        .from('event-image')
-        .upload(fileName, file, { contentType: file.type });
-      if (uploadError) {
-        console.error('アップロード失敗:', uploadError.message, uploadError);
-        alert('アップロード失敗: ' + uploadError.message);
-        setIsUploading(false);
-        return;
-      }
-      const { publicUrl } = supabase.storage.from('event-image').getPublicUrl(fileName).data;
-      if (!publicUrl) {
-        console.error('画像URL取得失敗');
-        alert('画像URL取得失敗');
-        setIsUploading(false);
-        return;
-      }
-      const { error: dbError } = await supabase
-        .from('images')
-        .insert([{ eventId, url: publicUrl, user: 'anonymous', date: new Date().toISOString().slice(0, 10) }]);
-      if (dbError) {
-        console.error('DB保存失敗:', dbError.message, dbError);
-        alert('DB保存失敗: ' + dbError.message);
-        setIsUploading(false);
-        return;
+      setIsUploading(true);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${eventId}_${Date.now()}_${i}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('event-image')
+          .upload(fileName, file, { contentType: file.type });
+        if (uploadError) {
+          console.error('アップロード失敗:', uploadError.message, uploadError);
+          alert('アップロード失敗: ' + uploadError.message);
+          continue; // 他のファイルは続行
+        }
+        const { publicUrl } = supabase.storage.from('event-image').getPublicUrl(fileName).data;
+        if (!publicUrl) {
+          console.error('画像URL取得失敗');
+          alert('画像URL取得失敗');
+          continue;
+        }
+        const { error: dbError } = await supabase
+          .from('images')
+          .insert([{ eventId, url: publicUrl, user: 'anonymous', date: new Date().toISOString().slice(0, 10) }]);
+        if (dbError) {
+          console.error('DB保存失敗:', dbError.message, dbError);
+          alert('DB保存失敗: ' + dbError.message);
+          continue;
+        }
       }
       fetchImages();
-      setIsUploading(false); // アップロード完了
+      setIsUploading(false);
     } catch (e) {
       console.error('予期せぬエラー:', e);
       alert('予期せぬエラー: ' + e.message);
@@ -318,8 +309,8 @@ export default function PostMain() {
         </div>
         <div className="w-full flex justify-end items-center gap-2">
           <Button onClick={handlePostImage} className="text-base py-3 px-6 bg-slate-700" disabled={isUploading}>画像投稿</Button>
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={e => {
-            if (e.target.files[0]) handleUpload(e.target.files[0]);
+          <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => {
+            if (e.target.files && e.target.files.length > 0) handleUpload(Array.from(e.target.files));
           }} />
         </div>
       </div>

@@ -40,9 +40,9 @@ export default function EventListMain() {
   const pagedEvents = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
 
-  // イベント投稿ページへの遷移
+  // イベント詳細ページへの遷移
   const handleEventClick = (id) => {
-    router.push(`/events/${id}/post`);
+    router.push(`/events/${id}`);
   };
 
   // 新規イベント作成ボタン

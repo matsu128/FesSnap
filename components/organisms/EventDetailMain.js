@@ -8,11 +8,13 @@ import Button from '../atoms/Button';
 import Icon from '../atoms/Icon';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
+import Modal from '../atoms/Modal';
 
 export default function EventDetailMain() {
   const [event, setEvent] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
   const [qrUrl, setQrUrl] = useState("");
+  const [showQrModal, setShowQrModal] = useState(false);
   const router = useRouter();
   const params = useParams();
   const eventId = params?.eventId;
@@ -41,6 +43,27 @@ export default function EventDetailMain() {
   const handlePost = () => router.push(`/events/${eventId}/post`);
   // イベントリストページに戻る
   const handleBack = () => router.push('/events');
+
+  // QR画像共有・保存
+  const handleShareQr = async () => {
+    if (!qrUrl) return;
+    try {
+      if (navigator.share) {
+        const res = await fetch(qrUrl);
+        const blob = await res.blob();
+        const file = new File([blob], 'fesnap-qr.png', { type: blob.type });
+        await navigator.share({ files: [file], title: event?.title || 'FesSnapイベントQR', text: 'イベント参加用QRコードです' });
+      } else {
+        // 非対応端末はダウンロード
+        const a = document.createElement('a');
+        a.href = qrUrl;
+        a.download = 'fesnap-qr.png';
+        a.click();
+      }
+    } catch (e) {
+      // 失敗時は何もしない
+    }
+  };
 
   return (
     <div className="w-full min-h-screen bg-white flex flex-col items-center px-2 sm:px-0">
@@ -76,13 +99,26 @@ export default function EventDetailMain() {
       <div className="flex w-full max-w-[400px] gap-4 mb-4 px-2 sm:px-0">
         <Card className="flex-1 flex items-center justify-center p-2">
           {qrUrl ? (
-            <img src={qrUrl} alt="QRコード" className="w-16 h-16 object-contain" />
+            <img src={qrUrl} alt="QRコード" className="w-16 h-16 object-contain cursor-pointer" onClick={() => setShowQrModal(true)} />
           ) : (
             <Icon type="qr" className="w-12 h-12 text-gray-400" />
           )}
         </Card>
         <Button onClick={handlePost} className="flex-1 text-base py-4 bg-slate-700">画像投稿</Button>
       </div>
+      {/* QR拡大・保存モーダル */}
+      <Modal isOpen={showQrModal} onClose={() => setShowQrModal(false)}>
+        <div className="flex flex-col items-center w-full relative p-4">
+          {/* 右上バツボタン */}
+          <button onClick={() => setShowQrModal(false)} className="absolute top-2 right-2 text-3xl text-gray-400 hover:text-gray-700 z-10">×</button>
+          <img src={qrUrl} alt="QRコード拡大" className="w-64 h-64 object-contain bg-white rounded-lg mt-4 mb-6 shadow-lg" />
+          <Button onClick={handleShareQr} className="w-64 bg-slate-700 text-lg py-3 flex items-center justify-center gap-2 mt-2">
+            <Icon type="download" className="w-5 h-5" />
+            <span className="text-center w-full">保存</span>
+          </Button>
+          <div className="text-xs text-gray-400 mt-2">端末によっては共有または画像保存が可能です</div>
+        </div>
+      </Modal>
       {/* 過去イベント画像（課金時のみ） */}
       {event.pastEvents && event.pastEvents.length > 0 && (
         <div className="w-full max-w-[400px] mb-4 px-2 sm:px-0">
