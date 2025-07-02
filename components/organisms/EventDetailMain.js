@@ -9,12 +9,14 @@ import Icon from '../atoms/Icon';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 import Modal from '../atoms/Modal';
+import LoginModal from '../molecules/LoginModal';
 
 export default function EventDetailMain() {
   const [event, setEvent] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
   const [qrUrl, setQrUrl] = useState("");
   const [showQrModal, setShowQrModal] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const router = useRouter();
   const params = useParams();
   const eventId = params?.eventId;
@@ -67,77 +69,106 @@ export default function EventDetailMain() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-white flex flex-col items-center px-2 sm:px-0">
+    <div className="w-full h-screen flex flex-col justify-between bg-white px-2 sm:px-0">
       {/* ヘッダー（ハンバーガーメニュー） */}
       <Header type="menu" onMenuClick={() => setShowMenu(v => !v)} />
-      {/* メニュー（ダミー） */}
+      {/* メニュー（ログイン・新規イベント作成） */}
       {showMenu && (
         <div className="fixed top-0 left-0 w-full h-full bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowMenu(false)}>
-          <div className="bg-white rounded-2xl shadow-xl p-8 min-w-[200px] max-w-[90vw]" onClick={e => e.stopPropagation()}>
-            <Button onClick={() => alert('ログイン（ダミー）')}>ログイン</Button>
+          <div className="bg-white rounded-2xl shadow-xl p-8 min-w-[240px] max-w-[90vw] flex flex-col gap-4" onClick={e => e.stopPropagation()}>
+            <Button onClick={() => { setLoginModalOpen(true); setShowMenu(false); }} className="w-full text-base py-3 bg-slate-700">ログイン</Button>
+            <Button onClick={() => { router.push('/admin'); setShowMenu(false); }} className="w-full text-base py-3 bg-blue-600">新規イベント作成</Button>
           </div>
         </div>
       )}
-      {/* タイトル・日付・場所 */}
-      <div className="mt-24 mb-2 w-full max-w-[400px] px-4">
-        <div className="flex justify-between items-center">
-          <div className="text-lg sm:text-xl font-bold text-gray-700">{event.title}</div>
-        </div>
-        <div className="flex justify-between text-xs sm:text-sm text-gray-500 mt-1">
-          <span>{event.date}</span>
-          <span>{event.location}</span>
-        </div>
-      </div>
-      {/* 詳細説明・金額・参加人数 */}
-      <Card className="w-full max-w-[400px] mb-4 px-2 sm:px-0">
-        <div className="text-sm sm:text-base text-gray-700 mb-1">{event.description}</div>
-        <div className="flex justify-between text-xs sm:text-sm text-gray-500">
-          <span>金額: {event.price}円</span>
-          <span>定員: {event.capacity}人</span>
-        </div>
-      </Card>
-      {/* QRコード＋画像投稿ボタン */}
-      <div className="flex w-full max-w-[400px] gap-4 mb-4 px-2 sm:px-0">
-        <Card className="flex-1 flex items-center justify-center p-2">
-          {qrUrl ? (
-            <img src={qrUrl} alt="QRコード" className="w-16 h-16 object-contain cursor-pointer" onClick={() => setShowQrModal(true)} />
-          ) : (
-            <Icon type="qr" className="w-12 h-12 text-gray-400" />
-          )}
+      {/* LoginModal */}
+      <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
+      {/* 中央コンテンツ */}
+      <div className="flex-1 w-full flex flex-col items-center justify-center">
+        {/* タイトル・日付・詳細・金額・人数を1つのカードでまとめて表示（デザイン強化） */}
+        <Card className="w-full max-w-[400px] mb-4 px-4 py-5 bg-white/90 shadow-lg border border-gray-200 rounded-2xl flex flex-col gap-2 items-center" style={{fontFamily: "'Baloo 2', 'Rounded Mplus 1c', 'Poppins', 'Quicksand', 'Nunito', 'Rubik', sans-serif"}}>
+          {/* タイトル（1行・動的フォントサイズ・省略なし） */}
+          <div
+            className="font-extrabold text-center break-words w-full tracking-wide mb-1"
+            style={{
+              fontSize:
+                event.title && event.title.length <= 8
+                  ? '2.1rem'
+                  : event.title && event.title.length <= 12
+                  ? '1.7rem'
+                  : event.title && event.title.length <= 18
+                  ? '1.3rem'
+                  : '1.05rem',
+              color: '#193a6a',
+              letterSpacing: '0.06em',
+              lineHeight: 1.08,
+              fontFamily: "'Baloo 2', 'Rounded Mplus 1c', 'Poppins', 'Quicksand', 'Nunito', 'Rubik', sans-serif"
+            }}
+          >
+            {event.title || 'イベントタイトル未設定'}
+          </div>
+          {/* 日付 */}
+          <div className="font-bold text-center w-full tracking-wide mb-1" style={{fontSize:'1.1rem', color:'#0077b6', letterSpacing:'0.04em', fontFamily: "'Baloo 2', 'Rounded Mplus 1c', 'Poppins', 'Quicksand', 'Nunito', 'Rubik', sans-serif"}}>
+            <span className="mr-1">日付：</span>{event.date || '未設定'}
+          </div>
+          {/* 詳細 */}
+          <div className="font-semibold text-center w-full tracking-wide mb-1" style={{fontSize:'1.05rem', color:'#3a4a6d', letterSpacing:'0.02em', fontFamily: "'Baloo 2', 'Rounded Mplus 1c', 'Poppins', 'Quicksand', 'Nunito', 'Rubik', sans-serif"}}>
+            <span className="mr-1">詳細：</span>{event.description ? event.description : '詳細なし'}
+          </div>
+          {/* 金額・人数 */}
+          <div className="flex flex-row items-center justify-center gap-2 font-bold w-full tracking-wide mt-1" style={{fontSize:'0.98rem', color:'#0077b6', letterSpacing:'0.02em', fontFamily: "'Baloo 2', 'Rounded Mplus 1c', 'Poppins', 'Quicksand', 'Nunito', 'Rubik', sans-serif"}}>
+            <span>金額: <span style={{color:'#193a6a'}}>{event.price ? `${event.price}円` : '未設定'}</span></span>
+            <span>定員: <span style={{color:'#193a6a'}}>{event.capacity ? `${event.capacity}人` : '未設定'}</span></span>
+          </div>
         </Card>
-        <Button onClick={handlePost} className="flex-1 text-base py-4 bg-slate-700">画像投稿</Button>
-      </div>
-      {/* QR拡大・保存モーダル */}
-      <Modal isOpen={showQrModal} onClose={() => setShowQrModal(false)}>
-        <div className="flex flex-col items-center w-full relative p-4">
-          {/* 右上バツボタン */}
-          <button onClick={() => setShowQrModal(false)} className="absolute top-2 right-2 text-3xl text-gray-400 hover:text-gray-700 z-10">×</button>
-          <img src={qrUrl} alt="QRコード拡大" className="w-64 h-64 object-contain bg-white rounded-lg mt-4 mb-6 shadow-lg" />
-          <Button onClick={handleShareQr} className="w-64 bg-slate-700 text-lg py-3 flex items-center justify-center gap-2 mt-2">
-            <Icon type="download" className="w-5 h-5" />
-            <span className="text-center w-full">保存</span>
-          </Button>
-          <div className="text-xs text-gray-400 mt-2">端末によっては共有または画像保存が可能です</div>
+        {/* QRコード＋画像投稿ボタン（縦中央） */}
+        <div className="flex w-full max-w-[400px] gap-4 mb-4 px-2 sm:px-0 items-center justify-center">
+          <Card className="flex-1 flex items-center justify-center p-2">
+            {qrUrl ? (
+              <img src={qrUrl} alt="QRコード" className="w-36 h-36 object-contain cursor-pointer" onClick={() => setShowQrModal(true)} />
+            ) : (
+              <Icon type="qr" className="w-28 h-28 text-gray-400" />
+            )}
+          </Card>
+          <Button onClick={handlePost} className="flex-1 text-base py-4 bg-slate-700">画像投稿</Button>
         </div>
-      </Modal>
-      {/* 過去イベント画像（課金時のみ） */}
-      {event.pastEvents && event.pastEvents.length > 0 && (
-        <div className="w-full max-w-[400px] mb-4 px-2 sm:px-0">
-          <div className="text-xs sm:text-sm text-gray-500 mb-1">過去イベント</div>
-          {event.pastEvents.slice(0, 6).map((pe, i) => (
-            <div key={i} className="flex items-center mb-1">
-              <span className="text-xs sm:text-sm text-gray-400 w-20">{pe.date} {pe.location}</span>
-              <div className="flex gap-1 flex-1">
-                {pe.images.slice(0, 3).map((img, j) => (
-                  <div key={j} className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 rounded-lg flex items-center justify-center text-xs text-gray-400">画像</div>
-                ))}
+        {/* QR拡大・保存モーダル */}
+        <Modal isOpen={showQrModal} onClose={() => setShowQrModal(false)}>
+          <div className="flex flex-col items-center w-full relative p-4">
+            {/* 右上バツボタン */}
+            <button onClick={() => setShowQrModal(false)} className="absolute top-2 right-2 text-3xl text-gray-400 hover:text-gray-700 z-10">×</button>
+            <img src={qrUrl} alt="QRコード拡大" className="w-64 h-64 object-contain bg-white rounded-lg mt-4 mb-6 shadow-lg" />
+            <Button onClick={handleShareQr} className="w-64 bg-slate-700 text-lg py-3 flex items-center justify-center gap-2 mt-2">
+              <Icon type="download" className="w-5 h-5" />
+              <span className="text-center w-full">保存</span>
+            </Button>
+            <div className="text-xs text-gray-400 mt-2">端末によっては共有または画像保存が可能です</div>
+          </div>
+        </Modal>
+        {/* 過去イベント画像（課金時のみ） */}
+        {event.pastEvents && event.pastEvents.length > 0 && (
+          <div className="w-full max-w-[400px] mb-4 px-2 sm:px-0">
+            <div className="text-xs sm:text-sm text-gray-500 mb-1">過去イベント</div>
+            {event.pastEvents.slice(0, 6).map((pe, i) => (
+              <div key={i} className="flex items-center mb-1">
+                <span className="text-xs sm:text-sm text-gray-400 w-20">{pe.date} {pe.location}</span>
+                <div className="flex gap-1 flex-1">
+                  {pe.images.slice(0, 3).map((img, j) => (
+                    <div key={j} className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 rounded-lg flex items-center justify-center text-xs text-gray-400">画像</div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {/* 戻るボタン */}
-      <Button onClick={handleBack} className="mb-8 mt-2 px-8 py-3 bg-slate-700 w-full max-w-[400px]">イベントリストへ戻る</Button>
+            ))}
+          </div>
+        )}
+      </div>
+      {/* 下部ボタンエリア（少し上に表示） */}
+      <div className="w-full max-w-[400px] flex gap-2 mb-10">
+        <Button onClick={handleBack} className="flex-1 text-base py-3 bg-slate-700 rounded-full shadow-md">イベントリストへ戻る</Button>
+        <Button onClick={() => router.push('/admin')} className="flex-1 text-base py-3 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white rounded-full shadow-md">
+          <span className="block">新規イベント<br />作成</span>
+        </Button>
+      </div>
     </div>
   );
 } 

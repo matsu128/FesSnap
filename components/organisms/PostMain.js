@@ -85,6 +85,7 @@ export default function PostMain() {
 
   // 投稿許可判定
   const isPostAllowed = (() => {
+    if (eventId === '630316dc-a3a3-4a16-98c5-ae7a3094533e') return true; // id=1は常に投稿可能
     if (!eventDate) return false;
     const event = new Date(eventDate);
     const nextDay = new Date(eventDate);
@@ -96,8 +97,8 @@ export default function PostMain() {
 
   // 投稿画像の絞り込み（ダミー：ユーザーIDで分岐）
   const filteredImages = images.filter(img => tab === 'mine' ? img.user === 'user1' : img.user !== 'user1');
-  const pagedImages = filteredImages.slice((page - 1) * 15, page * 15);
-  const totalPages = Math.ceil(filteredImages.length / PAGE_SIZE);
+  // ページネーションは全画像数で計算
+  const totalPages = Math.ceil(images.length / PAGE_SIZE);
 
   // カメラ対応判定（スマホ端末のみ）
   const isCameraSupported = () => {
@@ -364,11 +365,20 @@ export default function PostMain() {
         {images.length === 0 && (
           <div className="w-full text-center text-gray-400 py-12">画像を投稿しよう！</div>
         )}
-        {images.map(img => (
-          <div key={img.id} className="aspect-square bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 rounded-lg flex items-center justify-center cursor-pointer" onClick={() => handleImageClick(img)}>
-            <img src={img.url} alt="投稿画像" className="w-full h-full object-cover rounded-lg" />
-          </div>
-        ))}
+        {images.map((img, idx) => {
+          const startIdx = (page - 1) * PAGE_SIZE;
+          const endIdx = page * PAGE_SIZE;
+          if (idx < startIdx || idx >= endIdx) return null;
+          return (
+            <div
+              key={img.id}
+              className={`aspect-square bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 rounded-lg flex items-center justify-center cursor-pointer relative transition-all duration-150`}
+              onClick={() => handleImageClick(img)}
+            >
+              <img src={img.url} alt="投稿画像" className="w-full h-full object-cover rounded-lg" />
+            </div>
+          );
+        })}
       </div>
       {/* ページネーション（画像下中央） */}
       {totalPages > 1 && (

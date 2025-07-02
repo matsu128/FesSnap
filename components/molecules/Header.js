@@ -12,7 +12,7 @@ export default function Header({ type = 'default', onMenuClick, onLoginClick }) 
     <header className="w-full flex items-center justify-between px-4 py-3 bg-white/80 backdrop-blur-md shadow-sm fixed top-0 left-0 z-40">
       {/* ロゴ部分（タップで/に遷移） */}
       <motion.div initial={{ x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-        <button onClick={() => router.push('/')} className="focus:outline-none">
+        <button onClick={() => router.push('/events')} className="focus:outline-none">
           <Logo size="text-xl" />
         </button>
       </motion.div>

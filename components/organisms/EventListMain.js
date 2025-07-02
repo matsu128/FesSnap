@@ -8,6 +8,7 @@ import Card from '../atoms/Card';
 import Button from '../atoms/Button';
 import { useRouter } from 'next/navigation';
 import Modal from '../atoms/Modal';
+import LoginModal from '../molecules/LoginModal';
 
 const PAGE_SIZE = 5;
 
@@ -19,6 +20,7 @@ export default function EventListMain() {
   const [page, setPage] = useState(1);
   const router = useRouter();
   const [filterModalOpen, setFilterModalOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   // APIからイベントデータを取得
   useEffect(() => {
@@ -51,15 +53,14 @@ export default function EventListMain() {
   return (
     <div className="w-full min-h-screen bg-white flex flex-col items-center px-2 sm:px-0">
       {/* ヘッダー（ログインボタン付き） */}
-      <Header type="login" onLoginClick={() => alert('ログイン（ダミー）')} />
-      {/* フィルターバー上部 右寄せ 新規イベント作成ボタン */}
-      <div className="w-full max-w-[400px] flex justify-end items-center mt-24 mb-1 px-2 sm:px-0">
-        <Button onClick={handleCreateEvent} className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700 shadow-sm">新規イベント作成</Button>
+      <Header type="login" onLoginClick={() => setLoginModalOpen(true)} />
+      {/* 新規イベント作成・絞り込みボタンを同じ行に左寄せで横並び */}
+      <div className="w-full max-w-[400px] flex items-center gap-2 justify-center mt-24 mb-1 px-2 sm:px-0">
+        <Button onClick={() => setFilterModalOpen(true)} className="max-w-[140px] text-sm py-2 px-4 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white shadow-md">絞り込み</Button>
+        <Button onClick={handleCreateEvent} className="text-base px-5 py-2 rounded-full bg-blue-100 text-blue-700 shadow-sm">新規イベント作成</Button>
       </div>
       {/* フィルターバー */}
       <div className="w-full max-w-[400px] px-2 sm:px-0">
-        {/* 初期は絞り込みボタンのみ */}
-        <Button onClick={() => setFilterModalOpen(true)} className="w-full text-base py-3 bg-black hover:bg-neutral-800 text-white shadow-md mb-4">絞り込み</Button>
         {/* モーダルで3つのボタンを表示 */}
         <Modal isOpen={filterModalOpen} onClose={() => setFilterModalOpen(false)}>
           <div className="flex flex-col gap-4 w-full max-w-xs mx-auto">
@@ -91,6 +92,8 @@ export default function EventListMain() {
           <Button key={i} onClick={() => setPage(i + 1)} className={`px-3 py-1 text-sm sm:text-base ${page === i + 1 ? 'bg-slate-700 text-white' : 'bg-gray-100 text-gray-500'}`}>{i + 1}</Button>
         ))}
       </div>
+      {/* ログインモーダル */}
+      <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
     </div>
   );
 } 
