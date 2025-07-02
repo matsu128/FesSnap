@@ -243,24 +243,45 @@ export default function PostMain() {
   }
 
   const handleUpload = async (file) => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${eventId}_${Date.now()}.${fileExt}`;
-    const { error: uploadError } = await supabase.storage
-      .from('event-image')
-      .upload(fileName, file, { contentType: file.type });
-    if (uploadError) {
-      alert('アップロード失敗');
-      return;
+    try {
+      console.log('アップロード開始', file);
+      if (!file) {
+        alert('ファイルが選択されていません');
+        return;
+      }
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${eventId}_${Date.now()}.${fileExt}`;
+      console.log('バケット名: event-image');
+      console.log('ファイル名:', fileName);
+      console.log('Content-Type:', file.type);
+      console.log('ファイルサイズ:', file.size);
+      const { error: uploadError } = await supabase.storage
+        .from('event-image')
+        .upload(fileName, file, { contentType: file.type });
+      if (uploadError) {
+        console.error('アップロード失敗:', uploadError.message, uploadError);
+        alert('アップロード失敗: ' + uploadError.message);
+        return;
+      }
+      const { publicUrl } = supabase.storage.from('event-image').getPublicUrl(fileName).data;
+      if (!publicUrl) {
+        console.error('画像URL取得失敗');
+        alert('画像URL取得失敗');
+        return;
+      }
+      const { error: dbError } = await supabase
+        .from('images')
+        .insert([{ eventId, url: publicUrl, user: 'anonymous', date: new Date().toISOString().slice(0, 10) }]);
+      if (dbError) {
+        console.error('DB保存失敗:', dbError.message, dbError);
+        alert('DB保存失敗: ' + dbError.message);
+        return;
+      }
+      fetchImages();
+    } catch (e) {
+      console.error('予期せぬエラー:', e);
+      alert('予期せぬエラー: ' + e.message);
     }
-    const { publicUrl } = supabase.storage.from('event-image').getPublicUrl(fileName).data;
-    const { error: dbError } = await supabase
-      .from('images')
-      .insert([{ eventId, url: publicUrl, user: 'anonymous', date: new Date().toISOString().slice(0, 10) }]);
-    if (dbError) {
-      alert('DB保存失敗');
-      return;
-    }
-    fetchImages();
   };
 
   return (
