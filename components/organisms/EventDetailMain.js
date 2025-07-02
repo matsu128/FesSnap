@@ -48,6 +48,7 @@ export default function EventDetailMain() {
   const handleShareQr = async () => {
     if (!qrUrl) return;
     try {
+      // QRコード画像の内容がid/post/であることを前提に共有・保存
       if (navigator.share) {
         const res = await fetch(qrUrl);
         const blob = await res.blob();

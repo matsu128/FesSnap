@@ -114,7 +114,7 @@ export default function AdminMain() {
         return;
       }
       // 返却IDでQRコードURL生成
-      const qrValue = `https://fes-snap.vercel.app/events/${data.id}`;
+      const qrValue = `https://fes-snap.vercel.app/events/${data.id}/post`;
       setQr(qrValue);
       setQrEventId(data.id);
       // --- ここからQR画像アップロード＆DB保存 ---
