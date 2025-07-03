@@ -163,9 +163,9 @@ export default function EventDetailMain() {
         )}
       </div>
       {/* 下部ボタンエリア（少し上に表示） */}
-      <div className="w-full max-w-[400px] md:max-w-2xl flex gap-2 mb-20 md:mx-auto md:justify-center">
-        <Button onClick={handleBack} className="flex-1 text-base py-3 bg-slate-700 rounded-full shadow-md">イベントリストへ戻る</Button>
-        <Button onClick={() => router.push('/admin')} className="flex-1 text-base py-3 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white rounded-full shadow-md">
+      <div className="w-full max-w-[400px] md:max-w-2xl flex gap-2 mb-20 md:mx-auto md:justify-center w-full">
+        <Button onClick={handleBack} className="w-full text-lg py-4 bg-slate-700 rounded-full shadow-md">イベントリストへ戻る</Button>
+        <Button onClick={() => router.push('/admin')} className="w-full text-lg py-4 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white rounded-full shadow-md">
           <span className="block">新規イベント<br />作成</span>
         </Button>
       </div>
