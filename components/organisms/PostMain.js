@@ -9,6 +9,7 @@ import Icon from '../atoms/Icon';
 import { useRouter, useParams } from 'next/navigation';
 import CustomCameraModal from './CustomCameraModal';
 import { supabase } from '../../lib/supabaseClient';
+import LoginModal from '../molecules/LoginModal';
 
 function getPageSize() {
   if (typeof window !== 'undefined') {
@@ -54,6 +55,7 @@ export default function PostMain() {
   const [eventTitle, setEventTitle] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false); // 追加: ログイン状態（仮実装）
   const [pageSize, setPageSize] = useState(getPageSize());
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setPageSize(getPageSize());
@@ -303,14 +305,17 @@ export default function PostMain() {
     <div className="w-full min-h-screen bg-white flex flex-col items-center px-2 sm:px-0">
       {/* ヘッダー（ハンバーガーメニュー） */}
       <Header type="menu" onMenuClick={() => setShowMenu(v => !v)} />
-      {/* メニュー（ダミー） */}
+      {/* メニュー（ログイン・新規イベント作成） */}
       {showMenu && (
         <div className="fixed top-0 left-0 w-full h-full bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowMenu(false)}>
-          <div className="bg-white rounded-2xl shadow-xl p-8 min-w-[200px] max-w-[90vw]" onClick={e => e.stopPropagation()}>
-            <Button onClick={() => alert('ログイン（ダミー）')}>ログイン</Button>
+          <div className="bg-white rounded-2xl shadow-xl p-8 min-w-[240px] max-w-[90vw] flex flex-col gap-4" onClick={e => e.stopPropagation()}>
+            <Button onClick={() => { setLoginModalOpen(true); setShowMenu(false); }} className="w-full text-base py-3 bg-slate-700">ログイン</Button>
+            <Button onClick={() => { router.push('/admin'); setShowMenu(false); }} className="w-full text-base py-3 bg-blue-600">新規イベント作成</Button>
           </div>
         </div>
       )}
+      {/* LoginModal */}
+      <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
       {/* 画像投稿ボタン＋タイトル＋input（スマホ用input/capture復活） */}
       <div className="w-full max-w-[400px] flex flex-col items-center mt-24 mb-2 px-2 sm:px-0 gap-2">
         <div
