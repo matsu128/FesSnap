@@ -31,8 +31,6 @@ export default function Button({ children, onClick, className = '', type = 'butt
         focus:ring-2 focus:ring-green-100
         active:scale-98
         transition-all duration-200
-        text-sm sm:text-base
-        overflow-hidden
         ${className}
       `}
       style={undefined}
