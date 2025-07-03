@@ -25,6 +25,28 @@ export default function EventListMain() {
   // 動画のラストフレームで止めるためのref
   const videoRef = useRef(null);
 
+  // 動画の強制再生（Safari対策）
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.defaultMuted = true;
+      videoRef.current.play().catch(() => {});
+    }
+    // 保険：画面全体のクリック/タップで再生
+    const handler = (e) => {
+      // ボタン以外のみ
+      if (e.target.tagName !== 'BUTTON' && videoRef.current && videoRef.current.paused) {
+        videoRef.current.play().catch(() => {});
+      }
+    };
+    document.addEventListener('click', handler);
+    document.addEventListener('touchstart', handler);
+    return () => {
+      document.removeEventListener('click', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, []);
+
   // APIからイベントデータを取得
   useEffect(() => {
     fetch('/api/events')
