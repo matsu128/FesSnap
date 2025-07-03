@@ -1,7 +1,7 @@
 // LP（紹介ページ）のメイン部分を構成するorganism
 // Header, ServiceVideo, HorizontalEventSlider, EmphasizedNavButtonを組み合わせて、ページ遷移も実装
 // APIからダミーイベントデータを取得してスライダーに渡す
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import Header from '../molecules/Header';
 import ServiceVideo from '../molecules/ServiceVideo';
 import HorizontalEventSlider from '../molecules/HorizontalEventSlider';
@@ -16,7 +16,6 @@ import { motion } from 'framer-motion';
 
 export default function LPMain() {
   const router = useRouter();
-  const videoRef = useRef(null);
   // ダミーイベント例
   const eventExamples = [
     {
@@ -80,33 +79,6 @@ export default function LPMain() {
   // 今すぐ始めるボタンでイベントページへ
   const handleStart = () => router.push('/events');
 
-  useEffect(() => {
-    if (!videoRef.current) return;
-    // Safari/iOS強制再生
-    videoRef.current.muted = true;
-    videoRef.current.defaultMuted = true;
-    videoRef.current.playsInline = true;
-    videoRef.current.preload = 'auto';
-    const playVideo = () => {
-      if (videoRef.current) {
-        videoRef.current.play().catch(() => {});
-      }
-    };
-    playVideo();
-    // 画面タップ時も再生保険
-    const handleTap = (e) => {
-      if (videoRef.current && e.target.tagName !== 'BUTTON') {
-        playVideo();
-      }
-    };
-    window.addEventListener('touchend', handleTap);
-    window.addEventListener('click', handleTap);
-    return () => {
-      window.removeEventListener('touchend', handleTap);
-      window.removeEventListener('click', handleTap);
-    };
-  }, []);
-
   return (
     <div className="w-full min-h-screen bg-white flex flex-col items-center px-0 font-['Noto Sans JP']" style={{overflowX: 'hidden', fontFamily: "'Noto Sans JP', 'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
       {/* ヘッダー */}
@@ -124,13 +96,11 @@ export default function LPMain() {
       <section className="hero-section flex items-center justify-center relative overflow-hidden w-full min-h-screen">
         {/* 動画背景 */}
         <video
-          ref={videoRef}
           className="absolute inset-0 w-full h-full object-cover object-center z-0"
           src="/9003388-hd_1920_1080_25fps.mp4"
           autoPlay
           loop
           muted
-          defaultMuted
           playsInline
           preload="auto"
           style={{minWidth: '100%', minHeight: '100%', objectFit: 'cover', objectPosition: 'center'}}
@@ -298,18 +268,7 @@ export default function LPMain() {
                   {plan.highlight && <div className="absolute top-4 right-4 bg-white text-blue-600 text-xs font-bold px-3 py-1 rounded-full shadow">人気</div>}
                   <h3 className="text-2xl font-bold mb-2 tracking-wide drop-shadow-sm text-center md:text-3xl md:mb-4 text-black" style={{color:'#000'}}>{plan.name}</h3>
                   <div className="flex items-end justify-center md:justify-center mb-4 md:mb-6 gap-1 md:gap-2">
-                    <span
-                      className={
-                        plan.price === '無料'
-                          ? 'text-4xl md:text-5xl font-extrabold drop-shadow-sm bg-gradient-to-r from-blue-500 via-blue-400 to-blue-600 bg-clip-text text-transparent'
-                          : plan.price === '¥5,000'
-                            ? 'text-4xl md:text-5xl font-extrabold drop-shadow-sm bg-gradient-to-r from-pink-400 via-pink-500 to-pink-600 bg-clip-text text-transparent'
-                            : 'text-4xl md:text-5xl font-extrabold drop-shadow-sm text-black'
-                      }
-                      style={plan.price === '無料' || plan.price === '¥5,000' ? {WebkitBackgroundClip: 'text', color: 'transparent'} : {color:'#000'}}
-                    >
-                      {plan.price}
-                    </span>
+                    <span className="text-4xl md:text-5xl font-extrabold drop-shadow-sm">{plan.price}</span>
                     <span className={`ml-1 ${plan.highlight ? 'text-white text-opacity-80' : 'text-black'} text-sm md:text-base`} style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", maxWidth: '5.5ch', whiteSpace: 'nowrap', fontSize: 'clamp(0.8rem, 1.2vw, 1.05rem)', color: plan.highlight ? undefined : '#000'}}>/イベント</span>
                   </div>
                   <p className={plan.highlight ? 'text-white text-opacity-90' : 'text-black'} style={plan.highlight ? undefined : {color:'#000'}}>{plan.desc}</p>
@@ -351,15 +310,23 @@ export default function LPMain() {
       <footer className="bg-white border-gray-100 py-12 px-4 w-full mt-12 pt-12" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: 0}}>
         <div className="w-full mx-auto px-2" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: 0}}>
           <div className="flex flex-col items-center mb-8 w-full" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box'}}>
-            <svg width="auto" height="60" viewBox="0 0 220 60" style={{display:'block', margin:'0 auto', verticalAlign:'middle', overflow:'hidden', maxWidth:'100%'}}>
-              <defs>
-                <linearGradient id="fesnap-logo-gradient" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#00c6fb" />
-                  <stop offset="100%" stopColor="#005bea" />
-                </linearGradient>
-              </defs>
-              <text x="0" y="48" fontFamily="'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif" fontWeight="bold" fontSize="48" fill="url(#fesnap-logo-gradient)" letterSpacing="0.15em">FesSnap</text>
-            </svg>
+            <h2
+              className="font-extrabold text-center mb-4 tracking-tight leading-tight drop-shadow-xl text-balance text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-pink-400 to-blue-600"
+              style={{
+                fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
+                letterSpacing: '0.04em',
+                fontSize: 'clamp(1.1rem, 6vw, 2.2rem)',
+                lineHeight: 1.15,
+                maxWidth: '100%',
+                marginLeft: 'auto',
+                marginRight: 'auto',
+                wordBreak: 'keep-all',
+                WebkitTextWrap: 'balance',
+                textWrap: 'balance',
+              }}
+            >
+              イベントの感動を、その場でみんなと。
+            </h2>
             <p className="text-gray-500 mb-6 text-sm text-center w-full" style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)', maxWidth: '32ch', margin: '0 auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance', overflowX: 'hidden', boxSizing: 'border-box', paddingLeft: '1rem', paddingRight: '1rem'}}>
               イベントの思い出をリアルタイムで共有。<br />新しい写真共有の形を提供します。
             </p>

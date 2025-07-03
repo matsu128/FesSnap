@@ -35,14 +35,6 @@ export default function Button({ children, onClick, className = '', type = 'butt
       `}
       style={undefined}
     >
-      {/* 疑似的な光沢感を上部に追加 */}
-      <span
-        className="absolute left-0 top-0 w-full h-1/2 rounded-full pointer-events-none"
-        style={{
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.1) 100%)',
-          zIndex: 1,
-        }}
-      />
       <span className="relative z-10">{children}</span>
     </motion.button>
   );

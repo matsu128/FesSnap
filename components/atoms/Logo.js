@@ -1,16 +1,16 @@
 // FesSnap共通ロゴコンポーネント（SVGグラデーション対応）
 // props: size（テキストサイズクラス, 例: 'text-xl'）, className（追加クラス）
-export default function Logo({ size = 'text-5xl', className = '' }) {
+export default function Logo({ size = 'text-2xl', className = '' }) {
   // サイズクラス→フォントサイズpx変換
   const sizeMap = {
     'text-xl': 24,
-    'text-2xl': 28,
+    'text-2xl': 32,
     'text-3xl': 32,
     'text-4xl': 36,
     'text-5xl': 48,
     'text-6xl': 60,
   };
-  const fontSize = sizeMap[size] || 48;
+  const fontSize = sizeMap[size] || 32;
   return (
     <svg
       width="auto"
