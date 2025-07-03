@@ -274,7 +274,7 @@ export default function LPMain() {
                   {plan.highlight && <div className="absolute top-4 right-4 bg-white text-blue-600 text-xs font-bold px-3 py-1 rounded-full shadow">人気</div>}
                   <h3 className="text-2xl font-bold mb-2 tracking-wide drop-shadow-sm text-center md:text-3xl md:mb-4 text-black" style={{color:'#000'}}>{plan.name}</h3>
                   <div className="flex items-end justify-center md:justify-center mb-4 md:mb-6 gap-1 md:gap-2">
-                    <span className="text-4xl md:text-5xl font-extrabold drop-shadow-sm">{plan.price}</span>
+                    <span className={`text-4xl md:text-5xl font-extrabold drop-shadow-sm ${plan.price === '無料' ? 'text-blue-500' : (plan.price === '¥5,000' || plan.price === '¥2,000') ? 'text-pink-500' : 'text-black'}`}>{plan.price}</span>
                     <span className={`ml-1 ${plan.highlight ? 'text-white text-opacity-80' : 'text-black'} text-sm md:text-base`} style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", maxWidth: '5.5ch', whiteSpace: 'nowrap', fontSize: 'clamp(0.8rem, 1.2vw, 1.05rem)', color: plan.highlight ? undefined : '#000'}}>/イベント</span>
                   </div>
                   <p className={plan.highlight ? 'text-white text-opacity-90' : 'text-black'} style={plan.highlight ? undefined : {color:'#000'}}>{plan.desc}</p>
@@ -335,7 +335,10 @@ export default function LPMain() {
             </h2>
           </div>
           <div className="border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 w-full" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box'}}>
-            <p className="mx-auto md:mx-0 w-full text-center" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box', margin: 0}}>&copy; 2025 FesSnap. All rights reserved.</p>
+            <div className="flex w-full justify-between items-center flex-col sm:flex-row gap-1">
+              <span className="text-left w-full sm:w-auto">© 2025 FesSnap.</span>
+              <span className="text-right w-full sm:w-auto">All rights reserved.</span>
+            </div>
           </div>
         </div>
       </footer>
