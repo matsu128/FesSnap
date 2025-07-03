@@ -249,7 +249,7 @@ export default function LPMain() {
                     <p className="text-sm text-gray-500">{t.role}</p>
                   </div>
                 </div>
-                <p className="text-gray-800">&quot;{t.comment}&quot;</p>
+                <p className="text-black">&quot;{t.comment}&quot;</p>
               </Card>
             ))}
           </div>
@@ -266,17 +266,17 @@ export default function LPMain() {
               <Card key={i} className={`relative bg-white rounded-3xl shadow-xl overflow-hidden border ${plan.highlight ? 'border-blue-600 scale-105 z-10 shadow-2xl' : 'border-gray-100'} transition-all hover:shadow-2xl p-0 md:max-w-xl mb-4`}>
                 <div className={`p-8 border-b ${plan.highlight ? 'bg-gradient-to-r from-blue-500 via-blue-400 to-pink-400 text-white relative' : ''}`} style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
                   {plan.highlight && <div className="absolute top-4 right-4 bg-white text-blue-600 text-xs font-bold px-3 py-1 rounded-full shadow">人気</div>}
-                  <h3 className="text-2xl font-bold mb-2 tracking-wide drop-shadow-sm text-center md:text-3xl md:mb-4 text-gray-900">{plan.name}</h3>
+                  <h3 className="text-2xl font-bold mb-2 tracking-wide drop-shadow-sm text-center md:text-3xl md:mb-4 text-black">{plan.name}</h3>
                   <div className="flex items-end justify-center md:justify-center mb-4 md:mb-6 gap-1 md:gap-2">
                     <span className="text-4xl md:text-5xl font-extrabold drop-shadow-sm">{plan.price}</span>
-                    <span className={`ml-1 ${plan.highlight ? 'text-white text-opacity-80' : 'text-gray-800'} text-sm md:text-base`} style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", maxWidth: '5.5ch', whiteSpace: 'nowrap', fontSize: 'clamp(0.8rem, 1.2vw, 1.05rem)'}}>/イベント</span>
+                    <span className={`ml-1 ${plan.highlight ? 'text-white text-opacity-80' : 'text-black'} text-sm md:text-base`} style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", maxWidth: '5.5ch', whiteSpace: 'nowrap', fontSize: 'clamp(0.8rem, 1.2vw, 1.05rem)'}}>/イベント</span>
                   </div>
-                  <p className={plan.highlight ? 'text-white text-opacity-90' : 'text-gray-800'}>{plan.desc}</p>
+                  <p className={plan.highlight ? 'text-white text-opacity-90' : 'text-black'}>{plan.desc}</p>
                 </div>
                 <div className="p-8 bg-gradient-to-br from-white via-blue-50 to-pink-50">
                   <ul className="space-y-3 mb-6">
                     {plan.features.map((f, j) => (
-                      <li key={j} className={`flex items-start ${f.includes('なし') ? 'text-gray-400' : 'text-gray-800'} text-base`} style={{fontFamily: "'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
+                      <li key={j} className={`flex items-start ${f.includes('なし') ? 'text-gray-400' : 'text-black'} text-base`} style={{fontFamily: "'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
                         <Icon type={f.includes('なし') ? 'close' : 'check'} className={`w-5 h-5 mt-0.5 mr-2 ${f.includes('なし') ? 'text-gray-400' : 'text-green-500'}`} />
                         <span>{f}</span>
                       </li>
