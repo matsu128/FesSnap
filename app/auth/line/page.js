@@ -1,9 +1,9 @@
 "use client";
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
 
-export default function LineAuthPage() {
+function LineAuthPageInner() {
   const router = useRouter();
   const params = useSearchParams();
   useEffect(() => {
@@ -20,4 +20,12 @@ export default function LineAuthPage() {
     })();
   }, [params, router]);
   return <div className="mt-32 text-center text-gray-400">LINE認証中...</div>;
+}
+
+export default function LineAuthPage() {
+  return (
+    <Suspense>
+      <LineAuthPageInner />
+    </Suspense>
+  );
 } 
