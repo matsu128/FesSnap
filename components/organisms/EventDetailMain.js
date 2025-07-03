@@ -134,15 +134,50 @@ export default function EventDetailMain() {
         </div>
         {/* QR拡大・保存モーダル */}
         <Modal isOpen={showQrModal} onClose={() => setShowQrModal(false)}>
-          <div className="flex flex-col items-center w-full relative p-4">
+          <div className="flex flex-col items-center w-full relative">
             {/* 右上バツボタン */}
             <button onClick={() => setShowQrModal(false)} className="absolute top-2 right-2 text-3xl text-gray-400 hover:text-gray-700 z-10">×</button>
-            <img src={qrUrl} alt="QRコード拡大" className="w-64 h-64 object-contain bg-white rounded-lg mt-4 mb-6 shadow-lg" />
-            <Button onClick={handleShareQr} className="w-64 bg-slate-700 text-lg py-3 flex items-center justify-center gap-2 mt-2">
-              <Icon type="download" className="w-5 h-5" />
-              <span className="text-center w-full">保存</span>
-            </Button>
-            <div className="text-xs text-gray-400 mt-2">端末によっては共有または画像保存が可能です</div>
+            {/* admin/と同じデザインの拡大表示 */}
+            <div className="w-full max-w-[340px] mx-auto flex flex-col items-center mb-2 mt-1 bg-white rounded-xl p-2 shadow-md" style={{ aspectRatio: '9/16', minHeight: 480, justifyContent: 'flex-start', fontFamily: "'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif" }}>
+              <div className="w-full flex flex-col items-center mb-1">
+                <div className="font-extrabold mb-1 text-center break-words w-full tracking-wide" style={{fontSize:'2.1rem', color:'#193a6a', letterSpacing:'0.06em', lineHeight:1.08}}>{event.title}</div>
+                <div className="font-bold mb-0.5 text-center w-full tracking-wide" style={{fontSize:'1.1rem', color:'#0077b6', letterSpacing:'0.04em'}}>{event.date}</div>
+              </div>
+              {event.location && <div className="font-bold mb-0.5 text-center w-full tracking-wide" style={{fontSize:'1.05rem', color:'#1565a5', letterSpacing:'0.03em'}}>エリア: <span style={{color:'#193a6a'}}>{event.location}</span></div>}
+              {event.category && <div className="font-bold mb-0.5 text-center w-full tracking-wide" style={{fontSize:'1.05rem', color:'#1565a5', letterSpacing:'0.03em'}}>カテゴリー: <span style={{color:'#193a6a'}}>{event.category}</span></div>}
+              {event.description && <div className="font-semibold mb-0.5 text-center w-full tracking-wide" style={{fontSize:'1.05rem', color:'#3a4a6d', letterSpacing:'0.02em'}}>{event.description}</div>}
+              {(event.price || event.capacity) && (
+                <div className="flex flex-row items-center justify-center gap-2 font-bold mb-0.5 w-full tracking-wide" style={{fontSize:'0.98rem', color:'#0077b6', letterSpacing:'0.02em'}}>
+                  {event.price && <span>参加費: <span style={{color:'#193a6a'}}>{event.price}円</span></span>}
+                  {event.capacity && <span>人数: <span style={{color:'#193a6a'}}>{event.capacity}人</span></span>}
+                </div>
+              )}
+              {qrUrl && (
+                <img src={qrUrl} alt="QRコード" className="w-40 h-40 object-contain bg-white rounded-lg mt-2 mx-auto" />
+              )}
+              {/* ロゴ */}
+              <div className="w-full flex justify-center mt-3 mb-2" style={{minHeight: '28px'}}>
+                <span
+                  className="font-extrabold tracking-wide select-none"
+                  style={{
+                    fontFamily: "'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
+                    fontSize: '1.1rem',
+                    color: '#0077b6',
+                    letterSpacing: '0.06em',
+                    display: 'inline-block',
+                    textAlign: 'center',
+                    width: 'auto',
+                    margin: '0 auto',
+                  }}
+                >
+                  FesSnap
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-4 mt-4">
+              <Button onClick={handleShareQr} className="bg-slate-700 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />保存</Button>
+            </div>
+            <div className="mt-3 text-xs text-gray-500 text-center">端末によっては画像を長押しして保存できます</div>
           </div>
         </Modal>
         {/* 過去イベント画像（課金時のみ） */}
