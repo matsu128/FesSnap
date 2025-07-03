@@ -1,7 +1,7 @@
 // イベント詳細ページのorganism
 // Header（ハンバーガーメニュー）、イベント情報、QRコード、画像投稿ボタン、過去イベント画像、戻るボタンなどを含む
 // APIからイベントデータ取得
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Header from '../molecules/Header';
 import Card from '../atoms/Card';
 import Button from '../atoms/Button';
@@ -10,6 +10,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 import Modal from '../atoms/Modal';
 import LoginModal from '../molecules/LoginModal';
+import html2canvas from 'html2canvas';
 
 export default function EventDetailMain() {
   const [event, setEvent] = useState(null);
@@ -20,6 +21,8 @@ export default function EventDetailMain() {
   const router = useRouter();
   const params = useParams();
   const eventId = params?.eventId;
+  const qrInfoRef = useRef();
+  const [qrBase64, setQrBase64] = useState('');
 
   // イベントデータ取得
   useEffect(() => {
@@ -38,6 +41,29 @@ export default function EventDetailMain() {
     };
     fetchQrUrl();
   }, [eventId]);
+
+  // QRコード画像をBase64に変換
+  useEffect(() => {
+    async function fetchQrAsBase64(url) {
+      if (!url) return '';
+      try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        return await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+      } catch {
+        return '';
+      }
+    }
+    if (qrUrl) {
+      fetchQrAsBase64(qrUrl).then(setQrBase64);
+    } else {
+      setQrBase64('');
+    }
+  }, [qrUrl]);
 
   if (!event) return <div className="mt-32 text-center text-gray-400">Loading...</div>;
 
@@ -65,6 +91,26 @@ export default function EventDetailMain() {
       }
     } catch (e) {
       // 失敗時は何もしない
+    }
+  };
+
+  // QR拡大モーダルの内容をcanvasで1枚画像として共有
+  const handleShareQrInfo = async () => {
+    const area = qrInfoRef.current;
+    if (!area) return;
+    const canvas = await html2canvas(area, {backgroundColor: '#fff'});
+    const url = canvas.toDataURL('image/png');
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const file = new File([blob], 'event-qr-info.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: event?.title || 'イベント情報', text: 'イベント情報とQRコードです' });
+      } catch (e) {
+        // ユーザーがキャンセルした場合などは何もしない
+      }
+    } else {
+      // 何もしない
     }
   };
 
@@ -138,25 +184,22 @@ export default function EventDetailMain() {
             {/* 右上バツボタン */}
             <button onClick={() => setShowQrModal(false)} className="absolute top-2 right-2 text-3xl text-gray-400 hover:text-gray-700 z-10">×</button>
             {/* admin/と同じデザインの拡大表示 */}
-            <div className="w-full max-w-[340px] mx-auto flex flex-col items-center mb-2 mt-1 bg-white rounded-xl p-2 shadow-md" style={{ aspectRatio: '9/16', minHeight: 480, justifyContent: 'flex-start', fontFamily: "'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif" }}>
-              <div className="w-full flex flex-col items-center mb-1">
+            <div ref={qrInfoRef} className="w-full max-w-[340px] mx-auto flex flex-col justify-between items-center mb-2 mt-1 bg-white rounded-xl p-2 shadow-md overflow-hidden" style={{ aspectRatio: '9/16', minHeight: 480, height: 480, fontFamily: "'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif" }}>
+              {/* 上部：タイトル・日付 */}
+              <div className="w-full flex flex-col items-center mb-1 mt-2">
                 <div className="font-extrabold mb-1 text-center break-words w-full tracking-wide" style={{fontSize:'2.1rem', color:'#193a6a', letterSpacing:'0.06em', lineHeight:1.08}}>{event.title}</div>
                 <div className="font-bold mb-0.5 text-center w-full tracking-wide" style={{fontSize:'1.1rem', color:'#0077b6', letterSpacing:'0.04em'}}>{event.date}</div>
               </div>
-              {event.location && <div className="font-bold mb-0.5 text-center w-full tracking-wide" style={{fontSize:'1.05rem', color:'#1565a5', letterSpacing:'0.03em'}}>エリア: <span style={{color:'#193a6a'}}>{event.location}</span></div>}
-              {event.category && <div className="font-bold mb-0.5 text-center w-full tracking-wide" style={{fontSize:'1.05rem', color:'#1565a5', letterSpacing:'0.03em'}}>カテゴリー: <span style={{color:'#193a6a'}}>{event.category}</span></div>}
-              {event.description && <div className="font-semibold mb-0.5 text-center w-full tracking-wide" style={{fontSize:'1.05rem', color:'#3a4a6d', letterSpacing:'0.02em'}}>{event.description}</div>}
-              {(event.price || event.capacity) && (
-                <div className="flex flex-row items-center justify-center gap-2 font-bold mb-0.5 w-full tracking-wide" style={{fontSize:'0.98rem', color:'#0077b6', letterSpacing:'0.02em'}}>
-                  {event.price && <span>参加費: <span style={{color:'#193a6a'}}>{event.price}円</span></span>}
-                  {event.capacity && <span>人数: <span style={{color:'#193a6a'}}>{event.capacity}人</span></span>}
+              {/* 中央：QRコードのみ */}
+              <div className="flex flex-col w-full flex-1 justify-center items-center">
+                <div className="flex justify-center items-center w-full min-h-[160px]">
+                  {qrBase64 && (
+                    <img src={qrBase64} alt="QRコード" className="w-40 h-40 object-contain bg-white rounded-lg mx-auto" />
+                  )}
                 </div>
-              )}
-              {qrUrl && (
-                <img src={qrUrl} alt="QRコード" className="w-40 h-40 object-contain bg-white rounded-lg mt-2 mx-auto" />
-              )}
-              {/* ロゴ */}
-              <div className="w-full flex justify-center mt-3 mb-2" style={{minHeight: '28px'}}>
+              </div>
+              {/* 下部：ロゴ */}
+              <div className="w-full flex justify-center mb-1" style={{minHeight: '28px'}}>
                 <span
                   className="font-extrabold tracking-wide select-none"
                   style={{
@@ -175,7 +218,7 @@ export default function EventDetailMain() {
               </div>
             </div>
             <div className="flex gap-4 mt-4">
-              <Button onClick={handleShareQr} className="bg-slate-700 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />保存</Button>
+              <Button onClick={handleShareQrInfo} className="bg-slate-700 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />共有</Button>
             </div>
             <div className="mt-3 text-xs text-gray-500 text-center">端末によっては画像を長押しして保存できます</div>
           </div>

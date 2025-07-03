@@ -342,25 +342,20 @@ export default function AdminMain() {
           {/* 右上バツボタン */}
           <button onClick={() => setShowQrModal(false)} className="absolute top-2 right-2 text-3xl text-gray-400 hover:text-gray-700 z-10">×</button>
           {/* 入力情報一覧＋QR＋ロゴを1枚画像化できるようにラップ */}
-          <div id="qr-info-capture-area" className="w-full max-w-[340px] mx-auto flex flex-col items-center mb-2 mt-1 bg-white rounded-xl p-2 shadow-md" style={{ aspectRatio: '9/16', minHeight: 480, justifyContent: 'flex-start', fontFamily: "'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif" }}>
-            <div className="w-full flex flex-col items-center mb-1">
+          <div id="qr-info-capture-area" className="w-full max-w-[340px] mx-auto flex flex-col justify-between items-center mb-2 mt-1 bg-white rounded-xl p-2 shadow-md overflow-hidden" style={{ aspectRatio: '9/16', minHeight: 480, height: 480, fontFamily: "'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif" }}>
+            {/* 上部：タイトル・日付 */}
+            <div className="w-full flex flex-col items-center mb-1 mt-2">
               <div className="font-extrabold mb-1 text-center break-words w-full tracking-wide" style={{fontSize:'2.1rem', color:'#193a6a', letterSpacing:'0.06em', lineHeight:1.08}}>{selectedEvent?.title}</div>
               <div className="font-bold mb-0.5 text-center w-full tracking-wide" style={{fontSize:'1.1rem', color:'#0077b6', letterSpacing:'0.04em'}}>{date}</div>
             </div>
-            {region && <div className="font-bold mb-0.5 text-center w-full tracking-wide" style={{fontSize:'1.05rem', color:'#1565a5', letterSpacing:'0.03em'}}>エリア: <span style={{color:'#193a6a'}}>{region}</span></div>}
-            {category && <div className="font-bold mb-0.5 text-center w-full tracking-wide" style={{fontSize:'1.05rem', color:'#1565a5', letterSpacing:'0.03em'}}>カテゴリー: <span style={{color:'#193a6a'}}>{category}</span></div>}
-            {desc && <div className="font-semibold mb-0.5 text-center w-full tracking-wide" style={{fontSize:'1.05rem', color:'#3a4a6d', letterSpacing:'0.02em'}}>{desc}</div>}
-            {(price || capacity) && (
-              <div className="flex flex-row items-center justify-center gap-2 font-bold mb-0.5 w-full tracking-wide" style={{fontSize:'0.98rem', color:'#0077b6', letterSpacing:'0.02em'}}>
-                {price && <span>参加費: <span style={{color:'#193a6a'}}>{price}円</span></span>}
-                {capacity && <span>人数: <span style={{color:'#193a6a'}}>{capacity}人</span></span>}
-              </div>
-            )}
-            {qrJpegUrl && (
-              <img src={qrJpegUrl} alt="QRコード" className="w-40 h-40 object-contain bg-white rounded-lg mt-2 mx-auto" />
-            )}
-            {/* ロゴ（タイトルと同じデザイン・小さめ・ブルーオーシャン色） */}
-            <div className="w-full flex justify-center mt-3 mb-2" style={{minHeight: '28px'}}>
+            {/* 中央：QRコードのみ */}
+            <div className="flex flex-col w-full flex-1 justify-center items-center">
+              {qrJpegUrl && (
+                <img src={qrJpegUrl} alt="QRコード" className="w-40 h-40 object-contain bg-white rounded-lg mx-auto" />
+              )}
+            </div>
+            {/* 下部：ロゴ */}
+            <div className="w-full flex justify-center mb-1" style={{minHeight: '28px'}}>
               <span
                 className="font-extrabold tracking-wide select-none"
                 style={{
