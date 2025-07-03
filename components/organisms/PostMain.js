@@ -10,7 +10,12 @@ import { useRouter, useParams } from 'next/navigation';
 import CustomCameraModal from './CustomCameraModal';
 import { supabase } from '../../lib/supabaseClient';
 
-const PAGE_SIZE = 15;
+function getPageSize() {
+  if (typeof window !== 'undefined') {
+    return window.innerWidth >= 768 ? 20 : 12;
+  }
+  return 12;
+}
 
 function isIOS() {
   if (typeof window === 'undefined') return false;
@@ -48,6 +53,13 @@ export default function PostMain() {
   const [isUploading, setIsUploading] = useState(false);
   const [eventTitle, setEventTitle] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false); // 追加: ログイン状態（仮実装）
+  const [pageSize, setPageSize] = useState(getPageSize());
+
+  useEffect(() => {
+    const handleResize = () => setPageSize(getPageSize());
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // 画像データ取得
   useEffect(() => {
@@ -98,7 +110,7 @@ export default function PostMain() {
   // 投稿画像の絞り込み（ダミー：ユーザーIDで分岐）
   const filteredImages = images.filter(img => tab === 'mine' ? img.user === 'user1' : img.user !== 'user1');
   // ページネーションは全画像数で計算
-  const totalPages = Math.ceil(images.length / PAGE_SIZE);
+  const totalPages = Math.ceil(images.length / pageSize);
 
   // カメラ対応判定（スマホ端末のみ）
   const isCameraSupported = () => {
@@ -288,7 +300,7 @@ export default function PostMain() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-white flex flex-col items-center px-2 sm:px-0">
+    <div className="w-full min-h-screen bg-white flex flex-col items-center px-2 sm:px-0" style={{height: '100vh', overflowY: 'hidden'}}>
       {/* ヘッダー（ハンバーガーメニュー） */}
       <Header type="menu" onMenuClick={() => setShowMenu(v => !v)} />
       {/* メニュー（ダミー） */}
@@ -361,13 +373,13 @@ export default function PostMain() {
         </div>
       )}
       {/* 画像グリッド */}
-      <div className="w-full max-w-[400px] grid grid-cols-3 gap-2 mb-4 px-2 sm:px-0">
+      <div className="w-full max-w-[400px] grid grid-cols-3 md:grid-cols-5 gap-2 mb-2 md:mb-4 px-2 sm:px-0">
         {images.length === 0 && (
           <div className="w-full text-center text-gray-400 py-12">画像を投稿しよう！</div>
         )}
         {images.map((img, idx) => {
-          const startIdx = (page - 1) * PAGE_SIZE;
-          const endIdx = page * PAGE_SIZE;
+          const startIdx = (page - 1) * pageSize;
+          const endIdx = page * pageSize;
           if (idx < startIdx || idx >= endIdx) return null;
           return (
             <div
@@ -382,7 +394,7 @@ export default function PostMain() {
       </div>
       {/* ページネーション（画像下中央） */}
       {totalPages > 1 && (
-        <div className="flex gap-2 mb-8 w-full max-w-[400px] px-2 sm:px-0 justify-center items-center">
+        <div className="flex gap-2 mb-2 md:mb-8 w-full max-w-[400px] px-2 sm:px-0 justify-center items-center">
           {Array.from({ length: totalPages }, (_, i) => (
             <button
               key={i}
@@ -426,7 +438,7 @@ export default function PostMain() {
         ) : null}
       </Modal>
       {/* 戻るボタン */}
-      <Button onClick={handleBack} className="mb-8 mt-2 px-8 py-3 bg-slate-700 w-full max-w-[400px]">イベント詳細ページへ戻る</Button>
+      <Button onClick={handleBack} className="mb-4 mt-2 px-8 py-3 bg-slate-700 w-full max-w-[400px] flex justify-center items-center text-base sm:text-lg font-bold text-white text-center">イベント詳細ページへ戻る</Button>
     </div>
   );
 } 
