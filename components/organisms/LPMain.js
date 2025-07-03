@@ -111,7 +111,7 @@ export default function LPMain() {
           <div className="w-full" style={{margin: '0 auto', boxSizing: 'border-box', paddingLeft: '1rem', paddingRight: '1rem', overflowX: 'hidden'}}>
             <Logo size="text-5xl" className="mb-4 drop-shadow-lg" />
             <h2
-              className="font-extrabold text-white mb-4 tracking-tight leading-tight drop-shadow-xl text-balance"
+              className="font-extrabold text-white mb-4 tracking-tight leading-tight drop-shadow-xl text-center sm:text-center"
               style={{
                 fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
                 letterSpacing: '0.04em',
@@ -122,14 +122,18 @@ export default function LPMain() {
                 marginLeft: 'auto',
                 marginRight: 'auto',
                 wordBreak: 'keep-all',
-                WebkitTextWrap: 'balance',
-                textWrap: 'balance',
               }}
             >
-              <span className="bg-gradient-to-r from-blue-400 via-pink-400 to-blue-600 bg-clip-text text-transparent block">イベントの感動を、その場でみんなと。</span>
+              <span className="bg-gradient-to-r from-blue-400 via-pink-400 to-blue-600 bg-clip-text text-transparent block">
+                <span className="block text-left sm:text-center">イベントの感動を、<span className="sm:hidden"><br /></span></span>
+                <span className="block text-right sm:text-center w-full" style={{display: 'block'}}>
+                  <span className="sm:hidden">その場でみんなと。</span>
+                  <span className="hidden sm:inline">その場でみんなと。</span>
+                </span>
+              </span>
             </h2>
             <p
-              className="text-white/90 font-light mb-8 mx-auto leading-relaxed sm:leading-normal text-balance text-center w-full"
+              className="text-white/90 font-light mb-8 mx-auto leading-relaxed sm:leading-normal w-full"
               style={{
                 fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
                 textShadow: '0 2px 8px rgba(0,0,0,0.10)',
@@ -147,7 +151,9 @@ export default function LPMain() {
                 paddingRight: '0.5rem',
               }}
             >
-              イベントの思い出をリアルタイムで共有。<br className="hidden sm:block" />新しい写真共有の形を提供します。
+              <span className="block text-left sm:text-center">イベントの思い出を<span className="sm:hidden"><br /></span></span>
+              <span className="block text-right sm:text-center">リアルタイムで共有。</span>
+              <span className="block text-center mt-1">新しい写真共有の形を提供します。</span>
             </p>
             <EmphasizedNavButton onClick={handleStart} className="mt-12">今すぐ始める</EmphasizedNavButton>
           </div>
@@ -307,11 +313,11 @@ export default function LPMain() {
         </div>
       </section>
       {/* Footer */}
-      <footer className="bg-white border-gray-100 py-12 px-4 w-full mt-12 pt-12" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: 0}}>
+      <footer className="bg-white border-gray-100 py-6 px-4 w-full mt-8 pt-8" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: 0}}>
         <div className="w-full mx-auto px-2" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: 0}}>
-          <div className="flex flex-col items-center mb-8 w-full" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box'}}>
+          <div className="flex flex-col items-center w-full" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box'}}>
             <h2
-              className="font-extrabold text-center mb-4 tracking-tight leading-tight drop-shadow-xl text-balance text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-pink-400 to-blue-600"
+              className="font-extrabold text-center mb-2 tracking-tight leading-tight drop-shadow-xl text-balance text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-pink-400 to-blue-600"
               style={{
                 fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
                 letterSpacing: '0.04em',
@@ -327,9 +333,6 @@ export default function LPMain() {
             >
               イベントの感動を、その場でみんなと。
             </h2>
-            <p className="text-gray-500 mb-6 text-sm text-center w-full" style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)', maxWidth: '32ch', margin: '0 auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance', overflowX: 'hidden', boxSizing: 'border-box', paddingLeft: '1rem', paddingRight: '1rem'}}>
-              イベントの思い出をリアルタイムで共有。<br />新しい写真共有の形を提供します。
-            </p>
           </div>
           <div className="border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 w-full" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box'}}>
             <p className="mx-auto md:mx-0 w-full text-center" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box', margin: 0}}>&copy; 2025 FesSnap. All rights reserved.</p>
