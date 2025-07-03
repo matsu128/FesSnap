@@ -234,7 +234,7 @@ export default function LPMain() {
       {/* Testimonials Section */}
       <section className="pb-16 px-4 bg-gray-50 w-full" style={{overflowX: 'hidden'}}>
         <div className="w-full mx-auto px-2" style={{overflowX: 'hidden'}}>
-          <h2 className="text-3xl font-bold text-center mt-4 mb-4 text-balance" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", fontSize: 'clamp(1.3rem, 4vw, 2.2rem)', maxWidth: '28ch', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance'}}>
+          <h2 className="text-3xl font-bold text-center mt-4 mb-4 text-balance text-black" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", fontSize: 'clamp(1.3rem, 4vw, 2.2rem)', maxWidth: '28ch', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance', color: '#000'}}>
             利用者の声
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -245,11 +245,11 @@ export default function LPMain() {
                     <img src={t.img} alt={t.name} className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <h4 className="font-semibold">{t.name}</h4>
-                    <p className="text-sm text-gray-500">{t.role}</p>
+                    <h4 className="font-semibold text-black" style={{color:'#000'}}>{t.name}</h4>
+                    <p className="text-sm text-black" style={{color:'#000'}}>{t.role}</p>
                   </div>
                 </div>
-                <p className="text-black">&quot;{t.comment}&quot;</p>
+                <p className="text-black" style={{color:'#000'}}>&quot;{t.comment}&quot;</p>
               </Card>
             ))}
           </div>
@@ -258,7 +258,7 @@ export default function LPMain() {
       {/* Pricing Section（洗練・装飾追加） */}
       <section className="px-4 w-full bg-gradient-to-br from-blue-100 via-white to-pink-100" style={{overflowX: 'hidden'}}>
         <div className="w-full mx-auto px-2" style={{overflowX: 'hidden'}}>
-          <h2 className="mt-8 text-4xl font-extrabold text-center mb-4 tracking-wide text-balance" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", letterSpacing: '0.1em', fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', maxWidth: '28ch', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance'}}>
+          <h2 className="mt-8 text-4xl font-extrabold text-center mb-4 tracking-wide text-balance text-black" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", letterSpacing: '0.1em', fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', maxWidth: '28ch', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance', color: '#000'}}>
             料金プラン
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -266,17 +266,17 @@ export default function LPMain() {
               <Card key={i} className={`relative bg-white rounded-3xl shadow-xl overflow-hidden border ${plan.highlight ? 'border-blue-600 scale-105 z-10 shadow-2xl' : 'border-gray-100'} transition-all hover:shadow-2xl p-0 md:max-w-xl mb-4`}>
                 <div className={`p-8 border-b ${plan.highlight ? 'bg-gradient-to-r from-blue-500 via-blue-400 to-pink-400 text-white relative' : ''}`} style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
                   {plan.highlight && <div className="absolute top-4 right-4 bg-white text-blue-600 text-xs font-bold px-3 py-1 rounded-full shadow">人気</div>}
-                  <h3 className="text-2xl font-bold mb-2 tracking-wide drop-shadow-sm text-center md:text-3xl md:mb-4 text-black">{plan.name}</h3>
+                  <h3 className="text-2xl font-bold mb-2 tracking-wide drop-shadow-sm text-center md:text-3xl md:mb-4 text-black" style={{color:'#000'}}>{plan.name}</h3>
                   <div className="flex items-end justify-center md:justify-center mb-4 md:mb-6 gap-1 md:gap-2">
                     <span className="text-4xl md:text-5xl font-extrabold drop-shadow-sm">{plan.price}</span>
-                    <span className={`ml-1 ${plan.highlight ? 'text-white text-opacity-80' : 'text-black'} text-sm md:text-base`} style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", maxWidth: '5.5ch', whiteSpace: 'nowrap', fontSize: 'clamp(0.8rem, 1.2vw, 1.05rem)'}}>/イベント</span>
+                    <span className={`ml-1 ${plan.highlight ? 'text-white text-opacity-80' : 'text-black'} text-sm md:text-base`} style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", maxWidth: '5.5ch', whiteSpace: 'nowrap', fontSize: 'clamp(0.8rem, 1.2vw, 1.05rem)', color: plan.highlight ? undefined : '#000'}}>/イベント</span>
                   </div>
-                  <p className={plan.highlight ? 'text-white text-opacity-90' : 'text-black'}>{plan.desc}</p>
+                  <p className={plan.highlight ? 'text-white text-opacity-90' : 'text-black'} style={plan.highlight ? undefined : {color:'#000'}}>{plan.desc}</p>
                 </div>
                 <div className="p-8 bg-gradient-to-br from-white via-blue-50 to-pink-50">
                   <ul className="space-y-3 mb-6">
                     {plan.features.map((f, j) => (
-                      <li key={j} className={`flex items-start ${f.includes('なし') ? 'text-gray-400' : 'text-black'} text-base`} style={{fontFamily: "'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
+                      <li key={j} className={`flex items-start ${f.includes('なし') ? 'text-gray-400' : 'text-black'} text-base`} style={f.includes('なし') ? {fontFamily: "'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"} : {fontFamily: "'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", color:'#000'}}>
                         <Icon type={f.includes('なし') ? 'close' : 'check'} className={`w-5 h-5 mt-0.5 mr-2 ${f.includes('なし') ? 'text-gray-400' : 'text-green-500'}`} />
                         <span>{f}</span>
                       </li>
