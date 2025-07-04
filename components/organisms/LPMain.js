@@ -95,88 +95,86 @@ export default function LPMain() {
         </div>
       )}
       <section className="hero-section flex flex-col items-center justify-start relative overflow-hidden w-full min-h-screen pt-[56px] mt-4 bg-white">
-        <div className="w-full flex flex-col items-center justify-center z-20 text-center" style={{overflowX: 'hidden'}}>
-          <div className="w-full" style={{margin: '0 auto', boxSizing: 'border-box', paddingLeft: '1rem', paddingRight: '1rem', overflowX: 'hidden'}}>
-            <h1
-              className="mb-4 mt-2 text-5xl font-extrabold text-center bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent drop-shadow-lg"
-              style={{
-                fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
-                letterSpacing: '0.15em',
-                lineHeight: 1.1,
-                wordBreak: 'keep-all',
-                maxWidth: '100%',
-                marginLeft: 'auto',
-                marginRight: 'auto',
-                overflowWrap: 'break-word',
-                fontSize: 'clamp(2.2rem, 8vw, 3.2rem)',
-              }}
-            >
-              FesSnap
-            </h1>
-            <h2
-              className="font-extrabold text-white mb-4 tracking-tight leading-tight drop-shadow-xl text-center sm:text-center"
-              style={{
-                fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
-                letterSpacing: '0.04em',
-                textShadow: '0 4px 24px rgba(0,0,0,0.18)',
-                fontSize: 'clamp(1.1rem, 6vw, 2.2rem)',
-                lineHeight: 1.15,
-                maxWidth: '100%',
-                marginLeft: 'auto',
-                marginRight: 'auto',
-                wordBreak: 'keep-all',
-              }}
-            >
-              <span className="bg-gradient-to-r from-blue-400 via-pink-400 to-blue-600 bg-clip-text text-transparent block">
-                <span className="block text-left sm:text-center">イベントの感動を、<span className="sm:hidden"><br /></span></span>
-                <span className="block text-right sm:text-center w-full" style={{display: 'block'}}>
-                  <span className="sm:hidden">その場でみんなと。</span>
-                  <span className="hidden sm:inline">その場でみんなと。</span>
-                </span>
+        <div className="w-full max-w-2xl lg:max-w-4xl mx-auto" style={{margin: '0 auto', boxSizing: 'border-box', paddingLeft: '1rem', paddingRight: '1rem', overflowX: 'hidden'}}>
+          <h1
+            className="mb-6 mt-2 text-5xl sm:text-6xl lg:text-7xl font-extrabold text-center bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent drop-shadow-lg"
+            style={{
+              fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
+              letterSpacing: '0.15em',
+              lineHeight: 1.1,
+              wordBreak: 'keep-all',
+              maxWidth: '100%',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+              overflowWrap: 'break-word',
+              fontSize: 'clamp(2.6rem, 8vw, 5rem)',
+            }}
+          >
+            FesSnap
+          </h1>
+          <h2
+            className="font-extrabold text-white mb-4 tracking-tight leading-tight drop-shadow-xl text-center sm:text-center"
+            style={{
+              fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
+              letterSpacing: '0.04em',
+              textShadow: '0 4px 24px rgba(0,0,0,0.18)',
+              fontSize: 'clamp(1.1rem, 6vw, 2.2rem)',
+              lineHeight: 1.15,
+              maxWidth: '100%',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+              wordBreak: 'keep-all',
+            }}
+          >
+            <span className="bg-gradient-to-r from-blue-400 via-pink-400 to-blue-600 bg-clip-text text-transparent block">
+              <span className="block text-left sm:text-center">イベントの感動を、<span className="sm:hidden"><br /></span></span>
+              <span className="block text-right sm:text-center w-full" style={{display: 'block'}}>
+                <span className="sm:hidden">その場でみんなと。</span>
+                <span className="hidden sm:inline">その場でみんなと。</span>
               </span>
-            </h2>
-            <p
-              className="font-light mb-8 mx-auto leading-relaxed sm:leading-normal w-full text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600"
-              style={{
-                fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
-                fontSize: 'clamp(1.05rem, 3.5vw, 1.25rem)',
-                maxWidth: '100%',
-                margin: '0 auto',
-                wordBreak: 'keep-all',
-                WebkitTextWrap: 'balance',
-                textWrap: 'balance',
-                lineHeight: 1.5,
-                letterSpacing: '0.01em',
-                boxSizing: 'border-box',
-                overflowX: 'hidden',
-                paddingLeft: '0.5rem',
-                paddingRight: '0.5rem',
-              }}
-            >
-              <span className="block text-center mt-1">新しい写真共有の形を提供します。</span>
-            </p>
-            <div className="flex flex-row gap-6 justify-center items-center w-full max-w-xs mx-auto mb-6 mt-8">
-              <Button onClick={handleCreateEvent} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-full font-bold text-base shadow-md transition">イベント作成</Button>
-              <Button onClick={handleTryPost} className="flex-1 bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 hover:from-blue-400 hover:to-pink-400 text-white py-3 rounded-full font-bold text-base shadow-md transition">お試し投稿</Button>
+            </span>
+          </h2>
+          <p
+            className="font-light mb-8 mx-auto leading-relaxed sm:leading-normal w-full text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600"
+            style={{
+              fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
+              fontSize: 'clamp(1.05rem, 3.5vw, 1.25rem)',
+              maxWidth: '100%',
+              margin: '0 auto',
+              wordBreak: 'keep-all',
+              WebkitTextWrap: 'balance',
+              textWrap: 'balance',
+              lineHeight: 1.5,
+              letterSpacing: '0.01em',
+              boxSizing: 'border-box',
+              overflowX: 'hidden',
+              paddingLeft: '0.5rem',
+              paddingRight: '0.5rem',
+            }}
+          >
+            <span className="block text-center mt-1">新しい写真共有の形を提供します。</span>
+          </p>
+          <div className="flex flex-row gap-6 md:gap-10 justify-center items-center w-full max-w-xs md:max-w-md mx-auto mb-8 mt-10">
+            <Button onClick={handleCreateEvent} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-full font-bold text-base shadow-md transition">イベント作成</Button>
+            <Button onClick={handleTryPost} className="flex-1 bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 hover:from-blue-400 hover:to-pink-400 text-white py-3 rounded-full font-bold text-base shadow-md transition">お試し投稿</Button>
+          </div>
+          {/* QRコード画像カード */}
+          <div className="flex flex-col items-center w-full mb-4">
+            <div className="bg-white rounded-2xl shadow-lg p-3 max-w-[150px] md:max-w-[180px] lg:max-w-[220px] w-full aspect-square flex items-center justify-center cursor-pointer" onClick={() => setShowQRModal(true)}>
+              <img src="/QR_code.jpg" alt="QRコード" className="w-full h-full object-contain rounded-xl aspect-square" />
             </div>
-            {/* QRコード画像カード */}
-            <div className="flex flex-col items-center w-full mb-4">
-              <div className="bg-white rounded-2xl shadow-lg p-3 max-w-[150px] w-full aspect-square flex items-center justify-center cursor-pointer" onClick={() => setShowQRModal(true)}>
-                <img src="/QR_code.jpg" alt="QRコード" className="w-full h-full object-contain rounded-xl aspect-square" />
-              </div>
-              {/* 使い方はこちら文言 */}
-              <div className="w-full flex justify-center mt-3 mb-1">
-                <span className="text-2xl font-semibold text-gray-700 text-center select-none cursor-pointer" onClick={() => {
-                  const el = document.getElementById('howto');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }}>使い方はこちら</span>
-              </div>
-              {/* 下向き矢印アニメーション */}
-              <div className="flex justify-center mt-1 mb-2">
-                <span className="block text-3xl text-transparent bg-clip-text bg-gradient-to-b from-blue-400 via-pink-400 to-blue-600 animate-bounce-slow select-none" style={{filter:'drop-shadow(0 2px 8px rgba(0,0,0,0.10))'}}>
-                  ↓
-                </span>
-              </div>
+            {/* 使い方はこちら文言 */}
+            <div className="w-full flex justify-center mt-4 mb-2">
+              <span className="text-2xl md:text-3xl font-semibold text-gray-700 text-center select-none cursor-pointer" onClick={() => {
+                const el = document.getElementById('howto');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}>使い方はこちら</span>
+            </div>
+            {/* 下向き矢印アニメーション */}
+            <div className="flex justify-center mt-1 mb-2">
+              <span className="block text-5xl md:text-6xl lg:text-7xl text-transparent bg-clip-text bg-gradient-to-b from-blue-400 via-pink-400 to-blue-600 animate-bounce-slow select-none" style={{filter:'drop-shadow(0 2px 8px rgba(0,0,0,0.10))'}}>
+                ↓
+              </span>
             </div>
           </div>
         </div>
@@ -309,21 +307,20 @@ export default function LPMain() {
         <div className="w-full mx-auto px-2" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: 0}}>
           <div className="flex flex-col items-center w-full" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box'}}>
             <h2
-              className="font-extrabold text-center mb-2 tracking-tight leading-tight drop-shadow-xl text-balance text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-pink-400 to-blue-600"
+              className="mb-4 mt-2 text-5xl sm:text-6xl lg:text-7xl font-extrabold text-center bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent drop-shadow-lg"
               style={{
                 fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
-                letterSpacing: '0.04em',
-                fontSize: 'clamp(1.1rem, 6vw, 2.2rem)',
-                lineHeight: 1.15,
+                letterSpacing: '0.15em',
+                lineHeight: 1.1,
+                wordBreak: 'keep-all',
                 maxWidth: '100%',
                 marginLeft: 'auto',
                 marginRight: 'auto',
-                wordBreak: 'keep-all',
-                WebkitTextWrap: 'balance',
-                textWrap: 'balance',
+                overflowWrap: 'break-word',
+                fontSize: 'clamp(2.6rem, 8vw, 5rem)',
               }}
             >
-              イベントの感動を、その場でみんなと。
+              FesSnap
             </h2>
           </div>
           <div className="border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 w-full" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box'}}>
