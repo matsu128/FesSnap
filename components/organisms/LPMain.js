@@ -323,10 +323,10 @@ export default function LPMain() {
               FesSnap
             </h2>
           </div>
-          <div className="border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 w-full" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box'}}>
-            <div className="flex w-full justify-between items-center flex-col sm:flex-row gap-1">
-              <span className="text-left w-full sm:w-auto">© 2025 FesSnap.</span>
-              <span className="text-right w-full sm:w-auto">All rights reserved.</span>
+          <div className="border-gray-100 pt-8 flex flex-col items-center text-sm text-gray-500 w-full" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box'}}>
+            <div className="flex flex-col items-center w-full gap-1">
+              <span className="text-center w-full">© 2025 FesSnap.</span>
+              <span className="text-center w-full">All rights reserved.</span>
             </div>
           </div>
         </div>
