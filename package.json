@@ -17,6 +17,7 @@
     "jsonwebtoken": "^9.0.2",
     "jszip": "^3.10.1",
     "next": "15.3.4",
+    "next-sitemap": "^4.2.3",
     "node-fetch": "^2.7.0",
     "postcss": "^8.4.24",
     "react": "^19.0.0",

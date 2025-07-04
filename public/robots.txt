@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://fessnap.com
+
+# Sitemaps
+Sitemap: https://fessnap.com/sitemap.xml

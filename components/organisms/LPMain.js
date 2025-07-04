@@ -109,7 +109,8 @@ export default function LPMain() {
         <div className="absolute inset-0 bg-black bg-opacity-50 z-10"></div>
         <div className="w-full flex flex-col items-center justify-center z-20 text-center" style={{overflowX: 'hidden'}}>
           <div className="w-full" style={{margin: '0 auto', boxSizing: 'border-box', paddingLeft: '1rem', paddingRight: '1rem', overflowX: 'hidden'}}>
-            <Logo size="text-5xl" className="mb-4 drop-shadow-lg" />
+            <h1 style={{position:'absolute',left:'-9999px',height:'1px',width:'1px',overflow:'hidden'}}>FesSnap（フェススナップ）｜イベント写真共有サービス</h1>
+            <Logo size="text-5xl" className="mb-4 drop-shadow-lg" alt="FesSnapロゴ｜イベント写真共有サービス" />
             <h2
               className="font-extrabold text-white mb-4 tracking-tight leading-tight drop-shadow-xl text-center sm:text-center"
               style={{
@@ -222,7 +223,7 @@ export default function LPMain() {
             {eventExamples.map((ev, i) => (
               <Card key={i} className="event-card w-full sm:w-64 min-w-0 sm:min-w-[260px] flex-shrink-0 bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="h-40 overflow-hidden">
-                  <img src={ev.img} alt={ev.title} className="w-full max-w-full h-auto object-cover block" />
+                  <img src={ev.img} alt={`${ev.title}のイベント写真｜FesSnapイベント写真共有サービス`} className="w-full max-w-full h-auto object-cover block" />
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold mb-1 text-gray-900">{ev.title}</h3>
@@ -248,7 +249,7 @@ export default function LPMain() {
               <Card key={i} className="bg-white p-6 rounded-lg shadow-md">
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden mr-4">
-                    <img src={t.img} alt={t.name} className="w-full h-full object-cover" />
+                    <img src={t.img} alt={`${t.name}さんの顔写真｜FesSnap利用者の声`} className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <h4 className="font-semibold text-black" style={{color:'#000'}}>{t.name}</h4>

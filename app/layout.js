@@ -20,6 +20,26 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        <title>FesSnap（フェススナップ）｜イベント写真共有サービス</title>
+        <meta name="description" content="FesSnapはイベントの感動をその場でみんなと共有できる新しい写真共有サービスです。QRコードで簡単参加、リアルタイムで思い出をシェア！" />
+        <meta name="keywords" content="FesSnap,フェススナップ,イベント,写真共有,リアルタイム,QRコード,フェス,文化祭,パーティ,思い出,画像,シェア" />
+        <meta property="og:title" content="FesSnap（フェススナップ）｜イベント写真共有サービス" />
+        <meta property="og:description" content="イベントの感動をその場でみんなと。FesSnapはQRコードで簡単参加、リアルタイムで思い出をシェアできる新しい写真共有サービスです。" />
+        <meta property="og:image" content="https://fessnap.com/ogp.png" />
+        <meta property="og:url" content="https://fessnap.com/" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="FesSnap（フェススナップ）｜イベント写真共有サービス" />
+        <meta name="twitter:description" content="イベントの感動をその場でみんなと。FesSnapはQRコードで簡単参加、リアルタイムで思い出をシェアできる新しい写真共有サービスです。" />
+        <meta name="twitter:image" content="https://fessnap.com/ogp.png" />
+        <link rel="canonical" href="https://fessnap.com/" />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "FesSnap（フェススナップ）",
+          "url": "https://fessnap.com/",
+          "description": "イベントの感動をその場でみんなと共有できる新しい写真共有サービス"
+        })}} />
         <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Quicksand:wght@700&family=Nunito:wght@700&family=Rubik:wght@700&family=Rounded+Mplus+1c:wght@700&family=Poppins:wght@700&display=swap" rel="stylesheet" />
       </head>
       <body
