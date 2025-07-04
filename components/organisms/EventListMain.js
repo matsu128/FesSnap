@@ -9,6 +9,9 @@ import Button from '../atoms/Button';
 import { useRouter } from 'next/navigation';
 import Modal from '../atoms/Modal';
 import LoginModal from '../molecules/LoginModal';
+import PrefectureSelect from '../atoms/PrefectureSelect';
+import DatePickerModal from '../atoms/DatePickerModal';
+import CategorySelectModal from '../atoms/CategorySelectModal';
 
 const PAGE_SIZE = 5;
 
@@ -21,6 +24,9 @@ export default function EventListMain() {
   const router = useRouter();
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [showPrefModal, setShowPrefModal] = useState(false);
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
 
   // 動画のラストフレームで止めるためのref
   const videoRef = useRef(null);
@@ -57,11 +63,15 @@ export default function EventListMain() {
       });
   }, []);
 
-  // フィルタ適用（ダミー実装）
-  const handleFilterClick = (type) => {
-    // モーダル表示などはorganisms外で管理する想定
-    alert(type + 'フィルタモーダル（ダミー）');
-  };
+  // フィルタ適用
+  useEffect(() => {
+    let filteredEvents = events;
+    if (filterState.region) filteredEvents = filteredEvents.filter(ev => ev.region && ev.region.includes(filterState.region));
+    if (filterState.date) filteredEvents = filteredEvents.filter(ev => ev.date && ev.date === filterState.date);
+    if (filterState.category) filteredEvents = filteredEvents.filter(ev => ev.category && ev.category === filterState.category);
+    setFiltered(filteredEvents);
+    setPage(1);
+  }, [filterState, events]);
 
   // ページネーション
   const pagedEvents = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -102,17 +112,24 @@ export default function EventListMain() {
           <Button onClick={() => setFilterModalOpen(true)} className="max-w-[140px] text-sm py-2 px-4 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white shadow-md">絞り込み</Button>
           <Button onClick={handleCreateEvent} className="text-base px-5 py-2 rounded-full bg-blue-100 text-blue-700 shadow-sm">新規イベント作成</Button>
         </div>
-        {/* フィルターバー */}
-        <div className="w-full max-w-[400px] px-2 sm:px-0">
-          {/* モーダルで3つのボタンを表示 */}
-          <Modal isOpen={filterModalOpen} onClose={() => setFilterModalOpen(false)}>
-            <div className="flex flex-col gap-4 w-full max-w-xs mx-auto">
-              <Button onClick={() => { setFilterModalOpen(false); handleFilterClick('region'); }} className="w-full text-base py-3 bg-black hover:bg-neutral-800 text-white shadow-md">地域 {filterState.region && `: ${filterState.region}`}</Button>
-              <Button onClick={() => { setFilterModalOpen(false); handleFilterClick('date'); }} className="w-full text-base py-3 bg-black hover:bg-neutral-800 text-white shadow-md">日付 {filterState.date && `: ${filterState.date}`}</Button>
-              <Button onClick={() => { setFilterModalOpen(false); handleFilterClick('category'); }} className="w-full text-base py-3 bg-black hover:bg-neutral-800 text-white shadow-md">カテゴリー {filterState.category && `: ${filterState.category}`}</Button>
-            </div>
-          </Modal>
+        {/* 選択中のフィルタタグ */}
+        <div className="w-full max-w-[400px] flex flex-wrap gap-2 mb-2 px-2 sm:px-0">
+          {filterState.region && <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs cursor-pointer" onClick={()=>setFilterState(s=>({...s,region:''}))}>{filterState.region} ×</span>}
+          {filterState.date && <span className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-xs cursor-pointer" onClick={()=>setFilterState(s=>({...s,date:''}))}>{filterState.date} ×</span>}
+          {filterState.category && <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs cursor-pointer" onClick={()=>setFilterState(s=>({...s,category:''}))}>{filterState.category} ×</span>}
+          {(filterState.region||filterState.date||filterState.category) && <span className="ml-auto text-xs text-gray-400 cursor-pointer underline" onClick={()=>setFilterState({region:'',date:'',category:''})}>すべて解除</span>}
         </div>
+        {/* フィルターモーダル */}
+        <Modal isOpen={filterModalOpen} onClose={() => setFilterModalOpen(false)}>
+          <div className="flex flex-col gap-4 w-full max-w-xs mx-auto">
+            <Button onClick={() => { setFilterModalOpen(false); setShowPrefModal(true); }} className="w-full text-base py-3 bg-black hover:bg-neutral-800 text-white shadow-md">エリア {filterState.region && `: ${filterState.region}`}</Button>
+            <Button onClick={() => { setFilterModalOpen(false); setShowDateModal(true); }} className="w-full text-base py-3 bg-black hover:bg-neutral-800 text-white shadow-md">日付 {filterState.date && `: ${filterState.date}`}</Button>
+            <Button onClick={() => { setFilterModalOpen(false); setShowCategoryModal(true); }} className="w-full text-base py-3 bg-black hover:bg-neutral-800 text-white shadow-md">カテゴリー {filterState.category && `: ${filterState.category}`}</Button>
+          </div>
+        </Modal>
+        <PrefectureSelect show={showPrefModal} value={filterState.region} onChange={v=>setFilterState(s=>({...s,region:v}))} onClose={()=>setShowPrefModal(false)} label="エリアを選択" />
+        <DatePickerModal show={showDateModal} value={filterState.date} onChange={v=>setFilterState(s=>({...s,date:v}))} onClose={()=>setShowDateModal(false)} label="日付を選択" />
+        <CategorySelectModal show={showCategoryModal} value={filterState.category} onChange={v=>setFilterState(s=>({...s,category:v}))} onClose={()=>setShowCategoryModal(false)} label="カテゴリーを選択" />
         {/* イベントリスト：おしゃれな浮遊カードのみ */}
         <div className="w-full max-w-[400px] flex flex-col gap-8 mt-2 mb-8 px-2 sm:px-0">
           {pagedEvents.length === 0 && (

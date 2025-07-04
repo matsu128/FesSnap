@@ -50,6 +50,12 @@ export default function AdminMain() {
   const [qrTouched, setQrTouched] = useState(false);
   const [qrEventId, setQrEventId] = useState(null);
   const router = useRouter();
+  const [prefecture, setPrefecture] = useState('');
+  const [areaDetail, setAreaDetail] = useState('');
+  const [prefectures, setPrefectures] = useState([]);
+  const [prefectureLoading, setPrefectureLoading] = useState(true);
+  const [prefectureError, setPrefectureError] = useState('');
+  const [showPrefDropdown, setShowPrefDropdown] = useState(false);
 
   // イベントデータ取得
   useEffect(() => {
@@ -67,6 +73,23 @@ export default function AdminMain() {
         setDesc('');
         setPrice('');
         setCapacity('');
+      });
+  }, []);
+
+  useEffect(() => {
+    setPrefectureLoading(true);
+    fetch('/prefectures.json')
+      .then(res => {
+        if (!res.ok) throw new Error('都道府県データの取得に失敗しました');
+        return res.json();
+      })
+      .then(data => {
+        setPrefectures(data);
+        setPrefectureLoading(false);
+      })
+      .catch(e => {
+        setPrefectureError('都道府県リストの取得に失敗しました');
+        setPrefectureLoading(false);
       });
   }, []);
 
@@ -89,6 +112,7 @@ export default function AdminMain() {
     const newMissing = [];
     if (!selectedEvent?.title) newMissing.push('title');
     if (!date) newMissing.push('date');
+    if (!prefecture) newMissing.push('prefecture');
     setMissingFields(newMissing);
     if (newMissing.length > 0) {
       setQr('');
@@ -180,8 +204,9 @@ export default function AdminMain() {
     const newMissing = [];
     if (!selectedEvent?.title) newMissing.push('title');
     if (!date) newMissing.push('date');
+    if (!prefecture) newMissing.push('prefecture');
     setMissingFields(newMissing);
-  }, [selectedEvent?.title, date, qrTouched]);
+  }, [selectedEvent?.title, date, prefecture, qrTouched]);
 
   // QRコードをSVG→JPEG変換し、URLをセット
   const handleQrToJpeg = () => {
@@ -237,7 +262,7 @@ export default function AdminMain() {
   }
 
   // QR生成ボタンのバリデーション
-  const isQrReady = selectedEvent?.title && date;
+  const isQrReady = selectedEvent?.title && date && prefecture;
 
   // QR拡大モーダルの内容をcanvasで1枚画像として保存
   function handleSaveQrInfoAsImage() {
@@ -265,6 +290,11 @@ export default function AdminMain() {
     }
   }, [selectedEvent?.title]);
 
+  // エリア入力が変わったらregionを自動生成
+  useEffect(() => {
+    setRegion(prefecture ? prefecture + areaDetail : '');
+  }, [prefecture, areaDetail]);
+
   return (
     <div className="w-full min-h-screen bg-white flex flex-col items-center px-2 sm:px-0">
       {/* ヘッダー */}
@@ -285,8 +315,54 @@ export default function AdminMain() {
           }} placeholder="タイトル" maxLength={10} className={`mb-1 text-lg py-3 text-black ${(qrTouched && missingFields.includes('title')) ? 'ring-2 ring-red-400' : ''}`} />
         </div>
         <div>
-          <div className="text-base font-bold text-gray-700 mb-1">エリア <span className="text-gray-300 text-sm font-normal">例: 渋谷駅前</span></div>
-          <Input value={region} onChange={e => setRegion(e.target.value.slice(0,10))} placeholder="エリア" maxLength={10} className="mb-1 text-lg py-3 text-black" />
+          <label className="block text-base font-bold text-gray-700 mb-2">エリア <span className="text-gray-400 text-sm font-normal">（都道府県は必須、市区町村以下は自由入力）</span></label>
+          <div className="flex flex-col gap-3">
+            <div className="relative w-full">
+              <button
+                type="button"
+                className={`w-full py-3 px-4 rounded-xl border border-gray-300 bg-white shadow-sm text-lg text-left font-semibold focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-150 outline-none hover:border-blue-400 hover:shadow-md appearance-none flex items-center justify-between ${missingFields.includes('prefecture') ? 'ring-2 ring-red-400 border-red-400' : ''}`}
+                style={{ minHeight: '3.2rem', letterSpacing: '0.03em' }}
+                onClick={() => setShowPrefDropdown(v => !v)}
+                disabled={prefectureLoading || !!prefectureError}
+              >
+                {prefecture
+                  ? prefecture
+                  : prefectureLoading
+                  ? '都道府県データ取得中...'
+                  : '都道府県を選択'}
+                <span className="ml-2 text-gray-400">&#9660;</span>
+              </button>
+              {showPrefDropdown && !prefectureLoading && !prefectureError && (
+                <div className="absolute z-20 mt-2 w-full max-h-72 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-lg">
+                  {prefectures.map(p => (
+                    <div
+                      key={p}
+                      className={`px-4 py-3 cursor-pointer hover:bg-blue-50 transition-all duration-100 ${
+                        prefecture === p ? 'bg-blue-100 font-bold text-blue-700' : 'text-gray-800'
+                      }`}
+                      onClick={() => {
+                        setPrefecture(p);
+                        setShowPrefDropdown(false);
+                      }}
+                    >
+                      {p}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {prefectureError && (
+                <div className="text-red-500 text-sm font-bold mt-2">{prefectureError}</div>
+              )}
+            </div>
+            <input
+              value={areaDetail}
+              onChange={e => setAreaDetail(e.target.value)}
+              placeholder="市区町村・町名・番地等（例: 渋谷区道玄坂2-24-1）"
+              className="w-full py-3 px-4 rounded-xl border border-gray-300 shadow-sm text-lg focus:ring-2 focus:ring-pink-400 focus:border-pink-400 transition-all duration-150 outline-none hover:border-pink-400 hover:shadow-md"
+              style={{minHeight: '3.2rem', fontWeight: 500, letterSpacing: '0.02em'}}
+            />
+          </div>
+          <div className="text-xs text-gray-400 mt-2">都道府県は必須。市区町村以下は自由に入力してください。</div>
         </div>
         <div>
           <div className="text-base font-bold text-gray-700 mb-1">詳細 <span className="text-gray-300 text-sm font-normal">例: 受付横</span></div>
@@ -313,9 +389,13 @@ export default function AdminMain() {
       )}
       {missingFields.length > 0 && (
         <div className="w-full max-w-[400px] text-center text-red-400 text-sm mb-2 font-semibold tracking-wide">
-          {missingFields.includes('title') && !missingFields.includes('date') && 'タイトルが未入力です'}
-          {!missingFields.includes('title') && missingFields.includes('date') && '日付が未入力です'}
-          {missingFields.includes('title') && missingFields.includes('date') && 'タイトル・日付が未入力です'}
+          {missingFields.includes('title') && !missingFields.includes('date') && !missingFields.includes('prefecture') && 'タイトルが未入力です'}
+          {!missingFields.includes('title') && missingFields.includes('date') && !missingFields.includes('prefecture') && '日付が未入力です'}
+          {!missingFields.includes('title') && !missingFields.includes('date') && missingFields.includes('prefecture') && 'エリア（都道府県）が未選択です'}
+          {missingFields.includes('title') && missingFields.includes('date') && !missingFields.includes('prefecture') && 'タイトル・日付が未入力です'}
+          {missingFields.includes('title') && !missingFields.includes('date') && missingFields.includes('prefecture') && 'タイトル・エリア（都道府県）が未入力です'}
+          {!missingFields.includes('title') && missingFields.includes('date') && missingFields.includes('prefecture') && '日付・エリア（都道府県）が未入力です'}
+          {missingFields.includes('title') && missingFields.includes('date') && missingFields.includes('prefecture') && 'タイトル・日付・エリア（都道府県）が未入力です'}
         </div>
       )}
       {/* QRコード生成ボタンのみ */}
