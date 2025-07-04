@@ -99,7 +99,7 @@ export default function LPMain() {
       {/* Hero Section */}
       <section className="hero-section flex flex-col items-center justify-start relative overflow-hidden w-full min-h-[calc(100vh-56px)] pt-[56px] bg-white">
         <div className="w-full flex flex-col items-center justify-center z-20 text-center" style={{overflowX: 'hidden'}}>
-          <div className="w-full" style={{margin: '0 auto', boxSizing: 'border-box', paddingLeft: '1rem', paddingRight: '1rem', overflowX: 'hidden'}}>
+          <div className="w-full mt-[56px]" style={{margin: '0 auto', boxSizing: 'border-box', paddingLeft: '1rem', paddingRight: '1rem', overflowX: 'hidden'}}>
             <h1 style={{position:'absolute',left:'-9999px',height:'1px',width:'1px',overflow:'hidden'}}>FesSnap（フェススナップ）｜イベント写真共有サービス</h1>
             <Logo size="text-5xl" className="mb-4 drop-shadow-lg mt-2" alt="FesSnapロゴ｜イベント写真共有サービス" />
             <h2
