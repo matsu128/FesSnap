@@ -97,11 +97,11 @@ export default function LPMain() {
         </div>
       )}
       {/* Hero Section */}
-      <section className="hero-section flex items-center justify-center relative overflow-hidden w-full min-h-screen bg-white">
+      <section className="hero-section flex flex-col items-center justify-start relative overflow-hidden w-full min-h-[calc(100vh-56px)] pt-[56px] bg-white">
         <div className="w-full flex flex-col items-center justify-center z-20 text-center" style={{overflowX: 'hidden'}}>
           <div className="w-full" style={{margin: '0 auto', boxSizing: 'border-box', paddingLeft: '1rem', paddingRight: '1rem', overflowX: 'hidden'}}>
             <h1 style={{position:'absolute',left:'-9999px',height:'1px',width:'1px',overflow:'hidden'}}>FesSnap（フェススナップ）｜イベント写真共有サービス</h1>
-            <Logo size="text-5xl" className="mb-4 drop-shadow-lg" alt="FesSnapロゴ｜イベント写真共有サービス" />
+            <Logo size="text-5xl" className="mb-4 drop-shadow-lg mt-2" alt="FesSnapロゴ｜イベント写真共有サービス" />
             <h2
               className="font-extrabold text-white mb-4 tracking-tight leading-tight drop-shadow-xl text-center sm:text-center"
               style={{
@@ -144,24 +144,24 @@ export default function LPMain() {
             >
               <span className="block text-center mt-1">新しい写真共有の形を提供します。</span>
             </p>
-            <div className="flex flex-row gap-6 justify-center items-center w-full max-w-xs mx-auto mb-8 mt-12">
+            <div className="flex flex-row gap-6 justify-center items-center w-full max-w-xs mx-auto mb-6 mt-8">
               <Button onClick={handleCreateEvent} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-full font-bold text-base shadow-md transition">イベント作成</Button>
               <Button onClick={handleTryPost} className="flex-1 bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 hover:from-blue-400 hover:to-pink-400 text-white py-3 rounded-full font-bold text-base shadow-md transition">お試し投稿</Button>
             </div>
             {/* QRコード画像カード */}
-            <div className="flex flex-col items-center w-full mb-8">
-              <div className="bg-white rounded-2xl shadow-lg p-4 max-w-[180px] w-full aspect-[3/4] flex items-center justify-center cursor-pointer" onClick={() => setShowQRModal(true)}>
+            <div className="flex flex-col items-center w-full mb-4">
+              <div className="bg-white rounded-2xl shadow-lg p-3 max-w-[120px] w-full aspect-[3/4] flex items-center justify-center cursor-pointer" onClick={() => setShowQRModal(true)}>
                 <img src="/QR_code.jpg" alt="QRコード" className="w-full h-full object-contain rounded-xl" />
               </div>
               {/* 使い方はこちら文言 */}
-              <div className="w-full flex justify-center mt-4 mb-2">
+              <div className="w-full flex justify-center mt-3 mb-1">
                 <span className="text-base font-semibold text-gray-700 text-center select-none cursor-pointer" onClick={() => {
                   const el = document.getElementById('howto');
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}>使い方はこちら</span>
               </div>
               {/* 下向き矢印アニメーション */}
-              <div className="flex justify-center mt-2">
+              <div className="flex justify-center mt-1 mb-2">
                 <span className="block text-3xl text-transparent bg-clip-text bg-gradient-to-b from-blue-400 via-pink-400 to-blue-600 animate-bounce-slow select-none" style={{filter:'drop-shadow(0 2px 8px rgba(0,0,0,0.10))'}}>
                   ↓
                 </span>
