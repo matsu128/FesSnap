@@ -166,41 +166,15 @@ export default function LPMain() {
         <div className="w-full max-w-screen-lg mx-auto px-2" style={{overflowX: 'hidden'}}>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-center mb-8 md:mb-12 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg tracking-wide mt-12" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", letterSpacing: '0.08em'}}>使い方</h2>
           <div className="relative flex flex-col md:flex-row gap-8 md:gap-12 justify-center items-stretch w-full" style={{overflowX: 'hidden'}}>
-            {/* Feature 0: 1：QRコード読み込み\n2：画像投稿（常時自動再生） */}
+            {/* Feature 0: 1：QRコード読み込み\n2：画像投稿（再生ボタン付き） */}
             <div className="flex flex-col items-center mb-6 w-full max-w-[240px] mx-auto">
               <h3 className="text-lg font-bold mb-2 text-center text-blue-700 whitespace-pre-line" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>1：QRコード読み込み{`\n`}2：画像投稿</h3>
-              <div className="w-full aspect-[9/16] bg-gray-100 rounded-xl overflow-hidden mb-2 flex items-center justify-center">
-                <video
-                  src="/publish_image_demo.mp4"
-                  className="w-full h-full object-cover"
-                  muted
-                  playsInline
-                  autoPlay
-                  loop
-                  controls={false}
-                  preload="auto"
-                  tabIndex={-1}
-                  style={{ background: '#e5e7eb' }}
-                />
-              </div>
+              <VideoWithPlayButton src="/publish_image_demo.mp4" />
             </div>
-            {/* Feature 1: イベント作成（常時自動再生） */}
+            {/* Feature 1: イベント作成 */}
             <div className="flex flex-col items-center mb-10 w-full max-w-[240px] mx-auto">
               <h3 className="text-lg font-bold mb-2 text-center text-blue-700" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>イベント作成</h3>
-              <div className="w-full aspect-[9/16] bg-gray-100 rounded-xl overflow-hidden mb-2 flex items-center justify-center">
-                <video
-                  src="/create_event.mp4"
-                  className="w-full h-full object-cover"
-                  muted
-                  playsInline
-                  autoPlay
-                  loop
-                  controls={false}
-                  preload="auto"
-                  tabIndex={-1}
-                  style={{ background: '#e5e7eb' }}
-                />
-              </div>
+              <VideoWithPlayButton src="/create_event.mp4" />
             </div>
           </div>
           <div className="mt-4" />
@@ -340,6 +314,53 @@ export default function LPMain() {
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function VideoWithPlayButton({ src }) {
+  const videoRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const handlePlay = () => {
+    const video = videoRef.current;
+    if (video) {
+      video.muted = true; // Safari対策
+      video.load();      // Safari対策
+      video.currentTime = 0;
+      const playPromise = video.play();
+      if (playPromise) {
+        playPromise.then(() => setPlaying(true)).catch(() => {});
+      } else {
+        setPlaying(true);
+      }
+    }
+  };
+  return (
+    <div className="w-full aspect-[9/16] bg-gray-100 rounded-xl overflow-hidden mb-2 flex items-center justify-center relative">
+      <video
+        ref={videoRef}
+        src={src}
+        className="w-full h-full object-cover"
+        muted
+        playsInline
+        loop
+        controls={false}
+        preload="auto"
+        tabIndex={-1}
+        style={{ background: '#e5e7eb' }}
+      />
+      {!playing && (
+        <button
+          onClick={handlePlay}
+          className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/60 transition-colors duration-200"
+          style={{ cursor: 'pointer' }}
+        >
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+            <circle cx="28" cy="28" r="28" fill="white" fillOpacity="0.85" />
+            <polygon points="22,18 40,28 22,38" fill="#2563EB" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 } 
