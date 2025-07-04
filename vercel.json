@@ -1,20 +1,16 @@
 {
     "redirects": [
       {
-        "source": "/(.*)",
-        "destination": "https://fessnap.com/$1",
+        "source": "/",
         "has": [
           {
             "type": "host",
-            "value": "fessnap.com"
-          },
-          {
-            "type": "scheme",
-            "value": "http"
+            "value": "www.fessnap.com"
           }
         ],
+        "destination": "https://fessnap.com",
         "permanent": true
       }
     ]
-  }
+}
   
