@@ -322,9 +322,17 @@ function VideoWithPlayButton({ src }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const handlePlay = () => {
-    if (videoRef.current) {
-      videoRef.current.play();
-      setPlaying(true);
+    const video = videoRef.current;
+    if (video) {
+      video.muted = true; // Safari対策
+      video.load();      // Safari対策
+      video.currentTime = 0;
+      const playPromise = video.play();
+      if (playPromise) {
+        playPromise.then(() => setPlaying(true)).catch(() => {});
+      } else {
+        setPlaying(true);
+      }
     }
   };
   return (
