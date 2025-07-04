@@ -17,6 +17,7 @@ import { motion } from 'framer-motion';
 export default function LPMain() {
   const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
   // ダミーイベント例
   const eventExamples = [
     {
@@ -79,6 +80,8 @@ export default function LPMain() {
 
   // 今すぐ始めるボタンでイベントページへ
   const handleStart = () => router.push('/events');
+  const handleCreateEvent = () => router.push('/admin');
+  const handleTryPost = () => router.push('/events/630316dc-a3a3-4a16-98c5-ae7a3094533e/post');
 
   return (
     <div className="w-full min-h-screen bg-white flex flex-col items-center px-0 font-['Noto Sans JP']" style={{overflowX: 'hidden', fontFamily: "'Noto Sans JP', 'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
@@ -94,20 +97,7 @@ export default function LPMain() {
         </div>
       )}
       {/* Hero Section */}
-      <section className="hero-section flex items-center justify-center relative overflow-hidden w-full min-h-screen">
-        {/* 動画背景 */}
-        <video
-          className="absolute inset-0 w-full h-full object-cover object-center z-0"
-          src="/9003388-hd_1920_1080_25fps.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          style={{minWidth: '100%', minHeight: '100%', objectFit: 'cover', objectPosition: 'center'}}
-        />
-        {/* 黒半透明レイヤー */}
-        <div className="absolute inset-0 bg-black bg-opacity-50 z-10"></div>
+      <section className="hero-section flex items-center justify-center relative overflow-hidden w-full min-h-screen bg-white">
         <div className="w-full flex flex-col items-center justify-center z-20 text-center" style={{overflowX: 'hidden'}}>
           <div className="w-full" style={{margin: '0 auto', boxSizing: 'border-box', paddingLeft: '1rem', paddingRight: '1rem', overflowX: 'hidden'}}>
             <h1 style={{position:'absolute',left:'-9999px',height:'1px',width:'1px',overflow:'hidden'}}>FesSnap（フェススナップ）｜イベント写真共有サービス</h1>
@@ -135,10 +125,9 @@ export default function LPMain() {
               </span>
             </h2>
             <p
-              className="text-white/90 font-light mb-8 mx-auto leading-relaxed sm:leading-normal w-full"
+              className="font-light mb-8 mx-auto leading-relaxed sm:leading-normal w-full text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600"
               style={{
                 fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
-                textShadow: '0 2px 8px rgba(0,0,0,0.10)',
                 fontSize: 'clamp(1.05rem, 3.5vw, 1.25rem)',
                 maxWidth: '100%',
                 margin: '0 auto',
@@ -153,16 +142,36 @@ export default function LPMain() {
                 paddingRight: '0.5rem',
               }}
             >
-              <span className="block text-left sm:text-center">イベントの思い出を<span className="sm:hidden"><br /></span></span>
-              <span className="block text-right sm:text-center">リアルタイムで共有。</span>
               <span className="block text-center mt-1">新しい写真共有の形を提供します。</span>
             </p>
-            <EmphasizedNavButton onClick={handleStart} className="mt-12">今すぐ始める</EmphasizedNavButton>
+            <div className="flex flex-row gap-6 justify-center items-center w-full max-w-xs mx-auto mb-8 mt-12">
+              <Button onClick={handleCreateEvent} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-full font-bold text-base shadow-md transition">イベント作成</Button>
+              <Button onClick={handleTryPost} className="flex-1 bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 hover:from-blue-400 hover:to-pink-400 text-white py-3 rounded-full font-bold text-base shadow-md transition">お試し投稿</Button>
+            </div>
+            {/* QRコード画像カード */}
+            <div className="flex flex-col items-center w-full mb-8">
+              <div className="bg-white rounded-2xl shadow-lg p-4 max-w-[180px] w-full aspect-[3/4] flex items-center justify-center cursor-pointer" onClick={() => setShowQRModal(true)}>
+                <img src="/QR_code.jpg" alt="QRコード" className="w-full h-full object-contain rounded-xl" />
+              </div>
+              {/* 使い方はこちら文言 */}
+              <div className="w-full flex justify-center mt-4 mb-2">
+                <span className="text-base font-semibold text-gray-700 text-center select-none cursor-pointer" onClick={() => {
+                  const el = document.getElementById('howto');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}>使い方はこちら</span>
+              </div>
+              {/* 下向き矢印アニメーション */}
+              <div className="flex justify-center mt-2">
+                <span className="block text-3xl text-transparent bg-clip-text bg-gradient-to-b from-blue-400 via-pink-400 to-blue-600 animate-bounce-slow select-none" style={{filter:'drop-shadow(0 2px 8px rgba(0,0,0,0.10))'}}>
+                  ↓
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
       {/* Features Section（使い方） */}
-      <section className="px-4 bg-gradient-to-b from-blue-50 to-white w-full" style={{overflowX: 'hidden'}}>
+      <section id="howto" className="px-4 bg-gradient-to-b from-blue-50 to-white w-full" style={{overflowX: 'hidden'}}>
         <div className="w-full max-w-screen-lg mx-auto px-2" style={{overflowX: 'hidden'}}>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-center mb-8 md:mb-12 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg tracking-wide mt-12" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", letterSpacing: '0.08em'}}>使い方</h2>
           <div className="relative flex flex-col md:flex-row gap-8 md:gap-12 justify-center items-stretch w-full" style={{overflowX: 'hidden'}}>
@@ -183,7 +192,7 @@ export default function LPMain() {
       {/* Event Examples Section */}
       <section className="py-16 px-4 overflow-hidden w-full" style={{overflowX: 'hidden'}}>
         <div className="w-full mx-auto px-2" style={{overflowX: 'hidden'}}>
-          <h2 className="text-3xl font-bold text-center mb-12 text-black text-balance" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", fontSize: 'clamp(1.3rem, 4vw, 2.2rem)', maxWidth: '28ch', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance'}}>
+          <h2 className="text-3xl font-bold text-center mb-12 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg text-balance" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", fontSize: 'clamp(1.3rem, 4vw, 2.2rem)', maxWidth: '28ch', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance'}}>
             開催イベント例
           </h2>
           <div className="flex gap-4 overflow-x-auto pb-4 max-w-full" style={{overflowX: 'auto'}}>
@@ -208,7 +217,7 @@ export default function LPMain() {
       {/* Testimonials Section */}
       <section className="pb-16 px-4 bg-gray-50 w-full" style={{overflowX: 'hidden'}}>
         <div className="w-full mx-auto px-2" style={{overflowX: 'hidden'}}>
-          <h2 className="text-3xl font-bold text-center mt-4 mb-4 text-balance text-black" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", fontSize: 'clamp(1.3rem, 4vw, 2.2rem)', maxWidth: '28ch', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance', color: '#000'}}>
+          <h2 className="text-3xl font-bold text-center mt-4 mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg text-balance" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", fontSize: 'clamp(1.3rem, 4vw, 2.2rem)', maxWidth: '28ch', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance'}}>
             利用者の声
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -232,7 +241,7 @@ export default function LPMain() {
       {/* Pricing Section（洗練・装飾追加） */}
       <section className="px-4 w-full bg-gradient-to-br from-blue-100 via-white to-pink-100" style={{overflowX: 'hidden'}}>
         <div className="w-full mx-auto px-2" style={{overflowX: 'hidden'}}>
-          <h2 className="mt-8 text-4xl font-extrabold text-center mb-4 tracking-wide text-balance text-black" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", letterSpacing: '0.1em', fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', maxWidth: '28ch', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance', color: '#000'}}>
+          <h2 className="mt-8 text-4xl font-extrabold text-center mb-4 tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg text-balance" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", letterSpacing: '0.1em', fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', maxWidth: '28ch', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance'}}>
             料金プラン
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -314,6 +323,17 @@ export default function LPMain() {
           </div>
         </div>
       </footer>
+      {/* QRコード拡大モーダル */}
+      {showQRModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowQRModal(false)}>
+          <div className="relative bg-white rounded-2xl shadow-2xl p-4 max-w-[90vw] max-h-[80vh] flex items-center justify-center" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowQRModal(false)} className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-2xl font-bold bg-white/80 rounded-full w-8 h-8 flex items-center justify-center shadow">
+              ×
+            </button>
+            <img src="/QR_code.jpg" alt="QRコード拡大" className="w-full h-full max-w-[70vw] max-h-[70vh] object-contain rounded-xl" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
