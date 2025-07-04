@@ -16,6 +16,7 @@ import { motion } from 'framer-motion';
 
 export default function LPMain() {
   const router = useRouter();
+  const [showMenu, setShowMenu] = useState(false);
   // ダミーイベント例
   const eventExamples = [
     {
@@ -82,16 +83,16 @@ export default function LPMain() {
   return (
     <div className="w-full min-h-screen bg-white flex flex-col items-center px-0 font-['Noto Sans JP']" style={{overflowX: 'hidden', fontFamily: "'Noto Sans JP', 'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
       {/* ヘッダー */}
-      <header className="fixed top-0 w-full z-50 px-2 sm:px-4 py-2 sm:py-3 bg-transparent backdrop-blur-md flex justify-between items-center h-14 sm:h-16 shadow-sm">
-        <Link href="/" className="inline-block">
-          <motion.div initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}>
-            <Logo size="text-xl sm:text-2xl" />
-          </motion.div>
-        </Link>
-        <button className="w-12 h-12 flex items-center justify-center text-gray-700 rounded-full hover:bg-gray-100 transition sm:w-10 sm:h-10" style={{WebkitTapHighlightColor:'transparent'}}>
-          <Icon type="menu" className="w-7 h-7" />
-        </button>
-      </header>
+      <Header type="menu" onMenuClick={() => setShowMenu(v => !v)} />
+      {/* メニュー（ログイン・新規イベント作成） */}
+      {showMenu && (
+        <div className="fixed top-0 left-0 w-full h-full bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowMenu(false)}>
+          <div className="bg-white rounded-2xl shadow-xl p-8 min-w-[240px] max-w-[90vw] flex flex-col gap-4" onClick={e => e.stopPropagation()}>
+            <Button onClick={() => { router.push('/auth/line'); setShowMenu(false); }} className="w-full text-base py-3 bg-slate-700">ログイン</Button>
+            <Button onClick={() => { router.push('/admin'); setShowMenu(false); }} className="w-full text-base py-3 bg-blue-600">新規イベント作成</Button>
+          </div>
+        </div>
+      )}
       {/* Hero Section */}
       <section className="hero-section flex items-center justify-center relative overflow-hidden w-full min-h-screen">
         {/* 動画背景 */}
@@ -290,7 +291,11 @@ export default function LPMain() {
                     ))}
                   </ul>
                   <div className="flex flex-col md:flex-row gap-4 justify-center">
-                    <Button className={`w-full py-3 rounded-full font-bold text-lg shadow-md transition-all bg-gradient-to-r from-blue-500 via-blue-400 to-pink-400 text-white hover:from-pink-400 hover:to-blue-500`}>{plan.price === '無料' ? '無料で始める' : '申し込む'}</Button>
+                    <Link href="/stripe">
+                      <button className={`mt-auto px-8 py-3 rounded-full font-bold text-white ${plan.price === '無料' ? 'bg-blue-400' : 'bg-pink-500'} shadow-lg hover:opacity-90 transition disabled:opacity-60 w-full`}>
+                        {plan.price === '無料' ? '無料で始める' : `${plan.price}で申し込む`}
+                      </button>
+                    </Link>
                   </div>
                 </div>
               </Card>

@@ -1,5 +1,5 @@
 // サイト全体で使うモダンなヘッダーコンポーネント
-// props: type（'default'|'menu'|'login' などページ種別で切替）、onMenuClick, onLoginClick
+// props: type（'default'|'menu'|'login' などページ種別で切替）、onMenuClick, onLoginClick, menuColor
 import Button from '../atoms/Button';
 import Icon from '../atoms/Icon';
 import { motion } from 'framer-motion';
@@ -7,7 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Logo from '../atoms/Logo';
 import Link from 'next/link';
 
-export default function Header({ type = 'default', onMenuClick, onLoginClick }) {
+export default function Header({ type = 'default', onMenuClick, onLoginClick, menuColor }) {
   const router = useRouter();
   const pathname = usePathname();
   // ロゴ押下時の遷移先をパスで分岐
@@ -35,8 +35,8 @@ export default function Header({ type = 'default', onMenuClick, onLoginClick }) 
           <Button onClick={onLoginClick} className="text-sm px-4 py-2">ログイン</Button>
         )}
         {type === 'menu' && (
-          <button onClick={onMenuClick} className="p-2 rounded-full hover:bg-gray-100 transition">
-            <Icon type="menu" className="w-7 h-7 text-gray-700" />
+          <button onClick={onMenuClick} className={`p-2 rounded-full transition ${menuColor === 'white' ? '' : 'hover:bg-gray-100'}`}>
+            <Icon type="menu" className={`w-7 h-7 ${menuColor === 'white' ? 'text-white' : 'text-gray-700'}`} />
           </button>
         )}
       </div>
