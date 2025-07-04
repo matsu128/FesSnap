@@ -1,7 +1,7 @@
 // LP（紹介ページ）のメイン部分を構成するorganism
 // Header, ServiceVideo, HorizontalEventSlider, EmphasizedNavButtonを組み合わせて、ページ遷移も実装
 // APIからダミーイベントデータを取得してスライダーに渡す
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Header from '../molecules/Header';
 import ServiceVideo from '../molecules/ServiceVideo';
 import HorizontalEventSlider from '../molecules/HorizontalEventSlider';
@@ -166,49 +166,15 @@ export default function LPMain() {
         <div className="w-full max-w-screen-lg mx-auto px-2" style={{overflowX: 'hidden'}}>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-center mb-8 md:mb-12 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg tracking-wide mt-12" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", letterSpacing: '0.08em'}}>使い方</h2>
           <div className="relative flex flex-col md:flex-row gap-8 md:gap-12 justify-center items-stretch w-full" style={{overflowX: 'hidden'}}>
-            {/* Feature 1: QRで参加 */}
-            <div className="flex-1 w-full min-w-0 sm:min-w-[260px] max-w-md mx-auto group relative bg-white/80 rounded-3xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 overflow-hidden border border-blue-100 backdrop-blur-md mb-4">
-              <div className="w-28 h-28 flex items-center justify-center mx-auto mb-6 relative">
-                {/* SVGそのまま */}
-                <svg width="90" height="90" viewBox="0 0 56 56" fill="none" className="drop-shadow-lg">
-                  <rect x="10" y="6" width="36" height="44" rx="8" fill="#fff" stroke="#2563EB" strokeWidth="2"/>
-                  <rect x="20" y="16" width="16" height="16" rx="2" fill="#E0E7FF" />
-                  <rect x="24" y="20" width="4" height="4" fill="#2563EB" />
-                  <rect x="28" y="24" width="4" height="4" fill="#2563EB" />
-                  <rect x="32" y="20" width="4" height="4" fill="#2563EB" />
-                  <circle cx="28" cy="44" r="2" fill="#2563EB" />
-                </svg>
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold mb-3 text-blue-700 text-center tracking-wide" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>QRですぐ参加</h3>
-              <p className="text-gray-600 leading-relaxed text-center text-sm sm:text-base text-balance" style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", fontSize: 'clamp(0.85rem, 3vw, 1.05rem)', maxWidth: '100%', margin: '0 auto', wordBreak: 'break-word', WebkitTextWrap: 'balance', textWrap: 'balance', overflowWrap: 'break-word'}}>アプリのインストール不要。会場のQRコードをスマホで読み込むだけで、すぐに参加できます。</p>
+            {/* Feature 0: 1：QRコード読み込み\n2：画像投稿（再生ボタン付き） */}
+            <div className="flex flex-col items-center mb-6 w-full max-w-[240px] mx-auto">
+              <h3 className="text-lg font-bold mb-2 text-center text-blue-700 whitespace-pre-line" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>1：QRコード読み込み{`\n`}2：画像投稿</h3>
+              <VideoWithPlayButton src="/publish_image_demo.mp4" />
             </div>
-            {/* Feature 2: カメラ＋フラッシュ */}
-            <div className="flex-1 w-full min-w-0 sm:min-w-[260px] max-w-md mx-auto group relative bg-white/80 rounded-3xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 overflow-hidden border border-pink-100 backdrop-blur-md mb-4">
-              <div className="w-28 h-28 flex items-center justify-center mx-auto mb-6 relative">
-                {/* SVGそのまま */}
-                <svg width="90" height="90" viewBox="0 0 56 56" fill="none" className="drop-shadow-lg">
-                  <rect x="12" y="18" width="32" height="20" rx="6" fill="#fff" stroke="#F472B6" strokeWidth="2"/>
-                  <circle cx="28" cy="28" r="6" fill="#F472B6" />
-                  <circle cx="28" cy="28" r="3" fill="#fff" />
-                  <rect x="22" y="14" width="12" height="6" rx="2" fill="#F472B6" />
-                  <polygon points="28,8 30,14 26,14" fill="#F472B6" />
-                </svg>
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold mb-3 text-pink-600 text-center tracking-wide" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>リアルタイム共有</h3>
-              <p className="text-gray-600 leading-relaxed text-center text-sm sm:text-base text-balance" style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", fontSize: 'clamp(0.85rem, 3vw, 1.05rem)', maxWidth: '100%', margin: '0 auto', wordBreak: 'break-word', WebkitTextWrap: 'balance', textWrap: 'balance', overflowWrap: 'break-word'}}>撮影した写真がすぐに共有され、イベントの熱気をリアルタイムで感じることができます。</p>
-            </div>
-            {/* Feature 3: シールド＋人のシルエット */}
-            <div className="flex-1 w-full min-w-0 sm:min-w-[260px] max-w-md mx-auto group relative bg-white/80 rounded-3xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 overflow-hidden border border-blue-100 backdrop-blur-md mb-4">
-              <div className="w-28 h-28 flex items-center justify-center mx-auto mb-6 relative">
-                {/* SVGそのまま */}
-                <svg width="90" height="90" viewBox="0 0 56 56" fill="none" className="drop-shadow-lg">
-                  <path d="M28 48s16-8 16-20V14l-16-6-16 6v14c0 12 16 20 16 20z" fill="#fff" stroke="#2563EB" strokeWidth="2"/>
-                  <circle cx="28" cy="28" r="5" fill="#2563EB" />
-                  <ellipse cx="28" cy="36" rx="8" ry="4" fill="#E0E7FF" />
-                </svg>
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold mb-3 text-blue-700 text-center tracking-wide" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>イベント限定空間</h3>
-              <p className="text-gray-600 leading-relaxed text-center text-sm sm:text-base text-balance" style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", fontSize: 'clamp(0.85rem, 3vw, 1.05rem)', maxWidth: '100%', margin: '0 auto', wordBreak: 'break-word', WebkitTextWrap: 'balance', textWrap: 'balance', overflowWrap: 'break-word'}}>参加者だけのクローズドな空間で、安心して思い出を共有できます。</p>
+            {/* Feature 1: イベント作成 */}
+            <div className="flex flex-col items-center mb-10 w-full max-w-[240px] mx-auto">
+              <h3 className="text-lg font-bold mb-2 text-center text-blue-700" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>イベント作成</h3>
+              <VideoWithPlayButton src="/create_event.mp4" />
             </div>
           </div>
           <div className="mt-4" />
@@ -348,6 +314,45 @@ export default function LPMain() {
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function VideoWithPlayButton({ src }) {
+  const videoRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const handlePlay = () => {
+    if (videoRef.current) {
+      videoRef.current.play();
+      setPlaying(true);
+    }
+  };
+  return (
+    <div className="w-full aspect-[9/16] bg-gray-100 rounded-xl overflow-hidden mb-2 flex items-center justify-center relative">
+      <video
+        ref={videoRef}
+        src={src}
+        className="w-full h-full object-cover"
+        muted
+        playsInline
+        loop
+        controls={false}
+        preload="auto"
+        tabIndex={-1}
+        style={{ background: '#e5e7eb' }}
+      />
+      {!playing && (
+        <button
+          onClick={handlePlay}
+          className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/60 transition-colors duration-200"
+          style={{ cursor: 'pointer' }}
+        >
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+            <circle cx="28" cy="28" r="28" fill="white" fillOpacity="0.85" />
+            <polygon points="22,18 40,28 22,38" fill="#2563EB" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 } 
