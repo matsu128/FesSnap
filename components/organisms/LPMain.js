@@ -84,10 +84,8 @@ export default function LPMain() {
   const handleTryPost = () => router.push('/events/630316dc-a3a3-4a16-98c5-ae7a3094533e/post');
 
   return (
-    <div className="w-full min-h-screen bg-white flex flex-col items-center px-0 font-['Noto Sans JP']" style={{overflowX: 'hidden', fontFamily: "'Noto Sans JP', 'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
-      {/* ヘッダー */}
+    <>
       <Header type="menu" onMenuClick={() => setShowMenu(v => !v)} />
-      {/* メニュー（ログイン・新規イベント作成） */}
       {showMenu && (
         <div className="fixed top-0 left-0 w-full h-full bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowMenu(false)}>
           <div className="bg-white rounded-2xl shadow-xl p-8 min-w-[240px] max-w-[90vw] flex flex-col gap-4" onClick={e => e.stopPropagation()}>
@@ -96,12 +94,25 @@ export default function LPMain() {
           </div>
         </div>
       )}
-      {/* Hero Section */}
-      <section className="hero-section flex flex-col items-center justify-start relative overflow-hidden w-full min-h-[calc(100vh-56px)] pt-[56px] bg-white">
+      <section className="hero-section flex flex-col items-center justify-start relative overflow-hidden w-full min-h-screen pt-[56px] mt-4 bg-white">
         <div className="w-full flex flex-col items-center justify-center z-20 text-center" style={{overflowX: 'hidden'}}>
-          <div className="w-full mt-[56px]" style={{margin: '0 auto', boxSizing: 'border-box', paddingLeft: '1rem', paddingRight: '1rem', overflowX: 'hidden'}}>
-            <h1 style={{position:'absolute',left:'-9999px',height:'1px',width:'1px',overflow:'hidden'}}>FesSnap（フェススナップ）｜イベント写真共有サービス</h1>
-            <Logo size="text-5xl" className="mb-4 drop-shadow-lg mt-2" alt="FesSnapロゴ｜イベント写真共有サービス" />
+          <div className="w-full" style={{margin: '0 auto', boxSizing: 'border-box', paddingLeft: '1rem', paddingRight: '1rem', overflowX: 'hidden'}}>
+            <h1
+              className="mb-4 mt-2 text-5xl font-extrabold text-center bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent drop-shadow-lg"
+              style={{
+                fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
+                letterSpacing: '0.15em',
+                lineHeight: 1.1,
+                wordBreak: 'keep-all',
+                maxWidth: '100%',
+                marginLeft: 'auto',
+                marginRight: 'auto',
+                overflowWrap: 'break-word',
+                fontSize: 'clamp(2.2rem, 8vw, 3.2rem)',
+              }}
+            >
+              FesSnap
+            </h1>
             <h2
               className="font-extrabold text-white mb-4 tracking-tight leading-tight drop-shadow-xl text-center sm:text-center"
               style={{
@@ -150,12 +161,12 @@ export default function LPMain() {
             </div>
             {/* QRコード画像カード */}
             <div className="flex flex-col items-center w-full mb-4">
-              <div className="bg-white rounded-2xl shadow-lg p-3 max-w-[120px] w-full aspect-[3/4] flex items-center justify-center cursor-pointer" onClick={() => setShowQRModal(true)}>
-                <img src="/QR_code.jpg" alt="QRコード" className="w-full h-full object-contain rounded-xl" />
+              <div className="bg-white rounded-2xl shadow-lg p-3 max-w-[150px] w-full aspect-square flex items-center justify-center cursor-pointer" onClick={() => setShowQRModal(true)}>
+                <img src="/QR_code.jpg" alt="QRコード" className="w-full h-full object-contain rounded-xl aspect-square" />
               </div>
               {/* 使い方はこちら文言 */}
               <div className="w-full flex justify-center mt-3 mb-1">
-                <span className="text-base font-semibold text-gray-700 text-center select-none cursor-pointer" onClick={() => {
+                <span className="text-2xl font-semibold text-gray-700 text-center select-none cursor-pointer" onClick={() => {
                   const el = document.getElementById('howto');
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}>使い方はこちら</span>
@@ -334,7 +345,7 @@ export default function LPMain() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
