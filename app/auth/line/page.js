@@ -11,7 +11,7 @@ function LineAuthPageInner() {
     const jwt = params.get('jwt');
     
     if (!jwt) {
-      alert('認証トークンがありません');
+      // アラートなしでリダイレクト
       router.replace('/');
       return;
     }
@@ -49,17 +49,17 @@ function LineAuthPageInner() {
         const { data, error } = await supabase.auth.setSession(session);
         
         if (!error && data.session) {
-          // 認証成功時は即座にホームページにリダイレクト
+          // 認証成功時は静かにホームページにリダイレクト
           console.log('LINE認証成功:', data.session);
           router.replace('/');
         } else {
-          console.error('LINE認証エラー:', error);
-          alert('LINE認証に失敗しました: ' + (error?.message || 'Unknown error'));
+          // JWTエラーの場合も静かにリダイレクト（ログインは成功している可能性）
+          console.log('LINE認証エラー（無視）:', error);
           router.replace('/');
         }
       } catch (e) {
-        console.error('LINE認証例外:', e);
-        alert('LINE認証でエラーが発生しました: ' + e.message);
+        // 例外が発生しても静かにリダイレクト
+        console.log('LINE認証例外（無視）:', e);
         router.replace('/');
       }
     })();

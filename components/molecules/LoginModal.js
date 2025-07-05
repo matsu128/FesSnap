@@ -172,7 +172,7 @@ function OAuthButton({ provider, label, icon, isLine }) {
       const state = Math.random().toString(36).substring(2);
       const scope = 'profile openid email';
       
-      // LINE認証URL（promptパラメータを削除してLINEアプリが開くようにする）
+      // LINE認証URL
       const lineAuthUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
       
       // 環境変数チェック
@@ -181,7 +181,25 @@ function OAuthButton({ provider, label, icon, isLine }) {
         return;
       }
       
-      window.location.href = lineAuthUrl;
+      // モバイル環境ではLINEアプリを開く
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // LINEアプリのURLスキームを使用（より確実な方法）
+        const lineAppUrl = `line://app/${clientId}?redirect_uri=${encodeURIComponent(window.location.origin)}`;
+        
+        // 新しいウィンドウでLINEアプリを開く
+        const newWindow = window.open(lineAppUrl, '_blank');
+        
+        // フォールバック：LINEアプリが開かない場合は通常の認証URL
+        setTimeout(() => {
+          if (newWindow && newWindow.closed) {
+            // LINEアプリが開かなかった場合
+            window.location.href = lineAuthUrl;
+          }
+        }, 2000);
+      } else {
+        // PC環境では通常の認証URL
+        window.location.href = lineAuthUrl;
+      }
     } else {
       supabase.auth.signInWithOAuth({ 
         provider,
