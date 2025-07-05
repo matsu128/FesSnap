@@ -75,12 +75,22 @@ export default async function handler(req, res) {
     // 4. Supabase用JWT生成
     const payload = {
       sub: profile.userId,
-      name: profile.displayName,
-      picture: profile.pictureUrl,
-      iss: 'line-login',
       aud: 'authenticated',
       exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1時間有効
-      email: tokenJson.email || '',
+      iat: Math.floor(Date.now() / 1000),
+      iss: 'supabase',
+      role: 'authenticated',
+      user_metadata: {
+        name: profile.displayName,
+        picture: profile.pictureUrl,
+        email: tokenJson.email || '',
+        provider: 'line',
+        providers: ['line']
+      },
+      app_metadata: {
+        provider: 'line',
+        providers: ['line']
+      }
     };
     
     const token = jwt.sign(payload, supabaseJwtSecret, { algorithm: 'HS256' });

@@ -19,24 +19,46 @@ function LineAuthPageInner() {
     // 高速認証処理
     (async () => {
       try {
-        // signInWithCustomTokenメソッドの存在確認
-        if (typeof supabase.auth.signInWithCustomToken !== 'function') {
-          alert('認証機能が利用できません。ページを再読み込みしてください。');
-          router.replace('/');
-          return;
-        }
+        // JWTトークンをデコードしてユーザー情報を取得
+        const base64Url = jwt.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(window.atob(base64));
         
-        // 即座に認証実行
-        const { data, error } = await supabase.auth.signInWithCustomToken(jwt);
+        console.log('JWT payload:', payload);
         
-        if (!error) {
+        // セッションオブジェクトを作成
+        const session = {
+          access_token: jwt,
+          refresh_token: jwt,
+          expires_in: 3600,
+          expires_at: Math.floor(Date.now() / 1000) + 3600,
+          token_type: 'bearer',
+          user: {
+            id: payload.sub,
+            aud: payload.aud,
+            role: payload.role,
+            email: payload.user_metadata?.email,
+            user_metadata: payload.user_metadata,
+            app_metadata: payload.app_metadata,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        };
+        
+        // セッションを手動で設定
+        const { data, error } = await supabase.auth.setSession(session);
+        
+        if (!error && data.session) {
           // 認証成功時は即座にホームページにリダイレクト
+          console.log('LINE認証成功:', data.session);
           router.replace('/');
         } else {
-          alert('LINE認証に失敗しました: ' + error.message);
+          console.error('LINE認証エラー:', error);
+          alert('LINE認証に失敗しました: ' + (error?.message || 'Unknown error'));
           router.replace('/');
         }
       } catch (e) {
+        console.error('LINE認証例外:', e);
         alert('LINE認証でエラーが発生しました: ' + e.message);
         router.replace('/');
       }
