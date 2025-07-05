@@ -2,7 +2,20 @@ import jwt from 'jsonwebtoken';
 
 // LINE OAuthコールバックAPI（高速化版）
 export default async function handler(req, res) {
-  const { code, state } = req.query;
+  const { code, state, error, error_description } = req.query;
+  
+  // エラーパラメータがある場合はエラーページにリダイレクト
+  if (error) {
+    console.error('LINE OAuth error:', error, error_description);
+    
+    // INTERACTION_REQUIREDエラーの場合は、再度認証を促す
+    if (error === 'INTERACTION_REQUIRED') {
+      return res.redirect('/?error=line_interaction_required');
+    }
+    
+    // その他のエラーは一般的なエラーページに
+    return res.redirect('/?error=line_auth_failed');
+  }
   
   // 1. codeがなければエラー
   if (!code) {
@@ -43,6 +56,7 @@ export default async function handler(req, res) {
     const tokenJson = await tokenRes.json();
     
     if (!tokenJson.access_token) {
+      console.error('LINE token error:', tokenJson);
       return res.status(400).send('アクセストークン取得失敗: ' + (tokenJson.error_description || tokenJson.error || 'Unknown error'));
     }
 
@@ -54,6 +68,7 @@ export default async function handler(req, res) {
     const profile = await actualProfileRes.json();
     
     if (!profile.userId) {
+      console.error('LINE profile error:', profile);
       return res.status(400).send('プロフィール取得失敗: ' + (profile.error_description || profile.error || 'Unknown error'));
     }
 
@@ -73,6 +88,7 @@ export default async function handler(req, res) {
     // 5. 即座にリダイレクト（高速化）
     res.redirect(`/auth/line?jwt=${token}`);
   } catch (e) {
+    console.error('LINE auth error:', e);
     res.status(500).send('LINE認証エラー: ' + e.message);
   }
 } 

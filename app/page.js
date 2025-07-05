@@ -2,8 +2,23 @@
 // LP（紹介ページ）
 import LPMain from '../components/organisms/LPMain';
 import Head from 'next/head';
+import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  
+  useEffect(() => {
+    // URLパラメータからエラーを確認
+    const error = searchParams.get('error');
+    
+    if (error === 'line_interaction_required') {
+      alert('LINEアプリでの認証が必要です。再度LINEログインをお試しください。');
+    } else if (error === 'line_auth_failed') {
+      alert('LINE認証に失敗しました。再度お試しください。');
+    }
+  }, [searchParams]);
+
   return (
     <>
       <Head>
