@@ -11,7 +11,7 @@ function LineAuthPageInner() {
     const sessionParam = params.get('session');
     
     if (!sessionParam) {
-      // セッションパラメータがない場合は静かにリダイレクト
+      console.log('セッションパラメータがありません');
       router.replace('/');
       return;
     }
@@ -23,17 +23,26 @@ function LineAuthPageInner() {
         const sessionData = JSON.parse(decodeURIComponent(sessionParam));
         console.log('Session data:', sessionData);
         
+        // 現在のセッション状態を確認
+        const { data: currentSession } = await supabase.auth.getSession();
+        console.log('Current session before:', currentSession);
+        
         // Supabaseセッションを直接設定
         const { data, error } = await supabase.auth.setSession(sessionData);
+        console.log('setSession result:', { data, error });
         
         if (!error && data.session) {
           // 認証成功時は静かにホームページにリダイレクト
           console.log('LINE認証成功:', data.session);
           
+          // セッションが正しく設定されたか再確認
+          const { data: newSession } = await supabase.auth.getSession();
+          console.log('New session after:', newSession);
+          
           // 少し待ってからリダイレクト（セッション確立のため）
           setTimeout(() => {
             router.replace('/');
-          }, 500);
+          }, 1000);
         } else {
           // エラーの場合も静かにリダイレクト
           console.log('LINE認証エラー（無視）:', error);

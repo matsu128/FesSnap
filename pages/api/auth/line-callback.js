@@ -114,8 +114,12 @@ export default async function handler(req, res) {
       }
     };
     
+    console.log('Generated session data:', sessionData);
+    
     // セッションデータをURLパラメータとして渡す
     const sessionParam = encodeURIComponent(JSON.stringify(sessionData));
+    console.log('Session param length:', sessionParam.length);
+    
     res.redirect(`/auth/line?session=${sessionParam}`);
   } catch (e) {
     console.error('LINE auth error:', e);
