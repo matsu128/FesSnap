@@ -131,7 +131,7 @@ export default function EventDetailMain() {
       <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
       {/* 中央コンテンツ */}
       <div className="flex-1 w-full flex flex-col items-center justify-center">
-        {/* タイトル・日付・詳細・金額・人数を1つのカードでまとめて表示（デザイン強化） */}
+        {/* タイトルのみを表示 */}
         <Card className="w-full max-w-[400px] mb-4 px-4 py-5 bg-white/90 shadow-lg border border-gray-200 rounded-2xl flex flex-col gap-2 items-center" style={{fontFamily: "'Baloo 2', 'Rounded Mplus 1c', 'Poppins', 'Quicksand', 'Nunito', 'Rubik', sans-serif"}}>
           {/* タイトル（1行・動的フォントサイズ・省略なし） */}
           <div
@@ -152,19 +152,6 @@ export default function EventDetailMain() {
             }}
           >
             {event.title || 'イベントタイトル未設定'}
-          </div>
-          {/* 日付 */}
-          <div className="font-bold text-center w-full tracking-wide mb-1" style={{fontSize:'1.1rem', color:'#0077b6', letterSpacing:'0.04em', fontFamily: "'Baloo 2', 'Rounded Mplus 1c', 'Poppins', 'Quicksand', 'Nunito', 'Rubik', sans-serif"}}>
-            <span className="mr-1">日付：</span>{event.date || '未設定'}
-          </div>
-          {/* 詳細 */}
-          <div className="font-semibold text-center w-full tracking-wide mb-1" style={{fontSize:'1.05rem', color:'#3a4a6d', letterSpacing:'0.02em', fontFamily: "'Baloo 2', 'Rounded Mplus 1c', 'Poppins', 'Quicksand', 'Nunito', 'Rubik', sans-serif"}}>
-            <span className="mr-1">詳細：</span>{event.description ? event.description : '詳細なし'}
-          </div>
-          {/* 金額・人数 */}
-          <div className="flex flex-row items-center justify-center gap-2 font-bold w-full tracking-wide mt-1" style={{fontSize:'0.98rem', color:'#0077b6', letterSpacing:'0.02em', fontFamily: "'Baloo 2', 'Rounded Mplus 1c', 'Poppins', 'Quicksand', 'Nunito', 'Rubik', sans-serif"}}>
-            <span>金額: <span style={{color:'#193a6a'}}>{event.price ? `${event.price}円` : '未設定'}</span></span>
-            <span>定員: <span style={{color:'#193a6a'}}>{event.capacity ? `${event.capacity}人` : '未設定'}</span></span>
           </div>
         </Card>
         {/* QRコード＋画像投稿ボタン（縦中央） */}
@@ -188,7 +175,6 @@ export default function EventDetailMain() {
               {/* 上部：タイトル・日付 */}
               <div className="w-full flex flex-col items-center mb-1 mt-2">
                 <div className="font-extrabold mb-1 text-center break-words w-full tracking-wide" style={{fontSize:'2.1rem', color:'#193a6a', letterSpacing:'0.06em', lineHeight:1.08}}>{event.title}</div>
-                <div className="font-bold mb-0.5 text-center w-full tracking-wide" style={{fontSize:'1.1rem', color:'#0077b6', letterSpacing:'0.04em'}}>{event.date}</div>
               </div>
               {/* 中央：QRコードのみ */}
               <div className="flex flex-col w-full flex-1 justify-center items-center">

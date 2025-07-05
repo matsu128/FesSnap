@@ -138,7 +138,7 @@ export default function EventListMain() {
           {pagedEvents.map(event => (
             <Card key={event.id} className="cursor-pointer bg-white/80 backdrop-blur-lg rounded-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] hover:scale-105 hover:shadow-[0_12px_48px_0_rgba(0,0,0,0.55)] transition-transform duration-200 p-6 flex flex-col gap-2 border-none" onClick={() => handleEventClick(event.id)}>
               <div className="flex items-center gap-2 mb-2">
-                <span className="font-extrabold text-xl sm:text-2xl bg-gradient-to-r from-gray-900 via-blue-700 to-gray-700 bg-clip-text text-transparent drop-shadow">
+                <span className="font-extrabold text-xl sm:text-2xl bg-gradient-to-r from-blue-400 via-pink-400 to-blue-600 bg-clip-text text-transparent drop-shadow">
                   {event.title}
                 </span>
               </div>

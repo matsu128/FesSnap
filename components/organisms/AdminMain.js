@@ -1,18 +1,12 @@
 // 主催者ページのorganism
-// イベント切り替え・地域/日付/カテゴリーのモーダル、イベント詳細編集、QRコード生成・ダウンロード、APIからイベントデータ取得
+// タイトル入力とQRコード生成機能のみ
 import { useEffect, useState, useRef } from 'react';
 import Header from '../molecules/Header';
 import Button from '../atoms/Button';
 import Modal from '../atoms/Modal';
 import Input from '../atoms/Input';
 import Icon from '../atoms/Icon';
-// import QRCode from 'qrcode.react';
 import QRCode from 'react-qr-code';
-import ReactDatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import { ja } from 'date-fns/locale';
-import LPMain from './LPMain';
-import Logo from '../atoms/Logo';
 import html2canvas from 'html2canvas';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
@@ -26,36 +20,16 @@ export default function AdminMain() {
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEventModal, setShowEventModal] = useState(false);
-  const [showRegionModal, setShowRegionModal] = useState(false);
-  const [showDateModal, setShowDateModal] = useState(false);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [region, setRegion] = useState('');
-  const [date, setDate] = useState('');
-  const [category, setCategory] = useState('');
-  const [desc, setDesc] = useState('');
-  const [price, setPrice] = useState('');
-  const [capacity, setCapacity] = useState('');
   const [qr, setQr] = useState('');
   const qrRef = useRef();
   const qrAreaRef = useRef();
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrJpegUrl, setQrJpegUrl] = useState('');
   const [qrError, setQrError] = useState('');
-  const [calendarDate, setCalendarDate] = useState(date ? new Date(date) : null);
-  const [regionSearch, setRegionSearch] = useState('');
-  const [regionResults, setRegionResults] = useState([]);
-  const [regionLoading, setRegionLoading] = useState(false);
-  const [regionError, setRegionError] = useState('');
   const [missingFields, setMissingFields] = useState([]);
   const [qrTouched, setQrTouched] = useState(false);
   const [qrEventId, setQrEventId] = useState(null);
   const router = useRouter();
-  const [prefecture, setPrefecture] = useState('');
-  const [areaDetail, setAreaDetail] = useState('');
-  const [prefectures, setPrefectures] = useState([]);
-  const [prefectureLoading, setPrefectureLoading] = useState(true);
-  const [prefectureError, setPrefectureError] = useState('');
-  const [showPrefDropdown, setShowPrefDropdown] = useState(false);
 
   // イベントデータ取得
   useEffect(() => {
@@ -67,41 +41,12 @@ export default function AdminMain() {
           id: '',
           title: '',
         });
-        setRegion('');
-        setDate('');
-        setCategory('');
-        setDesc('');
-        setPrice('');
-        setCapacity('');
-      });
-  }, []);
-
-  useEffect(() => {
-    setPrefectureLoading(true);
-    fetch('/prefectures.json')
-      .then(res => {
-        if (!res.ok) throw new Error('都道府県データの取得に失敗しました');
-        return res.json();
-      })
-      .then(data => {
-        setPrefectures(data);
-        setPrefectureLoading(false);
-      })
-      .catch(e => {
-        setPrefectureError('都道府県リストの取得に失敗しました');
-        setPrefectureLoading(false);
       });
   }, []);
 
   // イベント切り替え
   const handleEventSwitch = (event) => {
     setSelectedEvent(event);
-    setRegion(event.location);
-    setDate(event.date);
-    setCategory(event.category);
-    setDesc(event.description);
-    setPrice(event.price);
-    setCapacity(event.capacity);
     setShowEventModal(false);
   };
 
@@ -111,8 +56,6 @@ export default function AdminMain() {
     setQrError('');
     const newMissing = [];
     if (!selectedEvent?.title) newMissing.push('title');
-    if (!date) newMissing.push('date');
-    if (!prefecture) newMissing.push('prefecture');
     setMissingFields(newMissing);
     if (newMissing.length > 0) {
       setQr('');
@@ -124,12 +67,12 @@ export default function AdminMain() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: selectedEvent?.title,
-          date,
-          region,
-          category,
-          desc,
-          price: price ? Number(price) : null,
-          capacity: capacity ? Number(capacity) : null
+          date: new Date().toISOString().slice(0, 10),
+          region: '',
+          category: '',
+          desc: '',
+          price: null,
+          capacity: null
         })
       });
       const data = await res.json();
@@ -141,9 +84,8 @@ export default function AdminMain() {
       const qrValue = `https://fes-snap.vercel.app/events/${data.id}/post`;
       setQr(qrValue);
       setQrEventId(data.id);
-      // --- ここからQR画像アップロード＆DB保存 ---
+      // QR画像アップロード＆DB保存
       setTimeout(async () => {
-        // QRコードSVGをcanvasに描画→PNG化
         const svg = qrRef.current?.querySelector('svg');
         if (!svg) return;
         const serializer = new XMLSerializer();
@@ -160,7 +102,6 @@ export default function AdminMain() {
           canvas.toBlob(async (blob) => {
             if (!blob) return;
             const filePath = `${data.id}.png`;
-            // Storageにアップロード
             const { error: uploadError } = await supabase.storage
               .from('event-qrcodes')
               .upload(filePath, blob, { contentType: 'image/png', upsert: true });
@@ -168,14 +109,12 @@ export default function AdminMain() {
               setQrError('QR画像のアップロードに失敗しました');
               return;
             }
-            // 公開URL取得
             const { data: urlData } = supabase.storage.from('event-qrcodes').getPublicUrl(filePath);
             const qrUrl = urlData?.publicUrl;
             if (!qrUrl) {
               setQrError('QR画像URLの取得に失敗しました');
               return;
             }
-            // qrcodesテーブルにinsert
             const { error: dbError } = await supabase
               .from('qrcodes')
               .insert([{ eventId: data.id, qrUrl }]);
@@ -187,7 +126,6 @@ export default function AdminMain() {
         };
         img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
       }, 300);
-      // --- ここまで追加 ---
       setTimeout(() => {
         if (qrAreaRef.current) {
           qrAreaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -198,207 +136,73 @@ export default function AdminMain() {
     }
   };
 
-  // 入力値の変化でmissingFieldsを自動で更新（QRボタン押下後のみ）
-  useEffect(() => {
-    if (!qrTouched) return;
-    const newMissing = [];
-    if (!selectedEvent?.title) newMissing.push('title');
-    if (!date) newMissing.push('date');
-    if (!prefecture) newMissing.push('prefecture');
-    setMissingFields(newMissing);
-  }, [selectedEvent?.title, date, prefecture, qrTouched]);
-
-  // QRコードをSVG→JPEG変換し、URLをセット
+  // QRコードをJPEGに変換
   const handleQrToJpeg = () => {
-    const svg = qrRef.current?.querySelector('svg');
-    if (!svg) {
-      alert('QRコードが見つかりません');
-      return;
-    }
-    const serializer = new XMLSerializer();
-    const svgStr = serializer.serializeToString(svg);
-    const img = new window.Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 400;
-      canvas.height = 400;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const url = canvas.toDataURL('image/jpeg');
-      setQrJpegUrl(url);
+    if (!qrRef.current) return;
+    html2canvas(qrRef.current, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      width: 180,
+      height: 180,
+    }).then(canvas => {
+      const jpegUrl = canvas.toDataURL('image/jpeg', 0.9);
+      setQrJpegUrl(jpegUrl);
       setShowQrModal(true);
-    };
-    img.onerror = () => alert('画像変換に失敗しました');
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
-  };
-  // QRダウンロード（JPEG）
-  const handleDownloadJpeg = () => {
-    if (!qrJpegUrl) return;
-    const a = document.createElement('a');
-    a.href = qrJpegUrl;
-    a.download = 'event-qr.jpg';
-    a.click();
-  };
-  // QR拡大モーダルの内容をcanvasで1枚画像として共有
-  async function handleShareQrInfo() {
-    const area = document.getElementById('qr-info-capture-area');
-    if (!area) return;
-    const canvas = await html2canvas(area, {backgroundColor: '#fff'});
-    const url = canvas.toDataURL('image/png');
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const file = new File([blob], 'event-qr-info.png', { type: 'image/png' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: selectedEvent?.title || 'イベント情報', text: 'イベント情報とQRコードです' });
-      } catch (e) {
-        // ユーザーがキャンセルした場合などは何もしない
-      }
-    } else {
-      alert('この端末では画像の共有がサポートされていません');
-    }
-  }
-
-  // QR生成ボタンのバリデーション
-  const isQrReady = selectedEvent?.title && date && prefecture;
-
-  // QR拡大モーダルの内容をcanvasで1枚画像として保存
-  function handleSaveQrInfoAsImage() {
-    const area = document.getElementById('qr-info-capture-area');
-    if (!area) return;
-    html2canvas(area, {backgroundColor: '#fff'}).then(canvas => {
-      const url = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'event-qr-info.png';
-      a.click();
     });
+  };
+
+  // QR情報を画像として保存
+  async function handleShareQrInfo() {
+    const captureArea = document.getElementById('qr-info-capture-area');
+    if (!captureArea) return;
+    try {
+      const canvas = await html2canvas(captureArea, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        width: 340,
+        height: 480,
+        useCORS: true,
+        allowTaint: true,
+      });
+      const dataUrl = canvas.toDataURL('image/png', 0.9);
+      const link = document.createElement('a');
+      link.download = `fes-snap-qr-${selectedEvent?.title || 'event'}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error('画像保存エラー:', error);
+    }
   }
-
-  // 日付選択時に赤枠を即消す
-  useEffect(() => {
-    if (qrTouched && date && missingFields.includes('date')) {
-      setMissingFields(missingFields.filter(f => f !== 'date'));
-    }
-  }, [date]);
-  // タイトル入力時に赤枠を即消す
-  useEffect(() => {
-    if (qrTouched && selectedEvent?.title && missingFields.includes('title')) {
-      setMissingFields(missingFields.filter(f => f !== 'title'));
-    }
-  }, [selectedEvent?.title]);
-
-  // エリア入力が変わったらregionを自動生成
-  useEffect(() => {
-    setRegion(prefecture ? prefecture + areaDetail : '');
-  }, [prefecture, areaDetail]);
 
   return (
-    <div className="w-full min-h-screen bg-white flex flex-col items-center px-2 sm:px-0">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex flex-col items-center">
       {/* ヘッダー */}
       <Header type="default" />
-      {/* カテゴリー・日付ボタンのみ */}
-      <div className="w-full max-w-[400px] grid grid-cols-2 gap-4 mt-24 mb-6 px-2 sm:px-0">
-        <Button onClick={() => setShowCategoryModal(true)} className={`bg-slate-700 py-3 text-base ${category ? 'ring-2 ring-blue-400' : ''}`}>{category || 'カテゴリー'}</Button>
-        <Button onClick={() => setShowDateModal(true)} className={`bg-slate-700 py-3 text-base flex items-center justify-center ${(date && !missingFields.includes('date')) ? 'ring-2 ring-blue-400' : ''} ${(qrTouched && missingFields.includes('date')) ? 'ring-2 ring-red-400' : ''}`}>
-          <Icon type="calendar" className="w-5 h-5 mr-2" />{date || '日付'}
-        </Button>
+      {/* ページタイトル */}
+      <div className="w-full max-w-[400px] mt-24 mb-8 px-2 sm:px-0">
+        <h1 className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 mb-2" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", letterSpacing: '0.05em'}}>
+          タイトルを入力して<br className="sm:hidden" />QRコード生成
+        </h1>
       </div>
-      {/* イベント詳細編集（タイトル+例+入力欄、金額・定員は数字＋サフィックス） */}
+      {/* タイトル入力 */}
       <div className="w-full max-w-[400px] flex flex-col gap-6 mb-8 px-2 sm:px-0">
-        <div>
-          <div className="text-base font-bold text-gray-700 mb-1">タイトル <span className="text-gray-300 text-sm font-normal">例: サマー音楽フェス2025</span></div>
+        <div className="flex flex-col items-center">
+          <div className="text-base font-bold text-gray-700 mb-1 text-center">タイトル <span className="text-gray-300 text-sm font-normal">例: サマー音楽フェス2025</span></div>
           <Input value={selectedEvent?.title || ''} onChange={e => {
             setSelectedEvent({ ...selectedEvent, title: e.target.value.slice(0,10) });
-          }} placeholder="タイトル" maxLength={10} className={`mb-1 text-lg py-3 text-black ${(qrTouched && missingFields.includes('title')) ? 'ring-2 ring-red-400' : ''}`} />
-        </div>
-        <div>
-          <label className="block text-base font-bold text-gray-700 mb-2">エリア <span className="text-gray-400 text-sm font-normal">（都道府県は必須、市区町村以下は自由入力）</span></label>
-          <div className="flex flex-col gap-3">
-            <div className="relative w-full">
-              <button
-                type="button"
-                className={`w-full py-3 px-4 rounded-xl border border-gray-300 bg-white shadow-sm text-lg text-left font-semibold focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-150 outline-none hover:border-blue-400 hover:shadow-md appearance-none flex items-center justify-between ${missingFields.includes('prefecture') ? 'ring-2 ring-red-400 border-red-400' : ''}`}
-                style={{ minHeight: '3.2rem', letterSpacing: '0.03em' }}
-                onClick={() => setShowPrefDropdown(v => !v)}
-                disabled={prefectureLoading || !!prefectureError}
-              >
-                {prefecture
-                  ? prefecture
-                  : prefectureLoading
-                  ? '都道府県データ取得中...'
-                  : '都道府県を選択'}
-                <span className="ml-2 text-gray-400">&#9660;</span>
-              </button>
-              {showPrefDropdown && !prefectureLoading && !prefectureError && (
-                <div className="absolute z-20 mt-2 w-full max-h-72 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-lg">
-                  {prefectures.map(p => (
-                    <div
-                      key={p}
-                      className={`px-4 py-3 cursor-pointer hover:bg-blue-50 transition-all duration-100 ${
-                        prefecture === p ? 'bg-blue-100 font-bold text-blue-700' : 'text-gray-800'
-                      }`}
-                      onClick={() => {
-                        setPrefecture(p);
-                        setShowPrefDropdown(false);
-                      }}
-                    >
-                      {p}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {prefectureError && (
-                <div className="text-red-500 text-sm font-bold mt-2">{prefectureError}</div>
-              )}
-            </div>
-            <input
-              value={areaDetail}
-              onChange={e => setAreaDetail(e.target.value)}
-              placeholder="市区町村・町名・番地等（例: 渋谷区道玄坂2-24-1）"
-              className="w-full py-3 px-4 rounded-xl border border-gray-300 shadow-sm text-lg focus:ring-2 focus:ring-pink-400 focus:border-pink-400 transition-all duration-150 outline-none hover:border-pink-400 hover:shadow-md"
-              style={{minHeight: '3.2rem', fontWeight: 500, letterSpacing: '0.02em'}}
-            />
-          </div>
-          <div className="text-xs text-gray-400 mt-2">都道府県は必須。市区町村以下は自由に入力してください。</div>
-        </div>
-        <div>
-          <div className="text-base font-bold text-gray-700 mb-1">詳細 <span className="text-gray-300 text-sm font-normal">例: 受付横</span></div>
-          <Input value={desc} onChange={e => setDesc(e.target.value.slice(0,10))} placeholder="詳細" maxLength={10} className="mb-1 text-lg py-3 text-black" />
-        </div>
-        <div>
-          <div className="text-base font-bold text-gray-700 mb-1">参加費 <span className="text-gray-300 text-sm font-normal">例: 3000</span> <span className="text-xs text-gray-400 ml-2">任意</span></div>
-          <div className="flex items-center">
-            <Input value={price} onChange={e => setPrice(e.target.value.replace(/[^0-9]/g, ''))} placeholder="参加費" type="number" className="mb-1 flex-1 text-lg py-3 text-black" />
-            <span className="ml-2 text-gray-500 text-lg">円</span>
-          </div>
-        </div>
-        <div>
-          <div className="text-base font-bold text-gray-700 mb-1">人数 <span className="text-gray-300 text-sm font-normal">例: 100</span> <span className="text-xs text-gray-400 ml-2">任意</span></div>
-          <div className="flex items-center">
-            <Input value={capacity} onChange={e => setCapacity(e.target.value.replace(/[^0-9]/g, ''))} placeholder="人数" type="number" className="mb-1 flex-1 text-lg py-3 text-black" />
-            <span className="ml-2 text-gray-500 text-lg">人</span>
-          </div>
+          }} placeholder="タイトル" maxLength={10} className={`mb-1 text-lg py-3 text-black text-center ${(qrTouched && missingFields.includes('title')) ? 'ring-2 ring-red-400' : ''}`} />
         </div>
       </div>
-      {/* エラー表示（QRボタン直上） */}
+      {/* エラー表示 */}
       {qrError && (
         <div className="w-full max-w-[400px] text-center text-red-500 text-base mb-2 font-bold">{qrError}</div>
       )}
       {missingFields.length > 0 && (
         <div className="w-full max-w-[400px] text-center text-red-400 text-sm mb-2 font-semibold tracking-wide">
-          {missingFields.includes('title') && !missingFields.includes('date') && !missingFields.includes('prefecture') && 'タイトルが未入力です'}
-          {!missingFields.includes('title') && missingFields.includes('date') && !missingFields.includes('prefecture') && '日付が未入力です'}
-          {!missingFields.includes('title') && !missingFields.includes('date') && missingFields.includes('prefecture') && 'エリア（都道府県）が未選択です'}
-          {missingFields.includes('title') && missingFields.includes('date') && !missingFields.includes('prefecture') && 'タイトル・日付が未入力です'}
-          {missingFields.includes('title') && !missingFields.includes('date') && missingFields.includes('prefecture') && 'タイトル・エリア（都道府県）が未入力です'}
-          {!missingFields.includes('title') && missingFields.includes('date') && missingFields.includes('prefecture') && '日付・エリア（都道府県）が未入力です'}
-          {missingFields.includes('title') && missingFields.includes('date') && missingFields.includes('prefecture') && 'タイトル・日付・エリア（都道府県）が未入力です'}
+          {missingFields.includes('title') && 'タイトルが未入力です'}
         </div>
       )}
-      {/* QRコード生成ボタンのみ */}
+      {/* QRコード生成ボタン */}
       <div className="flex w-full max-w-[400px] gap-4 mb-8 px-2 sm:px-0">
         <Button onClick={handleGenerateQr} className="flex-1 text-base py-4 bg-slate-700">QRコード生成</Button>
       </div>
@@ -419,22 +223,16 @@ export default function AdminMain() {
       {/* QR拡大モーダル */}
       <Modal isOpen={showQrModal} onClose={() => setShowQrModal(false)}>
         <div className="flex flex-col items-center w-full relative">
-          {/* 右上バツボタン */}
           <button onClick={() => setShowQrModal(false)} className="absolute top-2 right-2 text-3xl text-gray-400 hover:text-gray-700 z-10">×</button>
-          {/* 入力情報一覧＋QR＋ロゴを1枚画像化できるようにラップ */}
           <div id="qr-info-capture-area" className="w-full max-w-[340px] mx-auto flex flex-col justify-between items-center mb-2 mt-1 bg-white rounded-xl p-2 shadow-md overflow-hidden" style={{ aspectRatio: '9/16', minHeight: 480, height: 480, fontFamily: "'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif" }}>
-            {/* 上部：タイトル・日付 */}
             <div className="w-full flex flex-col items-center mb-1 mt-2">
               <div className="font-extrabold mb-1 text-center break-words w-full tracking-wide" style={{fontSize:'2.1rem', color:'#193a6a', letterSpacing:'0.06em', lineHeight:1.08}}>{selectedEvent?.title}</div>
-              <div className="font-bold mb-0.5 text-center w-full tracking-wide" style={{fontSize:'1.1rem', color:'#0077b6', letterSpacing:'0.04em'}}>{date}</div>
             </div>
-            {/* 中央：QRコードのみ */}
             <div className="flex flex-col w-full flex-1 justify-center items-center">
               {qrJpegUrl && (
                 <img src={qrJpegUrl} alt="QRコード" className="w-40 h-40 object-contain bg-white rounded-lg mx-auto" />
               )}
             </div>
-            {/* 下部：ロゴ */}
             <div className="w-full flex justify-center mb-1" style={{minHeight: '28px'}}>
               <span
                 className="font-extrabold tracking-wide select-none"
@@ -468,46 +266,6 @@ export default function AdminMain() {
           {events.map(ev => (
             <Button key={ev.id} onClick={() => handleEventSwitch(ev)} className="mb-1 w-40 bg-slate-700">{ev.title}</Button>
           ))}
-        </div>
-      </Modal>
-      {/* 地域モーダル */}
-      <Modal isOpen={showRegionModal} onClose={() => setShowRegionModal(false)}>
-        <div className="flex flex-col items-center w-full max-w-xs mx-auto p-2">
-          <div className="mb-2 text-lg font-bold">エリア検索</div>
-          <Input value={regionSearch} onChange={e => setRegionSearch(e.target.value)} placeholder="都道府県・市区町村名で検索" className="mb-2 text-black" />
-          <Button onClick={() => { setRegion(''); setShowRegionModal(false); }} className="w-32 bg-red-200 text-red-700">取り消し</Button>
-        </div>
-      </Modal>
-      {/* 日付モーダル（カレンダーUI） */}
-      <Modal isOpen={showDateModal} onClose={() => setShowDateModal(false)}>
-        <div className="flex flex-col items-center">
-          <div className="mb-2 text-lg font-bold">日付選択</div>
-          <ReactDatePicker
-            selected={calendarDate}
-            onChange={dateObj => {
-              setCalendarDate(dateObj);
-              setDate(dateObj ? dateObj.toISOString().slice(0, 10) : '');
-              if (missingFields.includes('date') && dateObj) {
-                setMissingFields(missingFields.filter(f => f !== 'date'));
-              }
-              setShowDateModal(false);
-            }}
-            minDate={new Date()}
-            locale={ja}
-            dateFormat="yyyy年MM月dd日"
-            inline
-            className="rounded-lg border border-gray-300 shadow-sm"
-          />
-        </div>
-      </Modal>
-      {/* カテゴリーモーダル */}
-      <Modal isOpen={showCategoryModal} onClose={() => setShowCategoryModal(false)}>
-        <div className="flex flex-col items-center">
-          <div className="mb-2 text-lg font-bold">カテゴリー選択</div>
-          <Button onClick={() => { setCategory('音楽フェス'); setShowCategoryModal(false); }} className="mb-1 w-32 bg-slate-700">音楽フェス</Button>
-          <Button onClick={() => { setCategory('文化祭'); setShowCategoryModal(false); }} className="mb-1 w-32 bg-slate-700">文化祭</Button>
-          <Button onClick={() => { setCategory('地域イベント'); setShowCategoryModal(false); }} className="mb-1 w-32 bg-slate-700">地域イベント</Button>
-          <Button onClick={() => { setCategory('その他'); setShowCategoryModal(false); }} className="w-32 bg-slate-700">その他</Button>
         </div>
       </Modal>
     </div>
