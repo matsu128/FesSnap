@@ -8,10 +8,10 @@ function LineAuthPageInner() {
   const params = useSearchParams();
   
   useEffect(() => {
-    const jwt = params.get('jwt');
+    const sessionParam = params.get('session');
     
-    if (!jwt) {
-      // アラートなしでリダイレクト
+    if (!sessionParam) {
+      // セッションパラメータがない場合は静かにリダイレクト
       router.replace('/');
       return;
     }
@@ -19,41 +19,23 @@ function LineAuthPageInner() {
     // 高速認証処理
     (async () => {
       try {
-        // JWTトークンをデコードしてユーザー情報を取得
-        const base64Url = jwt.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const payload = JSON.parse(window.atob(base64));
+        // セッションデータをデコード
+        const sessionData = JSON.parse(decodeURIComponent(sessionParam));
+        console.log('Session data:', sessionData);
         
-        console.log('JWT payload:', payload);
-        
-        // セッションオブジェクトを作成
-        const session = {
-          access_token: jwt,
-          refresh_token: jwt,
-          expires_in: 3600,
-          expires_at: Math.floor(Date.now() / 1000) + 3600,
-          token_type: 'bearer',
-          user: {
-            id: payload.sub,
-            aud: payload.aud,
-            role: payload.role,
-            email: payload.user_metadata?.email,
-            user_metadata: payload.user_metadata,
-            app_metadata: payload.app_metadata,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        };
-        
-        // セッションを手動で設定
-        const { data, error } = await supabase.auth.setSession(session);
+        // Supabaseセッションを直接設定
+        const { data, error } = await supabase.auth.setSession(sessionData);
         
         if (!error && data.session) {
           // 認証成功時は静かにホームページにリダイレクト
           console.log('LINE認証成功:', data.session);
-          router.replace('/');
+          
+          // 少し待ってからリダイレクト（セッション確立のため）
+          setTimeout(() => {
+            router.replace('/');
+          }, 500);
         } else {
-          // JWTエラーの場合も静かにリダイレクト（ログインは成功している可能性）
+          // エラーの場合も静かにリダイレクト
           console.log('LINE認証エラー（無視）:', error);
           router.replace('/');
         }
