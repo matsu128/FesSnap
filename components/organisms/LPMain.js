@@ -62,18 +62,18 @@ export default function LPMain() {
   // 料金プラン
   const plans = [
     {
-      name: 'ベーシックプラン', price: '無料', desc: '小規模イベント向け', features: [
-        '最大50人まで参加可能', '基本的な写真共有機能', 'イベント終了後7日間データ保存', 'カスタマイズ機能なし',
+      name: 'Freeプラン', price: '0円', desc: '小規模イベント<br />（親しい友人の誕生日会など）', features: [
+        '画像25枚（最大5人分想定）', '7日間', '無料で気軽に試せる', '参加者数が少なくて<br />シンプル利用向き',
       ], highlight: false,
     },
     {
-      name: 'プラスプラン', price: '¥2,000', desc: '中規模イベント向け', features: [
-        '最大300人まで参加可能', '高画質写真共有', 'イベント終了後30日間データ保存', '基本的なカスタマイズ機能',
+      name: 'Plusプラン', price: '7,000円', desc: '中規模イベント<br />（小規模結婚式、子ども会、サークルイベント）', features: [
+        '画像125枚（最大25人分想定）', '30日間', 'まとまった写真枚数対応', '高画質アップロード対応', 'QRコード共有で参加者も<br />簡単投稿',
       ], highlight: true,
     },
     {
-      name: 'プロプラン', price: '¥5,000', desc: '大規模イベント向け', features: [
-        '参加人数無制限', '超高画質写真共有', 'イベント終了後1年間データ保存', '高度なカスタマイズ機能', '専用サポート',
+      name: 'Proプラン', price: '15,000円', desc: '大規模イベント<br />（結婚式・企業パーティ<br />地域イベント・フェス）', features: [
+        '画像無制限', '1年間', '枚数制限なし', '長期間の保存・共有が可能', '写真のモデレーションや<br />カスタマイズ機能付き', '専用サポート対応',
       ], highlight: false,
     },
   ];
@@ -258,26 +258,38 @@ export default function LPMain() {
               <Card key={i} className={`relative bg-white rounded-3xl shadow-xl overflow-hidden border ${plan.highlight ? 'border-blue-600 scale-105 z-10 shadow-2xl' : 'border-gray-100'} transition-all hover:shadow-2xl p-0 md:max-w-xl mb-4`}>
                 <div className={`p-8 border-b ${plan.highlight ? 'bg-gradient-to-r from-blue-500 via-blue-400 to-pink-400 text-white relative' : ''}`} style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
                   {plan.highlight && <div className="absolute top-4 right-4 bg-white text-blue-600 text-xs font-bold px-3 py-1 rounded-full shadow">人気</div>}
-                  <h3 className="text-2xl font-bold mb-2 tracking-wide drop-shadow-sm text-center md:text-3xl md:mb-4 text-black" style={{color:'#000'}}>{plan.name}</h3>
+                  <h3 className="text-2xl font-bold mb-2 tracking-wide drop-shadow-sm text-center md:text-3xl md:mb-4 text-black" style={{color:'#000'}}>
+                    <span className="text-3xl md:text-4xl">{plan.name.split('プラン')[0]}</span>
+                    <span className="text-lg md:text-xl ml-1">プラン</span>
+                  </h3>
                   <div className="flex items-end justify-center md:justify-center mb-4 md:mb-6 gap-1 md:gap-2">
-                    <span className={`text-4xl md:text-5xl font-extrabold drop-shadow-sm ${plan.price === '無料' ? 'text-blue-500' : (plan.price === '¥5,000' || plan.price === '¥2,000') ? 'text-pink-500' : 'text-black'}`}>{plan.price}</span>
-                    <span className={`ml-1 ${plan.highlight ? 'text-white text-opacity-80' : 'text-black'} text-sm md:text-base`} style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", maxWidth: '5.5ch', whiteSpace: 'nowrap', fontSize: 'clamp(0.8rem, 1.2vw, 1.05rem)', color: plan.highlight ? undefined : '#000'}}>/イベント</span>
+                    <span className={`text-4xl md:text-5xl font-extrabold drop-shadow-sm whitespace-nowrap ${plan.price === '0円' ? 'text-blue-500' : 'text-pink-500'}`}>{plan.price}</span>
+                    <span className={`ml-1 ${plan.highlight ? 'text-white text-opacity-80' : 'text-black'} text-sm md:text-base whitespace-nowrap`} style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", maxWidth: '5.5ch', fontSize: 'clamp(0.8rem, 1.2vw, 1.05rem)', color: plan.highlight ? undefined : '#000'}}>/イベント</span>
                   </div>
-                  <p className={plan.highlight ? 'text-white text-opacity-90' : 'text-black'} style={plan.highlight ? undefined : {color:'#000'}}>{plan.desc}</p>
+                  <p className={plan.highlight ? 'text-white text-opacity-90' : 'text-black'} style={plan.highlight ? undefined : {color:'#000'}} dangerouslySetInnerHTML={{ __html: plan.desc }}></p>
                 </div>
                 <div className="p-8 bg-gradient-to-br from-white via-blue-50 to-pink-50">
                   <ul className="space-y-3 mb-6">
                     {plan.features.map((f, j) => (
-                      <li key={j} className={`flex items-start ${f.includes('なし') ? 'text-gray-400' : 'text-black'} text-base`} style={f.includes('なし') ? {fontFamily: "'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"} : {fontFamily: "'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", color:'#000'}}>
-                        <Icon type={f.includes('なし') ? 'close' : 'check'} className={`w-5 h-5 mt-0.5 mr-2 ${f.includes('なし') ? 'text-gray-400' : 'text-green-500'}`} />
-                        <span>{f}</span>
+                      <li key={j} className={`flex items-start ${f.includes('なし') ? 'text-gray-400' : 'text-black'} text-xs md:text-base`} style={f.includes('なし') ? {fontFamily: "'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"} : {fontFamily: "'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", color:'#000'}}>
+                        <svg className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 mt-0.5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <span className={`whitespace-nowrap md:whitespace-normal break-words ${f.includes('枚') || f.includes('日間') || f.includes('画像無制限') || f.includes('年間') || f.includes('制限なし') ? 'text-blue-600 font-semibold' : ''}`} dangerouslySetInnerHTML={{ __html: f }}></span>
                       </li>
                     ))}
                   </ul>
                   <div className="flex flex-col md:flex-row gap-4 justify-center">
                     <Link href="/stripe">
-                      <button className={`mt-auto px-8 py-3 rounded-full font-bold text-white ${plan.price === '無料' ? 'bg-blue-400' : 'bg-pink-500'} shadow-lg hover:opacity-90 transition disabled:opacity-60 w-full`}>
-                        {plan.price === '無料' ? '無料で始める' : `${plan.price}で申し込む`}
+                      <button className={`mt-auto px-8 py-3 rounded-full font-bold text-white ${plan.price === '0円' ? 'bg-blue-400' : 'bg-pink-500'} shadow-lg hover:opacity-90 transition disabled:opacity-60 w-full text-sm sm:text-base`}>
+                        {plan.price === '0円'
+                          ? '無料で始める'
+                          : plan.price === '15,000円'
+                            ? '15,000円で申込'
+                            : plan.price === '7,000円'
+                              ? '7,000円で申込'
+                              : `${plan.price}で申込`
+                        }
                       </button>
                     </Link>
                   </div>

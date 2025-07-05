@@ -6,31 +6,33 @@ import Button from '../../components/atoms/Button';
 
 const plans = [
   {
-    name: 'ベーシックプラン', price: '無料', desc: '小規模イベント向け', priceId: null, highlight: false,
+    name: 'Freeプラン', price: '0円', desc: '小規模イベント<br />（親しい友人の誕生日会など）', priceId: null, highlight: false,
     features: [
-      '最大50人まで参加可能',
-      '基本的な写真共有機能',
-      'イベント終了後7日間データ保存',
-      'カスタマイズ機能なし',
+      '画像25枚（最大5人分想定）',
+      '7日間',
+      '無料で気軽に試せる',
+      '参加者数が少なくて<br />シンプル利用向き',
     ],
   },
   {
-    name: 'プラスプラン', price: '¥2,000', desc: '中規模イベント向け', priceId: 'price_1Rh8TUINMH35xP4j7P5hiLq1', highlight: true,
+    name: 'Plusプラン', price: '7,000円', desc: '中規模イベント<br />（小規模結婚式、子ども会、サークルイベント）', priceId: 'price_1Rh8TUINMH35xP4j7P5hiLq1', highlight: true,
     features: [
-      '最大300人まで参加可能',
-      '高画質写真共有',
-      'イベント終了後30日間データ保存',
-      '基本的なカスタマイズ機能',
+      '画像125枚（最大25人分想定）',
+      '30日間',
+      'まとまった写真枚数対応',
+      '高画質アップロード対応',
+      'QRコード共有で参加者も<br />簡単投稿',
     ],
   },
   {
-    name: 'プロプラン', price: '¥5,000', desc: '大規模イベント向け', priceId: 'price_1Rh8TiINMH35xP4jqYvfj0YC', highlight: false,
+    name: 'Proプラン', price: '15,000円', desc: '大規模イベント<br />（結婚式・企業パーティ<br />地域イベント・フェス）', priceId: 'price_1Rh8TiINMH35xP4jqYvfj0YC', highlight: false,
     features: [
-      '参加人数無制限',
-      '超高画質写真共有',
-      'イベント終了後1年間データ保存',
-      '高度なカスタマイズ機能',
-      '専用サポート',
+      '画像無制限',
+      '1年間',
+      '枚数制限なし',
+      '長期間の保存・共有が可能',
+      '写真のモデレーションや<br />カスタマイズ機能付き',
+      '専用サポート対応',
     ],
   },
 ];
@@ -70,23 +72,40 @@ export default function StripePage() {
       <div className="flex flex-col md:flex-row gap-8 md:gap-12 justify-center items-stretch w-full max-w-4xl">
         {plans.map((plan, i) => (
           <div key={i} className={`flex-1 bg-white rounded-3xl p-8 shadow-lg border ${plan.highlight ? 'border-pink-400' : 'border-blue-100'} flex flex-col items-center`}>
-            <div className="text-xl font-bold mb-2 text-center">{plan.name}</div>
-            <div className={`text-4xl font-extrabold mb-2 ${plan.price === '無料' ? 'text-blue-500' : 'text-pink-500'}`}>{plan.price}</div>
-            <div className="text-gray-500 mb-4 text-center">{plan.desc}</div>
+            <div className="text-xl font-bold mb-2 text-center">
+              <span className="text-2xl md:text-3xl">{plan.name.split('プラン')[0]}</span>
+              <span className="text-base md:text-lg ml-1">プラン</span>
+            </div>
+            <div className={`text-4xl font-extrabold mb-2 ${plan.price === '0円' ? 'text-blue-500' : 'text-pink-500'}`}>{plan.price}</div>
+            <div className="text-gray-500 mb-4 text-center" dangerouslySetInnerHTML={{ __html: plan.desc }}></div>
             <ul className="space-y-3 mb-6">
               {plan.features.map((f, j) => (
-                <li key={j} className={`flex items-start ${f.includes('なし') ? 'text-gray-400' : 'text-black'} text-base`}>
-                  <span className="mr-2">{f.includes('なし') ? '✗' : '✓'}</span>
-                  <span>{f}</span>
+                <li key={j} className="flex items-start text-sm">
+                  <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700" dangerouslySetInnerHTML={{ 
+                    __html: f
+                      .replace(/(\d+枚)/g, '<span class="text-blue-600 font-bold">$1</span>')
+                      .replace(/(\d+日間)/g, '<span class="text-blue-600 font-bold">$1</span>')
+                      .replace(/(\d+年間)/g, '<span class="text-blue-600 font-bold">$1</span>')
+                      .replace(/(無制限)/g, '<span class="text-blue-600 font-bold">$1</span>')
+                      .replace(/(枚数制限なし)/g, '<span class="text-blue-600 font-bold">$1</span>')
+                      .replace(/(長期間)/g, '<span class="text-blue-600 font-bold">$1</span>')
+                      .replace(/(無料)/g, '<span class="text-blue-600 font-bold">$1</span>')
+                      .replace(/(高画質)/g, '<span class="text-blue-600 font-bold">$1</span>')
+                      .replace(/(QRコード)/g, '<span class="text-blue-600 font-bold">$1</span>')
+                      .replace(/(専用サポート)/g, '<span class="text-blue-600 font-bold">$1</span>')
+                  }}></span>
                 </li>
               ))}
             </ul>
             <button
-              className={`mt-auto px-8 py-3 rounded-full font-bold text-white ${plan.price === '無料' ? 'bg-blue-400' : 'bg-pink-500'} shadow-lg hover:opacity-90 transition disabled:opacity-60`}
+              className={`mt-auto px-8 py-3 rounded-full font-bold text-white ${plan.price === '0円' ? 'bg-blue-400' : 'bg-pink-500'} shadow-lg hover:opacity-90 transition disabled:opacity-60`}
               onClick={() => handleStripeCheckout(plan.priceId)}
               disabled={loading}
             >
-              {plan.price === '無料' ? '無料で始める' : `${plan.price}で申し込む`}
+              {plan.price === '0円' ? '無料で始める' : `${plan.price}で申し込む`}
             </button>
           </div>
         ))}
