@@ -2,10 +2,10 @@
 // LP（紹介ページ）
 import LPMain from '../components/organisms/LPMain';
 import Head from 'next/head';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function Home() {
+function HomePageInner() {
   const searchParams = useSearchParams();
   
   useEffect(() => {
@@ -46,5 +46,13 @@ export default function Home() {
       <h1 style={{position:'absolute',left:'-9999px',height:'1px',width:'1px',overflow:'hidden'}}>FesSnap（フェススナップ）｜イベント写真共有サービス</h1>
       <LPMain />
     </>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomePageInner />
+    </Suspense>
   );
 }
