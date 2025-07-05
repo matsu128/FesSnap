@@ -72,13 +72,13 @@ export default async function handler(req, res) {
       return res.status(400).send('プロフィール取得失敗: ' + (profile.error_description || profile.error || 'Unknown error'));
     }
 
-    // 4. Supabase用JWT生成（正しい形式）
+    // 4. Supabase用JWT生成（正確な形式）
     const payload = {
       sub: profile.userId,
       aud: 'authenticated',
       exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1時間有効
       iat: Math.floor(Date.now() / 1000),
-      iss: 'https://fessnap.com',
+      iss: 'supabase',  // Supabaseが期待する形式
       role: 'authenticated',
       user_metadata: {
         name: profile.displayName,
@@ -95,7 +95,7 @@ export default async function handler(req, res) {
     
     const token = jwt.sign(payload, supabaseJwtSecret, { algorithm: 'HS256' });
 
-    // 5. セッション情報を含むリダイレクト
+    // 5. セッション情報を含むリダイレクト（Supabase形式）
     const sessionData = {
       access_token: token,
       refresh_token: token,
@@ -116,11 +116,17 @@ export default async function handler(req, res) {
     
     console.log('Generated session data:', sessionData);
     
-    // セッションデータをURLパラメータとして渡す
+    // セッションデータをURLパラメータとして渡す（長さチェック）
     const sessionParam = encodeURIComponent(JSON.stringify(sessionData));
     console.log('Session param length:', sessionParam.length);
     
-    res.redirect(`/auth/line?session=${sessionParam}`);
+    // URLパラメータが長すぎる場合はlocalStorageを使用
+    if (sessionParam.length > 2000) {
+      // 短縮版：JWTトークンのみを渡す
+      res.redirect(`/auth/line?jwt=${token}`);
+    } else {
+      res.redirect(`/auth/line?session=${sessionParam}`);
+    }
   } catch (e) {
     console.error('LINE auth error:', e);
     res.status(500).send('LINE認証エラー: ' + e.message);

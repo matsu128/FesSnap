@@ -9,9 +9,10 @@ function LineAuthPageInner() {
   
   useEffect(() => {
     const sessionParam = params.get('session');
+    const jwtToken = params.get('jwt');
     
-    if (!sessionParam) {
-      console.log('セッションパラメータがありません');
+    if (!sessionParam && !jwtToken) {
+      console.log('認証パラメータがありません');
       router.replace('/');
       return;
     }
@@ -19,38 +20,75 @@ function LineAuthPageInner() {
     // 高速認証処理
     (async () => {
       try {
-        // セッションデータをデコード
-        const sessionData = JSON.parse(decodeURIComponent(sessionParam));
+        let sessionData;
+        
+        if (jwtToken) {
+          // JWTトークンのみの場合、セッションデータを構築
+          const base64Url = jwtToken.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const payload = JSON.parse(window.atob(base64));
+          
+          sessionData = {
+            access_token: jwtToken,
+            refresh_token: jwtToken,
+            expires_in: 3600,
+            expires_at: Math.floor(Date.now() / 1000) + 3600,
+            token_type: 'bearer',
+            user: {
+              id: payload.sub,
+              aud: payload.aud,
+              role: payload.role,
+              email: payload.user_metadata?.email,
+              user_metadata: payload.user_metadata,
+              app_metadata: payload.app_metadata,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          };
+        } else {
+          // セッションデータをデコード
+          sessionData = JSON.parse(decodeURIComponent(sessionParam));
+        }
+        
         console.log('Session data:', sessionData);
         
         // 現在のセッション状態を確認
         const { data: currentSession } = await supabase.auth.getSession();
         console.log('Current session before:', currentSession);
         
-        // Supabaseセッションを直接設定
+        // セッションを確実に設定
         const { data, error } = await supabase.auth.setSession(sessionData);
         console.log('setSession result:', { data, error });
         
         if (!error && data.session) {
-          // 認証成功時は静かにホームページにリダイレクト
           console.log('LINE認証成功:', data.session);
           
           // セッションが正しく設定されたか再確認
           const { data: newSession } = await supabase.auth.getSession();
           console.log('New session after:', newSession);
           
-          // 少し待ってからリダイレクト（セッション確立のため）
-          setTimeout(() => {
+          // 確実にセッションが設定されるまで待機
+          if (newSession.session) {
+            console.log('セッション設定完了、リダイレクト');
             router.replace('/');
-          }, 1000);
+          } else {
+            console.log('セッション設定失敗、再試行');
+            // 再試行
+            setTimeout(async () => {
+              const { data: retryData } = await supabase.auth.setSession(sessionData);
+              if (retryData.session) {
+                router.replace('/');
+              } else {
+                router.replace('/');
+              }
+            }, 1000);
+          }
         } else {
-          // エラーの場合も静かにリダイレクト
-          console.log('LINE認証エラー（無視）:', error);
+          console.log('LINE認証エラー:', error);
           router.replace('/');
         }
       } catch (e) {
-        // 例外が発生しても静かにリダイレクト
-        console.log('LINE認証例外（無視）:', e);
+        console.log('LINE認証例外:', e);
         router.replace('/');
       }
     })();
