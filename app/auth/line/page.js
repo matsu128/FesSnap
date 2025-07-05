@@ -16,6 +16,7 @@ function LineAuthPageInner() {
       return;
     }
 
+    // 高速認証処理
     (async () => {
       try {
         // signInWithCustomTokenメソッドの存在確認
@@ -25,10 +26,11 @@ function LineAuthPageInner() {
           return;
         }
         
+        // 即座に認証実行
         const { data, error } = await supabase.auth.signInWithCustomToken(jwt);
         
         if (!error) {
-          // 認証成功時はonAuthStateChangeでモーダルが閉じられる
+          // 認証成功時は即座にホームページにリダイレクト
           router.replace('/');
         } else {
           alert('LINE認証に失敗しました: ' + error.message);
@@ -41,7 +43,12 @@ function LineAuthPageInner() {
     })();
   }, [params, router]);
   
-  return <div className="mt-32 text-center text-gray-400">LINE認証中...</div>;
+  return (
+    <div className="mt-32 text-center">
+      <div className="text-gray-400 mb-4">LINE認証中...</div>
+      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+    </div>
+  );
 }
 
 export default function LineAuthPage() {

@@ -171,7 +171,10 @@ function OAuthButton({ provider, label, icon, isLine }) {
       const redirectUri = encodeURIComponent(`${window.location.origin}/api/auth/line-callback`);
       const state = Math.random().toString(36).substring(2);
       const scope = 'profile openid email';
-      const lineAuthUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
+      
+      // ワンクリックログインのためのパラメータ
+      const prompt = 'none'; // 既存セッションがあれば自動ログイン
+      const lineAuthUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}&prompt=${prompt}`;
       
       // 環境変数チェック
       if (!clientId) {
