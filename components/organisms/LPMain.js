@@ -13,11 +13,15 @@ import Link from 'next/link';
 import Card from '../atoms/Card';
 import Icon from '../atoms/Icon';
 import { motion } from 'framer-motion';
+import { supabase } from '../../lib/supabaseClient';
+import LoginModal from '../molecules/LoginModal';
 
 export default function LPMain() {
   const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   // ダミーイベント例
   const eventExamples = [
     {
@@ -78,6 +82,27 @@ export default function LPMain() {
     },
   ];
 
+  // ログイン状態を確認
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        setIsLoggedIn(!!user);
+      } catch (error) {
+        console.error('Login status check error:', error);
+        setIsLoggedIn(false);
+      }
+    };
+    checkLoginStatus();
+
+    // 認証状態の変更を監視
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session?.user);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   // 今すぐ始めるボタンでイベントページへ
   const handleStart = () => router.push('/events');
   const handleCreateEvent = () => router.push('/admin');
@@ -85,15 +110,26 @@ export default function LPMain() {
 
   return (
     <>
-      <Header type="menu" onMenuClick={() => setShowMenu(v => !v)} />
+      <Header type="menu" onMenuClick={() => setShowMenu(v => !v)} onLoginClick={() => setLoginModalOpen(true)} />
       {showMenu && (
         <div className="fixed top-0 left-0 w-full h-full bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowMenu(false)}>
           <div className="bg-white rounded-2xl shadow-xl p-8 min-w-[240px] max-w-[90vw] flex flex-col gap-4" onClick={e => e.stopPropagation()}>
-            <Button onClick={() => { router.push('/auth/line'); setShowMenu(false); }} className="w-full text-base py-3 bg-slate-700">ログイン</Button>
-            <Button onClick={() => { router.push('/events'); setShowMenu(false); }} className="w-full text-base py-3 bg-blue-600">ホーム</Button>
+            {!isLoggedIn ? (
+              <>
+                <Button onClick={() => { setLoginModalOpen(true); setShowMenu(false); }} className="w-full text-base py-3 bg-slate-700">ログイン</Button>
+                <Button onClick={() => { router.push('/events'); setShowMenu(false); }} className="w-full text-base py-3 bg-blue-600">ホーム</Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={() => { router.push('/events'); setShowMenu(false); }} className="w-full text-base py-3 bg-blue-600">ホーム</Button>
+                <Button onClick={() => { router.push('/admin'); setShowMenu(false); }} className="w-full text-base py-3 bg-green-600">新規イベント作成</Button>
+              </>
+            )}
           </div>
         </div>
       )}
+      {/* LoginModal */}
+      <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
       <section className="hero-section flex flex-col items-center justify-start relative overflow-hidden w-full min-h-screen pt-[56px] mt-4 bg-white">
         <div className="w-full max-w-2xl lg:max-w-4xl mx-auto" style={{margin: '0 auto', boxSizing: 'border-box', paddingLeft: '1rem', paddingRight: '1rem', overflowX: 'hidden'}}>
           <h1

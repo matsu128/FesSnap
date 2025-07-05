@@ -6,10 +6,56 @@ import { motion } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
 import Logo from '../atoms/Logo';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function Header({ type = 'default', onMenuClick, onLoginClick, menuColor }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+
+  // ログイン状態を確認
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        setIsLoggedIn(!!user);
+        setUser(user);
+      } catch (error) {
+        console.error('Login status check error:', error);
+        setIsLoggedIn(false);
+        setUser(null);
+      }
+    };
+    checkLoginStatus();
+
+    // 認証状態の変更を監視
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session?.user);
+      setUser(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // ログアウト処理
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Logout error:', error);
+        alert('ログアウトに失敗しました');
+      } else {
+        setIsLoggedIn(false);
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      alert('ログアウトに失敗しました');
+    }
+  };
+
   // ロゴ押下時の遷移先をパスで分岐
   const handleLogoClick = (e) => {
     e.preventDefault();
@@ -19,6 +65,7 @@ export default function Header({ type = 'default', onMenuClick, onLoginClick, me
       router.push('/events');
     }
   };
+
   return (
     <header className="w-full flex items-center justify-between px-4 py-3 backdrop-blur-md shadow-sm fixed top-0 left-0 z-40 bg-transparent">
       {/* ロゴ部分（パスで遷移先分岐） */}
@@ -31,10 +78,16 @@ export default function Header({ type = 'default', onMenuClick, onLoginClick, me
       </motion.div>
       {/* 右側のボタンやメニュー */}
       <div className="flex items-center gap-2">
-        {type === 'login' && (
+        {type === 'login' && !isLoggedIn && (
           <Button onClick={onLoginClick} className="text-sm px-4 py-2">ログイン</Button>
         )}
-        {type === 'menu' && (
+        {type === 'login' && isLoggedIn && (
+          <Button onClick={handleLogout} className="text-sm px-4 py-2 bg-red-600 hover:bg-red-700">ログアウト</Button>
+        )}
+        {type === 'menu' && !isLoggedIn && (
+          <Button onClick={onLoginClick} className="text-sm px-4 py-2">ログイン</Button>
+        )}
+        {type === 'menu' && isLoggedIn && (
           <button onClick={onMenuClick} className={`p-2 rounded-full transition ${menuColor === 'white' ? '' : 'hover:bg-gray-100'}`}>
             <Icon type="menu" className={`w-7 h-7 ${menuColor === 'white' ? 'text-white' : 'text-gray-700'}`} />
           </button>
