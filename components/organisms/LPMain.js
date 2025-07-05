@@ -90,7 +90,7 @@ export default function LPMain() {
         <div className="fixed top-0 left-0 w-full h-full bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowMenu(false)}>
           <div className="bg-white rounded-2xl shadow-xl p-8 min-w-[240px] max-w-[90vw] flex flex-col gap-4" onClick={e => e.stopPropagation()}>
             <Button onClick={() => { router.push('/auth/line'); setShowMenu(false); }} className="w-full text-base py-3 bg-slate-700">ログイン</Button>
-            <Button onClick={() => { router.push('/admin'); setShowMenu(false); }} className="w-full text-base py-3 bg-blue-600">新規イベント作成</Button>
+            <Button onClick={() => { router.push('/events'); setShowMenu(false); }} className="w-full text-base py-3 bg-blue-600">ホーム</Button>
           </div>
         </div>
       )}
@@ -160,7 +160,7 @@ export default function LPMain() {
           </div>
           {/* QRコード画像カード */}
           <div className="flex flex-col items-center w-full mb-4">
-            <div className="bg-white rounded-2xl shadow-lg p-3 max-w-[150px] md:max-w-[180px] lg:max-w-[220px] w-full aspect-square flex items-center justify-center cursor-pointer" onClick={() => setShowQRModal(true)}>
+            <div className="bg-white rounded-2xl shadow-lg p-3 max-w-[150px] md:max-w-[180px] lg:max-w-[220px] w-full aspect-square flex items-center justify-center cursor-pointer" onClick={() => router.push('/events')}>
               <img src="/QR_code.jpg" alt="QRコード" className="w-full h-full object-contain rounded-xl aspect-square" />
             </div>
             {/* 使い方はこちら文言 */}
@@ -171,8 +171,8 @@ export default function LPMain() {
               }}>使い方はこちら</span>
             </div>
             {/* 下向き矢印アニメーション */}
-            <div className="flex justify-center mt-1 mb-2">
-              <span className="block text-5xl md:text-6xl lg:text-7xl text-transparent bg-clip-text bg-gradient-to-b from-blue-400 via-pink-400 to-blue-600 animate-bounce-slow select-none" style={{filter:'drop-shadow(0 2px 8px rgba(0,0,0,0.10))'}}>
+            <div className="flex justify-center mt-2 mb-6 overflow-visible">
+              <span className="block text-6xl md:text-7xl lg:text-8xl font-black text-[#00c6fb] select-none" style={{filter:'drop-shadow(0 2px 8px rgba(0,0,0,0.10))', lineHeight: '1'}}>
                 ↓
               </span>
             </div>
