@@ -192,7 +192,8 @@ export default function LPMain() {
               }}
             >
               <span className="block text-lg sm:text-xl font-bold mt-4">
-                <span className="bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 bg-clip-text text-transparent">あの写真誰が撮ったんだっけ？</span>をなくすサービスです。
+                <span className="bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 bg-clip-text text-transparent">あの写真誰が撮ったんだっけ？</span><br />
+                <span className="text-black">をなくすサービスです。</span>
               </span>
             </p>
           </div>
