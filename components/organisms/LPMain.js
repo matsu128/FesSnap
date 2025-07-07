@@ -163,13 +163,13 @@ export default function LPMain() {
                 wordBreak: 'keep-all',
               }}
             >
-              <span className="block w-full text-center mx-auto max-w-xs sm:max-w-md">
-                <span className="block font-bold mb-2 sm:mb-3 text-base sm:text-lg text-black">
-                  <span className="bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent text-lg sm:text-xl align-middle">QRコード</span>でつながった人だけが
+              <span className="block w-full text-center mx-auto max-w-sm sm:max-w-lg">
+                <span className="block font-bold mb-2 sm:mb-3 text-lg sm:text-xl text-black">
+                  <span className="bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent text-xl sm:text-2xl align-middle">QRコード</span>でつながった人だけが
                 </span>
-                <span className="block font-bold bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 bg-clip-text text-transparent mb-2 sm:mb-3 text-xl sm:text-2xl">写真を投稿・閲覧できる</span>
-                <span className="block font-bold mb-2 sm:mb-3 text-base sm:text-lg text-black">
-                  <span className="bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent text-lg sm:text-xl align-middle">クローズドな空間</span>を提供します。
+                <span className="block font-bold bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 bg-clip-text text-transparent mb-2 sm:mb-3 text-2xl sm:text-3xl">写真を投稿・閲覧できる</span>
+                <span className="block font-bold mb-2 sm:mb-3 text-lg sm:text-xl text-black">
+                  <span className="bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent text-xl sm:text-2xl align-middle">クローズドな空間</span>を提供します。
                 </span>
               </span>
             </h2>
@@ -191,7 +191,7 @@ export default function LPMain() {
                 paddingRight: '0.5rem',
               }}
             >
-              <span className="block text-lg sm:text-xl font-bold mt-4">
+              <span className="block text-xl sm:text-2xl font-bold mt-4">
                 <span className="bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 bg-clip-text text-transparent">あの写真誰が撮ったんだっけ？</span><br />
                 <span className="text-black">をなくすサービスです。</span>
               </span>
@@ -223,7 +223,7 @@ export default function LPMain() {
         <div className="w-full max-w-screen-lg mx-auto px-2" style={{overflowX: 'hidden'}}>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-center mb-4 md:mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg tracking-wide mt-12" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", letterSpacing: '0.08em'}}>使い方</h2>
           <div className="w-full flex justify-center mb-6">
-            <p className="text-center text-xs sm:text-sm md:text-base lg:text-lg font-bold text-gray-700 leading-relaxed max-w-full" style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", lineHeight: '1.7', whiteSpace: 'pre-line'}}>
+            <p className="text-center text-base sm:text-lg md:text-xl font-bold text-gray-700 leading-relaxed mx-auto max-w-sm sm:max-w-lg" style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", lineHeight: '1.7', whiteSpace: 'pre-line'}}>
               <span className="text-[#2563EB]">１：イベントを作成してQRコードを取得</span><br />
               <span className="text-pink-500">２：QRコードをシェアして実際に画像を投稿！</span>
             </p>
