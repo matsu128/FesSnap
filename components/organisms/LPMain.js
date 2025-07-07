@@ -148,59 +148,61 @@ export default function LPMain() {
           >
             FesSnap
           </h1>
-          <h2
-            className="font-extrabold text-white mb-4 tracking-tight leading-tight drop-shadow-xl text-center sm:text-center"
-            style={{
-              fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
-              letterSpacing: '0.04em',
-              textShadow: '0 4px 24px rgba(0,0,0,0.18)',
-              fontSize: 'clamp(1.1rem, 6vw, 2.2rem)',
-              lineHeight: 1.15,
-              maxWidth: '100%',
-              marginLeft: 'auto',
-              marginRight: 'auto',
-              wordBreak: 'keep-all',
-            }}
-          >
-            <span className="bg-gradient-to-r from-blue-400 via-pink-400 to-blue-600 bg-clip-text text-transparent block">
-              <span className="block text-left sm:text-center">イベントの感動を、<span className="sm:hidden"><br /></span></span>
-              <span className="block text-right sm:text-center w-full" style={{display: 'block'}}>
-                <span className="sm:hidden">その場でみんなと。</span>
-                <span className="hidden sm:inline">その場でみんなと。</span>
+          <div className="mb-8 mt-4">
+            <h2
+              className="font-extrabold text-white tracking-tight leading-tight drop-shadow-xl text-center sm:text-center"
+              style={{
+                fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
+                letterSpacing: '0.04em',
+                textShadow: '0 4px 24px rgba(0,0,0,0.18)',
+                fontSize: 'clamp(1.3rem, 6vw, 2.4rem)',
+                lineHeight: 1.15,
+                maxWidth: '100%',
+                marginLeft: 'auto',
+                marginRight: 'auto',
+                wordBreak: 'keep-all',
+              }}
+            >
+              <span className="block w-full text-center mx-auto max-w-xs sm:max-w-md">
+                <span className="block font-bold mb-2 sm:mb-3 text-base sm:text-lg text-black">
+                  <span className="bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent text-lg sm:text-xl align-middle">QRコード</span>でつながった人だけが
+                </span>
+                <span className="block font-bold bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 bg-clip-text text-transparent mb-2 sm:mb-3 text-xl sm:text-2xl">写真を投稿・閲覧できる</span>
+                <span className="block font-bold mb-2 sm:mb-3 text-base sm:text-lg text-black">
+                  <span className="bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent text-lg sm:text-xl align-middle">クローズドな空間</span>を提供します。
+                </span>
               </span>
-            </span>
-          </h2>
-          <p
-            className="font-light mb-8 mx-auto leading-relaxed sm:leading-normal w-full text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600"
-            style={{
-              fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
-              fontSize: 'clamp(1.05rem, 3.5vw, 1.25rem)',
-              maxWidth: '100%',
-              margin: '0 auto',
-              wordBreak: 'keep-all',
-              WebkitTextWrap: 'balance',
-              textWrap: 'balance',
-              lineHeight: 1.5,
-              letterSpacing: '0.01em',
-              boxSizing: 'border-box',
-              overflowX: 'hidden',
-              paddingLeft: '0.5rem',
-              paddingRight: '0.5rem',
-            }}
-          >
-            <span className="block text-center mt-1">新しい写真共有の形を提供します。</span>
-          </p>
-          <div className="flex flex-row gap-6 md:gap-10 justify-center items-center w-full max-w-xs md:max-w-md mx-auto mb-8 mt-10">
-            <Button onClick={handleCreateEvent} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-full font-bold text-base shadow-md transition">イベント作成</Button>
-            <Button onClick={handleTryPost} className="flex-1 bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 hover:from-blue-400 hover:to-pink-400 text-white py-3 rounded-full font-bold text-base shadow-md transition">お試し投稿</Button>
+            </h2>
+            <p
+              className="font-light mx-auto leading-relaxed sm:leading-normal w-full text-center mt-6"
+              style={{
+                fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
+                fontSize: 'clamp(1.05rem, 3.5vw, 1.25rem)',
+                maxWidth: '100%',
+                margin: '0 auto',
+                wordBreak: 'keep-all',
+                WebkitTextWrap: 'balance',
+                textWrap: 'balance',
+                lineHeight: 1.5,
+                letterSpacing: '0.01em',
+                boxSizing: 'border-box',
+                overflowX: 'hidden',
+                paddingLeft: '0.5rem',
+                paddingRight: '0.5rem',
+              }}
+            >
+              <span className="block text-lg sm:text-xl font-bold mt-4">
+                <span className="bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 bg-clip-text text-transparent">あの写真誰が撮ったんだっけ？</span>をなくすサービスです。
+              </span>
+            </p>
           </div>
-          {/* QRコード画像カード */}
+          {/* QRコード画像カード・使い方・下向き矢印 */}
           <div className="flex flex-col items-center w-full mb-4">
             <div className="bg-white rounded-2xl shadow-lg p-3 max-w-[150px] md:max-w-[180px] lg:max-w-[220px] w-full aspect-square flex items-center justify-center cursor-pointer" onClick={() => router.push('/events')}>
               <img src="/QR_code.jpg" alt="QRコード" className="w-full h-full object-contain rounded-xl aspect-square" />
             </div>
             {/* 使い方はこちら文言 */}
-            <div className="w-full flex justify-center mt-4 mb-2">
+            <div className="w-full flex justify-center mt-4 mb-6">
               <span className="text-2xl md:text-3xl font-semibold text-gray-700 text-center select-none cursor-pointer" onClick={() => {
                 const el = document.getElementById('howto');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -218,17 +220,22 @@ export default function LPMain() {
       {/* Features Section（使い方） */}
       <section id="howto" className="px-4 bg-gradient-to-b from-blue-50 to-white w-full" style={{overflowX: 'hidden'}}>
         <div className="w-full max-w-screen-lg mx-auto px-2" style={{overflowX: 'hidden'}}>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-center mb-8 md:mb-12 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg tracking-wide mt-12" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", letterSpacing: '0.08em'}}>使い方</h2>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-center mb-4 md:mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg tracking-wide mt-12" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", letterSpacing: '0.08em'}}>使い方</h2>
+          <div className="w-full flex justify-center mb-6">
+            <p className="text-center text-xs sm:text-sm md:text-base lg:text-lg font-bold text-gray-700 leading-relaxed max-w-full" style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", lineHeight: '1.7', whiteSpace: 'pre-line'}}>
+              <span className="text-[#2563EB]">１：イベントを作成してQRコードを取得</span><br />
+              <span className="text-pink-500">２：QRコードをシェアして実際に画像を投稿！</span>
+            </p>
+          </div>
           <div className="relative flex flex-col md:flex-row gap-8 md:gap-12 justify-center items-stretch w-full" style={{overflowX: 'hidden'}}>
-            {/* Feature 0: 1：QRコード読み込み\n2：画像投稿（再生ボタン付き） */}
-            <div className="flex flex-col items-center mb-6 w-full max-w-[240px] mx-auto">
-              <h3 className="text-lg font-bold mb-2 text-center text-blue-700 whitespace-pre-line" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>1：QRコード読み込み{`\n`}2：画像投稿</h3>
-              <VideoWithPlayButton src="/publish_image_demo.mp4" />
-            </div>
-            {/* Feature 1: イベント作成 */}
+            {/* 並び順を逆に：まずイベント作成、次にQRコード読み込み */}
             <div className="flex flex-col items-center mb-10 w-full max-w-[240px] mx-auto">
-              <h3 className="text-lg font-bold mb-2 text-center text-blue-700" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>イベント作成</h3>
+              <h3 className="text-lg font-bold mb-2 text-center text-[#2563EB]" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>1：イベント作成</h3>
               <VideoWithPlayButton src="/create_event.mp4" />
+            </div>
+            <div className="flex flex-col items-center mb-6 w-full max-w-[240px] mx-auto">
+              <h3 className="text-lg font-bold mb-2 text-center text-pink-500 whitespace-pre-line" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>2：画像投稿</h3>
+              <VideoWithPlayButton src="/publish_image_demo.mp4" />
             </div>
           </div>
           <div className="mt-4" />
