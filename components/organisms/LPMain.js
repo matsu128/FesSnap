@@ -233,10 +233,12 @@ export default function LPMain() {
             <div className="flex flex-col items-center mb-10 w-full max-w-[240px] mx-auto">
               <h3 className="text-lg font-bold mb-2 text-center text-[#2563EB]" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>1：イベント作成</h3>
               <VideoWithPlayButton src="/create_event.mp4" />
+              <Button className="mt-3 w-full bg-[#2563EB] text-white font-bold py-2 rounded-full shadow-md hover:bg-blue-700 transition" onClick={() => router.push('/admin')}>イベントを作成してみる</Button>
             </div>
             <div className="flex flex-col items-center mb-6 w-full max-w-[240px] mx-auto">
               <h3 className="text-lg font-bold mb-2 text-center text-pink-500 whitespace-pre-line" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>2：画像投稿</h3>
               <VideoWithPlayButton src="/publish_image_demo.mp4" />
+              <Button className="mt-3 w-full bg-pink-500 text-white font-bold py-2 rounded-full shadow-md hover:bg-pink-600 transition" onClick={() => router.push('/events/630316dc-a3a3-4a16-98c5-ae7a3094533e/post')}>画像投稿を試してみる</Button>
             </div>
           </div>
           <div className="mt-4" />
