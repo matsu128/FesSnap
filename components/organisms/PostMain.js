@@ -11,6 +11,7 @@ import CustomCameraModal from './CustomCameraModal';
 import { supabase } from '../../lib/supabaseClient';
 import LoginModal from '../molecules/LoginModal';
 import LikeButton from '../atoms/LikeButton';
+import { useAuth } from '../../contexts/AuthContext';
 
 function getPageSize() {
   if (typeof window !== 'undefined') {
@@ -33,7 +34,30 @@ function isMobile() {
   return isIOS() || isAndroid();
 }
 
+// 1時間操作がなければ自動ログアウト
+function useAutoLogout() {
+  const timerRef = useRef(null);
+  useEffect(() => {
+    const resetTimer = () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        supabase.auth.signOut();
+        window.location.reload();
+      }, 60 * 60 * 1000); // 1時間
+    };
+    const events = ['mousemove', 'keydown', 'mousedown', 'touchstart'];
+    events.forEach(event => window.addEventListener(event, resetTimer));
+    resetTimer();
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
+    };
+  }, []);
+}
+
 export default function PostMain() {
+  useAutoLogout();
+  const { isLoggedIn, user, signOut, signIn, signUp, signInWithOAuth } = useAuth();
   const [images, setImages] = useState([]);
   const [showMenu, setShowMenu] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
@@ -49,16 +73,17 @@ export default function PostMain() {
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [modalImageIndex, setModalImageIndex] = useState(null);
   const [showSelectModal, setShowSelectModal] = useState(false);
-  const [eventDate, setEventDate] = useState(null);
+  const [eventCreatedAt, setEventCreatedAt] = useState(null);
   const [showPostError, setShowPostError] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [eventTitle, setEventTitle] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [pageSize, setPageSize] = useState(getPageSize());
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [sortType, setSortType] = useState('newest'); // newest or popular
   const [uploadError, setUploadError] = useState("");
   const [showLoginGuideModal, setShowLoginGuideModal] = useState(false);
+  const [likeEnabled, setLikeEnabled] = useState(false);
+  const [showLikeLoginGuideModal, setShowLikeLoginGuideModal] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setPageSize(getPageSize());
@@ -72,24 +97,6 @@ export default function PostMain() {
   }, [eventId]);
 
   useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setIsLoggedIn(!!user);
-      } catch (error) {
-        console.error('Login status check error:', error);
-        setIsLoggedIn(false);
-      }
-    };
-    checkLoginStatus();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsLoggedIn(!!session?.user);
-    });
-    return () => subscription.unsubscribe();
-  }, [eventId]);
-
-  useEffect(() => {
-    if (!eventId) return;
     const channel = supabase
       .channel('images_changes')
       .on(
@@ -121,20 +128,19 @@ export default function PostMain() {
 
   // いいね処理（ログイン必須・カウントのみ）
   const handleLike = async (imageId) => {
-    // 毎回supabaseで厳密にログインチェック
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      setLoginModalOpen(true);
+      setShowLikeLoginGuideModal(true);
       return;
     }
     try {
       const currentImage = images.find(img => img.id === imageId);
       if (!currentImage) return;
       const newLikeCount = (currentImage.like_count || 0) + 1;
-      const { error } = await supabase
+      const { data, error, status, statusText } = await supabase
         .from('images')
         .update({ like_count: newLikeCount })
         .eq('id', imageId);
+      console.log('[Like] DB更新レスポンス:', { data, error, status, statusText });
       if (!error) {
         setImages(prev => prev.map(img =>
           img.id === imageId ? { ...img, like_count: newLikeCount } : img
@@ -164,35 +170,27 @@ export default function PostMain() {
     return sortedImages;
   };
 
-  // イベント日付取得
+  // イベント作成日・タイトル・いいね有効フラグ取得
   useEffect(() => {
     if (!eventId) return;
     fetch('/api/events')
       .then(res => res.json())
       .then(data => {
         const event = data.find(e => e.id === eventId);
-        setEventDate(event?.date || null);
+        setEventCreatedAt(event?.created_at || null);
         setEventTitle(event?.title || "");
+        setLikeEnabled(!!event?.like_enabled);
       });
   }, [eventId]);
 
-  // JSTで今日の日付を取得
-  function getTodayJST() {
-    const now = new Date();
-    const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-    return jst.toISOString().slice(0, 10);
-  }
-
   // 投稿許可判定
   const isPostAllowed = (() => {
-    if (eventId === '630316dc-a3a3-4a16-98c5-ae7a3094533e') return true; // id=1は常に投稿可能
-    if (!eventDate) return false;
-    const event = new Date(eventDate);
-    const nextDay = new Date(eventDate);
-    nextDay.setDate(event.getDate() + 1);
-    const yyyyMMdd = d => d.toISOString().slice(0, 10);
-    const todayJST = getTodayJST();
-    return todayJST === yyyyMMdd(event) || todayJST === yyyyMMdd(nextDay);
+    if (eventId === '630316dc-a3a3-4a16-98c5-ae7a3094533e') return true; // デモイベントは常に投稿可
+    if (!eventCreatedAt) return false;
+    const created = new Date(eventCreatedAt);
+    const now = new Date();
+    const diffDays = (now - created) / (1000 * 60 * 60 * 24);
+    return diffDays >= 0 && diffDays < 7;
   })();
 
   // 投稿画像のソート処理
@@ -383,18 +381,6 @@ export default function PostMain() {
     setShowImageModal(true);
   };
 
-  // 日付を日本語表記に変換する関数
-  function formatJPDate(dateStr) {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
-  }
-  function getNextDay(dateStr) {
-    const d = new Date(dateStr);
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 10);
-  }
-
   // 複数ファイル対応
   const handleUpload = async (files) => {
     setUploadError("");
@@ -457,7 +443,11 @@ export default function PostMain() {
       {showMenu && (
         <div className="fixed top-0 left-0 w-full h-full bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowMenu(false)}>
           <div className="bg-white rounded-2xl shadow-xl p-8 min-w-[240px] max-w-[90vw] flex flex-col gap-4" onClick={e => e.stopPropagation()}>
-            <Button onClick={() => { setLoginModalOpen(true); setShowMenu(false); }} className="w-full text-base py-3 bg-slate-700">ログイン</Button>
+            {!isLoggedIn ? (
+              <Button onClick={() => { setLoginModalOpen(true); setShowMenu(false); }} className="w-full text-base py-3 bg-slate-700">ログイン</Button>
+            ) : (
+              <Button onClick={async () => { await signOut(); setShowMenu(false); }} className="w-full text-base py-3 bg-red-600">ログアウト</Button>
+            )}
             <Button onClick={() => { router.push('/admin'); setShowMenu(false); }} className="w-full text-base py-3 bg-blue-600">新規イベント作成</Button>
           </div>
         </div>
@@ -485,7 +475,7 @@ export default function PostMain() {
       </div>
       
       {/* 絞り込みボタン */}
-      {eventId !== '630316dc-a3a3-4a16-98c5-ae7a3094533e' && (
+      {likeEnabled && eventId !== '630316dc-a3a3-4a16-98c5-ae7a3094533e' && (
         <div className="w-full max-w-[400px] flex gap-2 mb-4 px-2 sm:px-0">
           <Button 
             onClick={() => setSortType('popular')} 
@@ -536,9 +526,8 @@ export default function PostMain() {
       <Modal isOpen={showPostError} onClose={() => setShowPostError(false)}>
         <div className="flex flex-col items-center p-6">
           <div className="font-bold text-lg text-red-600 mb-2">投稿できません</div>
-          <div className="text-base text-gray-700 mb-2">このイベントの投稿受付期間は</div>
-          <div className="text-base font-bold mb-2">{formatJPDate(eventDate)} ～ {formatJPDate(getNextDay(eventDate))}</div>
-          <div className="text-sm text-red-400 mb-4">※期間外は画像投稿できません</div>
+          <div className="text-base text-gray-700 mb-2">このイベントの投稿受付期間は終了しました</div>
+          <div className="text-sm text-red-400 mb-4">※イベント作成日から7日間のみ投稿可能です</div>
           <Button onClick={() => setShowPostError(false)} className="w-32 bg-slate-700">閉じる</Button>
         </div>
       </Modal>
@@ -569,7 +558,7 @@ export default function PostMain() {
           if (idx < startIdx || idx >= endIdx) return null;
 
           // idが「630316dc-a3a3-4a16-98c5-ae7a3094533e」の場合はいいね機能を表示しない
-          const showLike = eventId !== '630316dc-a3a3-4a16-98c5-ae7a3094533e';
+          const showLike = likeEnabled && eventId !== '630316dc-a3a3-4a16-98c5-ae7a3094533e';
 
           return (
             <div
@@ -582,8 +571,8 @@ export default function PostMain() {
                 <LikeButton
                   imageId={img.id}
                   likeCount={img.like_count}
-                  onLike={() => fetchImages()}
-                  disabled={!isLoggedIn}
+                  onLike={() => handleLike(img.id)}
+                  disabled={false}
                 />
               )}
             </div>
@@ -644,6 +633,14 @@ export default function PostMain() {
             </div>
           </div>
         ) : null}
+      </Modal>
+      {/* いいね未ログイン案内モーダル */}
+      <Modal isOpen={showLikeLoginGuideModal} onClose={() => setShowLikeLoginGuideModal(false)}>
+        <div className="flex flex-col items-center p-6">
+          <div className="font-bold text-lg text-blue-600 mb-2">ログインすると「いいね」できます</div>
+          <div className="text-base text-gray-700 mb-4">この機能を利用するにはログインが必要です</div>
+          <Button onClick={() => { setShowLikeLoginGuideModal(false); setLoginModalOpen(true); }} className="w-40 bg-slate-700">ログインする</Button>
+        </div>
       </Modal>
       {/* 戻るボタン */}
       <Button onClick={handleBack} className="mb-8 mt-2 px-8 py-3 bg-slate-700 w-full max-w-[400px]">イベント詳細ページへ戻る</Button>

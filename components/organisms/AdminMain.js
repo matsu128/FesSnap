@@ -29,6 +29,7 @@ export default function AdminMain() {
   const [missingFields, setMissingFields] = useState([]);
   const [qrTouched, setQrTouched] = useState(false);
   const [qrEventId, setQrEventId] = useState(null);
+  const [likeEnabled, setLikeEnabled] = useState(false);
   const router = useRouter();
 
   // イベントデータ取得
@@ -41,6 +42,7 @@ export default function AdminMain() {
           id: '',
           title: '',
         });
+        setLikeEnabled(false);
       });
   }, []);
 
@@ -48,6 +50,7 @@ export default function AdminMain() {
   const handleEventSwitch = (event) => {
     setSelectedEvent(event);
     setShowEventModal(false);
+    setLikeEnabled(!!event.like_enabled);
   };
 
   // QRコード生成
@@ -67,12 +70,7 @@ export default function AdminMain() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: selectedEvent?.title,
-          date: new Date().toISOString().slice(0, 10),
-          region: '',
-          category: '',
-          desc: '',
-          price: null,
-          capacity: null
+          like_enabled: likeEnabled
         })
       });
       const data = await res.json();
@@ -170,7 +168,7 @@ export default function AdminMain() {
       link.href = dataUrl;
       link.click();
     } catch (error) {
-      console.error('画像保存エラー:', error);
+      // 画像保存エラー: error;
     }
   }
 
@@ -191,6 +189,13 @@ export default function AdminMain() {
           <Input value={selectedEvent?.title || ''} onChange={e => {
             setSelectedEvent({ ...selectedEvent, title: e.target.value.slice(0,10) });
           }} placeholder="タイトル" maxLength={10} className={`mb-1 text-lg py-3 text-black text-center ${(qrTouched && missingFields.includes('title')) ? 'ring-2 ring-red-400' : ''}`} />
+        </div>
+        {/* いいね機能トグル */}
+        <div className="flex items-center gap-2 justify-center mt-2">
+          <input type="checkbox" id="likeEnabled" checked={likeEnabled} onChange={e => setLikeEnabled(e.target.checked)} className="w-5 h-5 accent-pink-500" />
+          <label htmlFor="likeEnabled" className="text-base font-bold text-pink-500 select-none" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
+            いいね機能をつける
+          </label>
         </div>
       </div>
       {/* エラー表示 */}

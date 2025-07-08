@@ -2,31 +2,20 @@ import Modal from '../atoms/Modal';
 import Button from '../atoms/Button';
 import Icon from '../atoms/Icon';
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function LoginModal({ isOpen, onClose }) {
+  const { isLoggedIn, signIn, signUp, signInWithOAuth } = useAuth();
   const [showSignUp, setShowSignUp] = useState(false);
   const [showEmailConfirm, setShowEmailConfirm] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   
   // 認証状態の変更を監視
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        // メール確認完了後のログイン成功
-        if (showEmailConfirm) {
-          setShowEmailConfirm(false);
-          alert('メール確認が完了しました！ログインしました。');
-          onClose();
-        } else {
-          // OAuth認証成功時（Google・LINE）
-          onClose();
-        }
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [showEmailConfirm, onClose]);
+    if (isLoggedIn && isOpen) {
+      onClose();
+    }
+  }, [isLoggedIn, isOpen, onClose]);
   
   return (
     <>
@@ -89,6 +78,7 @@ export default function LoginModal({ isOpen, onClose }) {
 }
 
 function EmailLoginForm({ isSignUp, onSwitch, onEmailConfirm, onClose }) {
+  const { signIn, signUp } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -99,7 +89,7 @@ function EmailLoginForm({ isSignUp, onSwitch, onEmailConfirm, onClose }) {
     
     try {
       if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await signUp(email, password);
         
         if (error) {
           // エラーメッセージを日本語化
@@ -127,7 +117,7 @@ function EmailLoginForm({ isSignUp, onSwitch, onEmailConfirm, onClose }) {
           }
         }
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await signIn(email, password);
         if (error) {
           // エラーメッセージを日本語化
           let errorMessage = 'ログインに失敗しました';
@@ -165,6 +155,7 @@ function EmailLoginForm({ isSignUp, onSwitch, onEmailConfirm, onClose }) {
 }
 
 function OAuthButton({ provider, label, icon, isLine }) {
+  const { signInWithOAuth } = useAuth();
   const handleOAuth = () => {
     if (isLine) {
       const clientId = process.env.NEXT_PUBLIC_LINE_CLIENT_ID || (typeof window !== 'undefined' ? window.NEXT_PUBLIC_LINE_CLIENT_ID : '');
@@ -184,22 +175,15 @@ function OAuthButton({ provider, label, icon, isLine }) {
       // 直接LINE認証ページに遷移
       window.location.href = lineAuthUrl;
     } else {
-      supabase.auth.signInWithOAuth({ 
-        provider,
-        options: {
-          redirectTo: window.location.origin,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
+      signInWithOAuth(provider)
+        .then(({ data, error }) => {
+          if (error) {
+            alert('OAuth認証に失敗しました: ' + error.message);
           }
-        }
-      }).then(({ data, error }) => {
-        if (error) {
-          alert('OAuth認証に失敗しました: ' + error.message);
-        }
-      }).catch((e) => {
-        alert('OAuth認証でエラーが発生しました: ' + e.message);
-      });
+        })
+        .catch((e) => {
+          alert('OAuth認証でエラーが発生しました: ' + e.message);
+        });
     }
   };
   

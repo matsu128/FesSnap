@@ -4,21 +4,9 @@ import { useState } from 'react';
 export default function LikeButton({ imageId, likeCount, onLike, disabled }) {
   const [loading, setLoading] = useState(false);
 
-  const handleLike = async () => {
-    if (disabled || loading) return;
-    setLoading(true);
-    try {
-      // ログインチェックは親で行う前提
-      const { error } = await supabase
-        .from('images')
-        .update({ like_count: (likeCount || 0) + 1 })
-        .eq('id', imageId);
-      if (!error && onLike) {
-        onLike();
-      }
-    } finally {
-      setLoading(false);
-    }
+  const handleLike = () => {
+    if (disabled) return;
+    if (onLike) onLike();
   };
 
   return (
@@ -26,7 +14,7 @@ export default function LikeButton({ imageId, likeCount, onLike, disabled }) {
       type="button"
       className="absolute bottom-1 right-1 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-1.5 flex items-center gap-1 text-white text-xs transition-all duration-200 cursor-pointer backdrop-blur-sm"
       onClick={e => { e.stopPropagation(); handleLike(); }}
-      disabled={disabled || loading}
+      disabled={disabled}
       aria-label="いいね"
     >
       <svg

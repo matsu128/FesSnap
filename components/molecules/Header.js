@@ -6,50 +6,20 @@ import { motion } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
 import Logo from '../atoms/Logo';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function Header({ type = 'default', onMenuClick, onLoginClick, menuColor }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
+  const { isLoggedIn, user, signOut } = useAuth();
 
-  // ログイン状態を確認
-  useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setIsLoggedIn(!!user);
-        setUser(user);
-      } catch (error) {
-        console.error('Login status check error:', error);
-        setIsLoggedIn(false);
-        setUser(null);
-      }
-    };
-    checkLoginStatus();
-
-    // 認証状態の変更を監視
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsLoggedIn(!!session?.user);
-      setUser(session?.user || null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  // 追加
+  console.log('[Header] render. type:', type, 'isLoggedIn:', isLoggedIn, 'user:', user);
 
   // ログアウト処理
   const handleLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Logout error:', error);
-        alert('ログアウトに失敗しました');
-      } else {
-        setIsLoggedIn(false);
-        setUser(null);
-      }
+      await signOut();
     } catch (error) {
       console.error('Logout error:', error);
       alert('ログアウトに失敗しました');

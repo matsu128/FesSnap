@@ -11,6 +11,7 @@ import { supabase } from '../../lib/supabaseClient';
 import Modal from '../atoms/Modal';
 import LoginModal from '../molecules/LoginModal';
 import html2canvas from 'html2canvas';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function EventDetailMain() {
   const [event, setEvent] = useState(null);
@@ -23,6 +24,7 @@ export default function EventDetailMain() {
   const eventId = params?.eventId;
   const qrInfoRef = useRef();
   const [qrBase64, setQrBase64] = useState('');
+  const { isLoggedIn, signOut } = useAuth();
 
   // イベントデータ取得
   useEffect(() => {
@@ -122,7 +124,11 @@ export default function EventDetailMain() {
       {showMenu && (
         <div className="fixed top-0 left-0 w-full h-full bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowMenu(false)}>
           <div className="bg-white rounded-2xl shadow-xl p-8 min-w-[240px] max-w-[90vw] flex flex-col gap-4" onClick={e => e.stopPropagation()}>
-            <Button onClick={() => { setLoginModalOpen(true); setShowMenu(false); }} className="w-full text-base py-3 bg-slate-700">ログイン</Button>
+            {!isLoggedIn ? (
+              <Button onClick={() => { setLoginModalOpen(true); setShowMenu(false); }} className="w-full text-base py-3 bg-slate-700">ログイン</Button>
+            ) : (
+              <Button onClick={async () => { await signOut(); setShowMenu(false); }} className="w-full text-base py-3 bg-red-600">ログアウト</Button>
+            )}
             <Button onClick={() => { router.push('/admin'); setShowMenu(false); }} className="w-full text-base py-3 bg-blue-600">新規イベント作成</Button>
           </div>
         </div>

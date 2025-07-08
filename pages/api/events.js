@@ -2,19 +2,25 @@ import { supabase } from '../../lib/supabaseClient';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    // 全イベント取得
-    const { data, error } = await supabase.from('events').select('*').order('created_at', { ascending: false });
+    // イベント一覧取得
+    const { data, error } = await supabase
+      .from('events')
+      .select('id, title, like_enabled, created_at'); // dateは取得しない
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json(data);
   }
   if (req.method === 'POST') {
     // 新規イベント作成
-    const { title, date, region, category, desc, price, capacity } = req.body;
-    const { data, error } = await supabase.from('events').insert([
-      { title, date, region, category, desc, price, capacity }
-    ]).select().single();
+    const { title, like_enabled } = req.body;
+    if (!title) return res.status(400).json({ error: 'タイトル必須' });
+    const { data, error } = await supabase
+      .from('events')
+      .insert([
+        { title, like_enabled } // dateは送信しない
+      ])
+      .select();
     if (error) return res.status(500).json({ error: error.message });
-    return res.status(201).json(data);
+    return res.status(200).json(data[0]);
   }
   res.status(405).json({ error: 'Method not allowed' });
 } 
