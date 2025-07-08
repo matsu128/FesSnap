@@ -35,7 +35,6 @@ export function AuthProvider({ children }) {
       if (user) {
         localStorage.setItem('lastLoginAt', Date.now().toString());
       }
-      console.log('[AuthContext] checkLoginStatus user:', user, 'isLoggedIn:', !!user);
     };
     checkLoginStatus();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -44,7 +43,6 @@ export function AuthProvider({ children }) {
       if (session?.user) {
         localStorage.setItem('lastLoginAt', Date.now().toString());
       }
-      console.log('[AuthContext] onAuthStateChange event:', event, 'user:', session?.user, 'isLoggedIn:', !!session?.user);
     });
     return () => subscription.unsubscribe();
   }, []);

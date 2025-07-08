@@ -13,9 +13,6 @@ export default function Header({ type = 'default', onMenuClick, onLoginClick, me
   const pathname = usePathname();
   const { isLoggedIn, user, signOut } = useAuth();
 
-  // 追加
-  console.log('[Header] render. type:', type, 'isLoggedIn:', isLoggedIn, 'user:', user);
-
   // ログアウト処理
   const handleLogout = async () => {
     try {
