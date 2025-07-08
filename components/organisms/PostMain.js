@@ -10,6 +10,7 @@ import { useRouter, useParams } from 'next/navigation';
 import CustomCameraModal from './CustomCameraModal';
 import { supabase } from '../../lib/supabaseClient';
 import LoginModal from '../molecules/LoginModal';
+import LikeButton from '../atoms/LikeButton';
 
 function getPageSize() {
   if (typeof window !== 'undefined') {
@@ -38,7 +39,6 @@ export default function PostMain() {
   const [showPostModal, setShowPostModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [tab, setTab] = useState('mine'); // mine or friends
   const [page, setPage] = useState(1);
   const router = useRouter();
   const params = useParams();
@@ -53,9 +53,12 @@ export default function PostMain() {
   const [showPostError, setShowPostError] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [eventTitle, setEventTitle] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // 追加: ログイン状態（仮実装）
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [pageSize, setPageSize] = useState(getPageSize());
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [sortType, setSortType] = useState('newest'); // newest or popular
+  const [uploadError, setUploadError] = useState("");
+  const [showLoginGuideModal, setShowLoginGuideModal] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setPageSize(getPageSize());
@@ -63,10 +66,48 @@ export default function PostMain() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 画像データ取得
   useEffect(() => {
     if (!eventId) return;
     fetchImages();
+  }, [eventId]);
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        setIsLoggedIn(!!user);
+      } catch (error) {
+        console.error('Login status check error:', error);
+        setIsLoggedIn(false);
+      }
+    };
+    checkLoginStatus();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session?.user);
+    });
+    return () => subscription.unsubscribe();
+  }, [eventId]);
+
+  useEffect(() => {
+    if (!eventId) return;
+    const channel = supabase
+      .channel('images_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'images',
+          filter: `eventId=eq.${eventId}`
+        },
+        (payload) => {
+          fetchImages();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [eventId]);
 
   const fetchImages = async () => {
@@ -76,6 +117,51 @@ export default function PostMain() {
       .eq('eventId', eventId)
       .order('created_at', { ascending: false });
     if (!error) setImages(data);
+  };
+
+  // いいね処理（ログイン必須・カウントのみ）
+  const handleLike = async (imageId) => {
+    // 毎回supabaseで厳密にログインチェック
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setLoginModalOpen(true);
+      return;
+    }
+    try {
+      const currentImage = images.find(img => img.id === imageId);
+      if (!currentImage) return;
+      const newLikeCount = (currentImage.like_count || 0) + 1;
+      const { error } = await supabase
+        .from('images')
+        .update({ like_count: newLikeCount })
+        .eq('id', imageId);
+      if (!error) {
+        setImages(prev => prev.map(img =>
+          img.id === imageId ? { ...img, like_count: newLikeCount } : img
+        ));
+      }
+    } catch (error) {
+      console.error('いいね処理エラー:', error);
+    }
+  };
+
+  // ソート処理
+  const getSortedImages = () => {
+    let sortedImages = [...images];
+    
+    if (sortType === 'popular') {
+      // いいね数でソート
+      sortedImages.sort((a, b) => {
+        const likesA = a.like_count || 0;
+        const likesB = b.like_count || 0;
+        return likesB - likesA;
+      });
+    } else {
+      // 新しい順（デフォルト）
+      sortedImages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+    
+    return sortedImages;
   };
 
   // イベント日付取得
@@ -109,10 +195,10 @@ export default function PostMain() {
     return todayJST === yyyyMMdd(event) || todayJST === yyyyMMdd(nextDay);
   })();
 
-  // 投稿画像の絞り込み（ダミー：ユーザーIDで分岐）
-  const filteredImages = images.filter(img => tab === 'mine' ? img.user === 'user1' : img.user !== 'user1');
+  // 投稿画像のソート処理
+  const sortedImages = getSortedImages();
   // ページネーションは全画像数で計算
-  const totalPages = Math.ceil(images.length / pageSize);
+  const totalPages = Math.ceil(sortedImages.length / pageSize);
 
   // カメラ対応判定（スマホ端末のみ）
   const isCameraSupported = () => {
@@ -171,15 +257,63 @@ export default function PostMain() {
     fileInputRef.current.click();
   };
   // 投稿処理
-  const handlePost = () => {
+  const handlePost = async () => {
     if (!capturedImage) return;
-    const newImg = {
-      id: `img${Date.now()}`,
-      url: capturedImage,
-      user: 'user1',
-      date: new Date().toISOString().slice(0, 10)
-    };
-    setImages(prev => [...prev, newImg]);
+    setUploadError("");
+    try {
+      setIsUploading(true);
+      // 画像をbase64からBlobに変換
+      const res = await fetch(capturedImage);
+      const blob = await res.blob();
+      const fileExt = 'jpg';
+      const fileName = `${eventId}_${Date.now()}.${fileExt}`;
+      // ストレージにアップロード
+      const { error: uploadError } = await supabase.storage
+        .from('event-image')
+        .upload(fileName, blob, { contentType: 'image/jpeg' });
+      if (uploadError) {
+        console.error('アップロード失敗:', uploadError.message, uploadError);
+        setUploadError('アップロード失敗: ' + uploadError.message);
+        setIsUploading(false);
+        return;
+      }
+      const { publicUrl } = supabase.storage.from('event-image').getPublicUrl(fileName).data;
+      if (!publicUrl) {
+        console.error('画像URL取得失敗');
+        setUploadError('画像URL取得失敗');
+        setIsUploading(false);
+        return;
+      }
+      // DBに保存
+      const { error: dbError } = await supabase
+        .from('images')
+        .insert([{ 
+          eventId, 
+          url: publicUrl, 
+          user: 'anonymous', 
+          date: new Date().toISOString().slice(0, 10),
+          like_count: 0
+        }]);
+      if (dbError) {
+        console.error('DB保存失敗:', dbError.message, dbError);
+        setUploadError('DB保存失敗: ' + dbError.message);
+        setIsUploading(false);
+        return;
+      }
+      // DB保存後に未ログインなら案内モーダル発火
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setShowLoginGuideModal(true);
+        setSelectedImage({ url: publicUrl });
+        setShowImageModal(true);
+      }
+      fetchImages();
+      setIsUploading(false);
+    } catch (e) {
+      console.error('予期せぬエラー:', e);
+      setUploadError('予期せぬエラー: ' + e.message);
+      setIsUploading(false);
+    }
     setCapturedImage(null);
     setShowImageModal(false);
   };
@@ -191,7 +325,7 @@ export default function PostMain() {
 
   // 画像拡大モーダル
   const handleImageClick = (img) => {
-    const idx = filteredImages.findIndex(i => i.id === img.id);
+    const idx = sortedImages.findIndex(i => i.id === img.id);
     setSelectedImage(img);
     setModalImageIndex(idx);
     setShowImageModal(true);
@@ -199,14 +333,14 @@ export default function PostMain() {
   const handlePrevImage = () => {
     if (modalImageIndex > 0) {
       const prevIdx = modalImageIndex - 1;
-      setSelectedImage(filteredImages[prevIdx]);
+      setSelectedImage(sortedImages[prevIdx]);
       setModalImageIndex(prevIdx);
     }
   };
   const handleNextImage = () => {
-    if (modalImageIndex < filteredImages.length - 1) {
+    if (modalImageIndex < sortedImages.length - 1) {
       const nextIdx = modalImageIndex + 1;
-      setSelectedImage(filteredImages[nextIdx]);
+      setSelectedImage(sortedImages[nextIdx]);
       setModalImageIndex(nextIdx);
     }
   };
@@ -263,6 +397,7 @@ export default function PostMain() {
 
   // 複数ファイル対応
   const handleUpload = async (files) => {
+    setUploadError("");
     try {
       setIsUploading(true);
       for (let i = 0; i < files.length; i++) {
@@ -274,29 +409,42 @@ export default function PostMain() {
           .upload(fileName, file, { contentType: file.type });
         if (uploadError) {
           console.error('アップロード失敗:', uploadError.message, uploadError);
-          alert('アップロード失敗: ' + uploadError.message);
+          setUploadError('アップロード失敗: ' + uploadError.message);
           continue; // 他のファイルは続行
         }
         const { publicUrl } = supabase.storage.from('event-image').getPublicUrl(fileName).data;
         if (!publicUrl) {
           console.error('画像URL取得失敗');
-          alert('画像URL取得失敗');
+          setUploadError('画像URL取得失敗');
           continue;
         }
         const { error: dbError } = await supabase
           .from('images')
-          .insert([{ eventId, url: publicUrl, user: 'anonymous', date: new Date().toISOString().slice(0, 10) }]);
+          .insert([{ 
+            eventId, 
+            url: publicUrl, 
+            user: 'anonymous', 
+            date: new Date().toISOString().slice(0, 10),
+            like_count: 0
+          }]);
         if (dbError) {
           console.error('DB保存失敗:', dbError.message, dbError);
-          alert('DB保存失敗: ' + dbError.message);
+          setUploadError('DB保存失敗: ' + dbError.message);
           continue;
+        }
+        // DB保存後に未ログインなら案内モーダル発火
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setShowLoginGuideModal(true);
+          setSelectedImage({ url: publicUrl });
+          setShowImageModal(true);
         }
       }
       fetchImages();
       setIsUploading(false);
     } catch (e) {
       console.error('予期せぬエラー:', e);
-      alert('予期せぬエラー: ' + e.message);
+      setUploadError('予期せぬエラー: ' + e.message);
       setIsUploading(false);
     }
   };
@@ -331,7 +479,47 @@ export default function PostMain() {
             if (e.target.files && e.target.files.length > 0) handleUpload(Array.from(e.target.files));
           }} />
         </div>
+        {uploadError && (
+          <div className="w-full text-center text-red-600 font-bold mt-2 text-sm break-words">{uploadError}</div>
+        )}
       </div>
+      
+      {/* 絞り込みボタン */}
+      {eventId !== '630316dc-a3a3-4a16-98c5-ae7a3094533e' && (
+        <div className="w-full max-w-[400px] flex gap-2 mb-4 px-2 sm:px-0">
+          <Button 
+            onClick={() => setSortType('popular')} 
+            className={`flex-1 py-2.5 text-sm font-bold transition-all duration-200 ${
+              sortType === 'popular' 
+                ? 'bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white shadow-lg scale-105' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-1">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+              人気順
+            </div>
+          </Button>
+          <Button 
+            onClick={() => setSortType('newest')} 
+            className={`flex-1 py-2.5 text-sm font-bold transition-all duration-200 ${
+              sortType === 'newest' 
+                ? 'bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white shadow-lg scale-105' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-1">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+              新しい順
+            </div>
+          </Button>
+        </div>
+      )}
+
       {/* アップロード中ローディング表示 */}
       {isUploading && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-40">
@@ -370,29 +558,34 @@ export default function PostMain() {
           <Button onClick={() => setShowCameraAlert(false)} className="w-32 bg-slate-700">閉じる</Button>
         </div>
       </Modal>
-      {/* 自分/友達の投稿切替（ログイン時のみ表示） */}
-      {isLoggedIn && (
-        <div className="w-full max-w-[400px] flex justify-between mb-2 px-2 sm:px-0">
-          <Button onClick={() => setTab('mine')} active={tab === 'mine'} className={`flex-1 mr-1`}>自分の投稿</Button>
-          <Button onClick={() => setTab('friends')} active={tab === 'friends'} className={`flex-1 ml-1`}>友達の投稿</Button>
-        </div>
-      )}
       {/* 画像グリッド */}
       <div className="w-full max-w-[400px] grid grid-cols-3 md:grid-cols-5 gap-2 mb-8 md:mb-4 px-2 sm:px-0">
-        {images.length === 0 && (
+        {sortedImages.length === 0 && (
           <div className="w-full text-center text-gray-400 py-12">画像を投稿しよう！</div>
         )}
-        {images.map((img, idx) => {
+        {sortedImages.map((img, idx) => {
           const startIdx = (page - 1) * pageSize;
           const endIdx = page * pageSize;
           if (idx < startIdx || idx >= endIdx) return null;
+
+          // idが「630316dc-a3a3-4a16-98c5-ae7a3094533e」の場合はいいね機能を表示しない
+          const showLike = eventId !== '630316dc-a3a3-4a16-98c5-ae7a3094533e';
+
           return (
             <div
               key={img.id}
-              className={`aspect-square bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 rounded-lg flex items-center justify-center cursor-pointer relative transition-all duration-150`}
+              className={`aspect-square bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 rounded-lg flex items-center justify-center cursor-pointer relative transition-all duration-150 group`}
               onClick={() => handleImageClick(img)}
             >
               <img src={img.url} alt="投稿画像" className="w-full h-full object-cover rounded-lg" />
+              {showLike && (
+                <LikeButton
+                  imageId={img.id}
+                  likeCount={img.like_count}
+                  onLike={() => fetchImages()}
+                  disabled={!isLoggedIn}
+                />
+              )}
             </div>
           );
         })}
@@ -413,7 +606,7 @@ export default function PostMain() {
           ))}
         </div>
       )}
-      {/* 画像拡大モーダル（撮影時 or 通常） */}
+      {/* 画像拡大モーダル（撮影時 or 通常 or未ログイン案内） */}
       <Modal isOpen={showImageModal} onClose={handleCloseImageModal} fullScreen>
         {selectedImage ? (
           <div className="fixed inset-0 bg-black z-50 flex flex-col justify-between items-center">
@@ -427,16 +620,26 @@ export default function PostMain() {
                 <button onClick={handlePrevImage} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white text-3xl rounded-full w-12 h-20 flex items-center justify-center z-10">&#60;</button>
               )}
               <img src={selectedImage.url} alt="拡大画像" className="max-w-full max-h-full object-contain" />
-              {modalImageIndex < filteredImages.length - 1 && (
+              {modalImageIndex < sortedImages.length - 1 && (
                 <button onClick={handleNextImage} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white text-3xl rounded-full w-12 h-20 flex items-center justify-center z-10">&#62;</button>
               )}
             </div>
-            {/* 下部保存ボタン */}
+            {/* 下部保存ボタン or 未ログイン案内 */}
             <div className="w-full flex justify-center p-4 fixed bottom-0 left-0 bg-black bg-opacity-80 z-50">
-              {isMobile() ? (
-                <Button onClick={handleShareSave} className="w-64 bg-slate-700 text-lg py-3 flex items-center justify-center gap-2"><Icon type="download" className="w-5 h-5" /><span className="text-center w-full">保存</span></Button>
+              {showLoginGuideModal ? (
+                <div className="w-full flex flex-col items-center justify-center">
+                  <div className="text-white text-center font-extrabold text-base sm:text-lg leading-relaxed mb-3" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
+                    ログインをして画像を保存しよう！<br />
+                    <span className="text-sm sm:text-base font-normal">ログインをすると<br className="sm:hidden" />過去イベントの閲覧および<br className="sm:hidden" />投稿した画像を確認することができます</span>
+                  </div>
+                  <Button onClick={() => { setLoginModalOpen(true); setShowLoginGuideModal(false); }} className="w-48 bg-white text-blue-600 font-bold py-2 rounded-full shadow-md hover:bg-blue-100 transition text-base">ログイン</Button>
+                </div>
               ) : (
-                <Button onClick={handleDownload} className="w-64 bg-slate-700 text-lg py-3 flex items-center justify-center gap-2"><Icon type="download" className="w-5 h-5" /><span className="text-center w-full">保存</span></Button>
+                isMobile() ? (
+                  <Button onClick={handleShareSave} className="w-64 bg-slate-700 text-lg py-3 flex items-center justify-center gap-2"><Icon type="download" className="w-5 h-5" /><span className="text-center w-full">保存</span></Button>
+                ) : (
+                  <Button onClick={handleDownload} className="w-64 bg-slate-700 text-lg py-3 flex items-center justify-center gap-2"><Icon type="download" className="w-5 h-5" /><span className="text-center w-full">保存</span></Button>
+                )
               )}
             </div>
           </div>
