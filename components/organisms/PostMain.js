@@ -84,6 +84,7 @@ export default function PostMain() {
   const [showLoginGuideModal, setShowLoginGuideModal] = useState(false);
   const [likeEnabled, setLikeEnabled] = useState(false);
   const [showLikeLoginGuideModal, setShowLikeLoginGuideModal] = useState(false);
+  const [showAlreadyLikedModal, setShowAlreadyLikedModal] = useState(false); // 追加
 
   useEffect(() => {
     const handleResize = () => setPageSize(getPageSize());
@@ -133,19 +134,39 @@ export default function PostMain() {
       return;
     }
     try {
-      const currentImage = images.find(img => img.id === imageId);
-      if (!currentImage) return;
+      // 1. すでにいいね済みかチェック
+      const { data: existing, error: selectError, status: selectStatus } = await supabase
+        .from('image_likes')
+        .select('id, user_id, image_id')
+        .eq('image_id', Number(imageId))
+        .eq('user_id', user.id)
+        .single();
+
+      if (existing) {
+        setShowAlreadyLikedModal(true);
+        return;
+      }
+
+      // 2. いいね履歴を追加
+      const { error: likeError } = await supabase
+        .from('image_likes')
+        .insert([{ image_id: Number(imageId), user_id: user.id }]);
+
+      if (likeError) {
+        // エラー処理（UNIQUE違反など）
+        return;
+      }
+
+      // 3. like_countを+1
+      const currentImage = images.find(img => img.id === Number(imageId));
       const newLikeCount = (currentImage.like_count || 0) + 1;
-      const { data, error, status, statusText } = await supabase
+      await supabase
         .from('images')
         .update({ like_count: newLikeCount })
-        .eq('id', imageId);
-      console.log('[Like] DB更新レスポンス:', { data, error, status, statusText });
-      if (!error) {
-        setImages(prev => prev.map(img =>
-          img.id === imageId ? { ...img, like_count: newLikeCount } : img
-        ));
-      }
+        .eq('id', Number(imageId));
+      setImages(prev => prev.map(img =>
+        img.id === Number(imageId) ? { ...img, like_count: newLikeCount } : img
+      ));
     } catch (error) {
       console.error('いいね処理エラー:', error);
     }
@@ -288,7 +309,7 @@ export default function PostMain() {
         .insert([{ 
           eventId, 
           url: publicUrl, 
-          user: 'anonymous', 
+          user: user ? user.id : null, // uuidを入れる
           date: new Date().toISOString().slice(0, 10),
           like_count: 0
         }]);
@@ -409,7 +430,7 @@ export default function PostMain() {
           .insert([{ 
             eventId, 
             url: publicUrl, 
-            user: 'anonymous', 
+            user: user ? user.id : null, // uuidを入れる
             date: new Date().toISOString().slice(0, 10),
             like_count: 0
           }]);
@@ -419,8 +440,8 @@ export default function PostMain() {
           continue;
         }
         // DB保存後に未ログインなら案内モーダル発火
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser) {
           setShowLoginGuideModal(true);
           setSelectedImage({ url: publicUrl });
           setShowImageModal(true);
@@ -438,7 +459,7 @@ export default function PostMain() {
   return (
     <div className="w-full min-h-screen bg-white flex flex-col items-center px-2 sm:px-0">
       {/* ヘッダー（ハンバーガーメニュー） */}
-      <Header type="menu" onMenuClick={() => setShowMenu(v => !v)} />
+      <Header type="menu" onMenuClick={() => setShowMenu(v => !v)} onLoginClick={() => setLoginModalOpen(true)} />
       {/* メニュー（ログイン・新規イベント作成） */}
       {showMenu && (
         <div className="fixed top-0 left-0 w-full h-full bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowMenu(false)}>
@@ -640,6 +661,16 @@ export default function PostMain() {
           <div className="font-bold text-lg text-blue-600 mb-2">ログインすると「いいね」できます</div>
           <div className="text-base text-gray-700 mb-4">この機能を利用するにはログインが必要です</div>
           <Button onClick={() => { setShowLikeLoginGuideModal(false); setLoginModalOpen(true); }} className="w-40 bg-slate-700">ログインする</Button>
+        </div>
+      </Modal>
+      {/* 既にいいね済みモーダル */}
+      <Modal isOpen={showAlreadyLikedModal} onClose={() => setShowAlreadyLikedModal(false)}>
+        <div className="flex flex-col items-center p-6">
+          <div className="font-bold text-lg text-blue-600 mb-2 text-center">
+            <span className="block sm:inline">同じ画像には</span>
+            <span className="block sm:inline">1度のみ<br className='sm:hidden' />いいね可能です</span>
+          </div>
+          <Button onClick={() => setShowAlreadyLikedModal(false)} className="w-32 bg-slate-700">閉じる</Button>
         </div>
       </Modal>
       {/* 戻るボタン */}

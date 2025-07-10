@@ -13,7 +13,7 @@ export default function Logo({ size = 'text-2xl', className = '' }) {
   const fontSize = sizeMap[size] || 32;
   return (
     <svg
-      width="auto"
+      width={220}
       height={fontSize + 12}
       viewBox={`0 0 220 ${fontSize + 12}`}
       className={className}

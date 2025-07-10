@@ -40,7 +40,6 @@ export default function EventListMain() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         setIsLoggedIn(!!user);
-        console.log('Login status checked:', !!user);
       } catch (error) {
         console.error('Login status check error:', error);
         setIsLoggedIn(false);
@@ -50,7 +49,6 @@ export default function EventListMain() {
 
     // 認証状態の変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, !!session?.user);
       setIsLoggedIn(!!session?.user);
       
       // ログイン成功時にイベントリストを更新
