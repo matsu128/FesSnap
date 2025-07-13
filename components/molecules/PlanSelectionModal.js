@@ -152,19 +152,12 @@ export default function PlanSelectionModal({ isOpen, onClose, onPlanSelected }) 
   };
 
   const handlePlanSelect = async (plan) => {
-    if (!user?.id) {
-      alert('ログインが必要です');
-      return;
-    }
-
     if (plan.id === 'free') {
       // 無料プランの場合はモーダルを閉じるだけ
-      onPlanSelected && onPlanSelected(plan);
       onClose();
       return;
     }
-
-    // Plus/Proプランの場合は初期表示のボタンを選択状態にする
+    // Plus/Proプランの場合は親で状態変更
     onPlanSelected && onPlanSelected(plan);
     onClose();
   };

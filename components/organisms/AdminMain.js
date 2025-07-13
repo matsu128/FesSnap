@@ -535,23 +535,15 @@ export default function AdminMain() {
         isOpen={showPlanModal} 
         onClose={() => {
           setShowPlanModal(false);
-          // モーダルが閉じられた時は質問を非表示にする
           setShowQuestions(false);
         }} 
         onPlanSelected={(plan) => {
           setShowPlanModal(false);
-          // プラン選択に応じて初期表示のボタンを更新
           if (plan.id === 'free') {
             setSelectedPlanType('free');
-            // Freeプランの場合は質問を表示しない
             setShowQuestions(false);
-          } else if (plan.id === 'plus') {
-            setSelectedPlanType('plus');
-            // Plus/Proプランの場合は質問を表示
-            setShowQuestions(true);
-          } else if (plan.id === 'pro') {
-            setSelectedPlanType('pro');
-            // Plus/Proプランの場合は質問を表示
+          } else if (plan.id === 'plus' || plan.id === 'pro') {
+            setSelectedPlanType(plan.id);
             setShowQuestions(true);
           }
         }}
