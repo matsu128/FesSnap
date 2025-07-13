@@ -13,14 +13,14 @@ import Link from 'next/link';
 import Card from '../atoms/Card';
 import Icon from '../atoms/Icon';
 import { motion } from 'framer-motion';
-import { supabase } from '../../lib/supabaseClient';
+import { useAuth } from '../../contexts/AuthContext';
 import LoginModal from '../molecules/LoginModal';
 
 export default function LPMain() {
   const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isLoggedIn } = useAuth();
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   // ダミーイベント例
   const eventExamples = [
@@ -71,37 +71,18 @@ export default function LPMain() {
       ], highlight: false,
     },
     {
-      name: 'Plusプラン', price: '7,000円', desc: '中規模イベント<br />（小規模結婚式、子ども会、サークルイベント）', features: [
+      name: 'Plusプラン', price: '3,000円', desc: '中規模イベント<br />（小規模結婚式、子ども会、サークルイベント）', features: [
         '画像125枚（最大25人分想定）', '30日間', 'まとまった写真枚数対応', '高画質アップロード対応', 'QRコード共有で参加者も<br />簡単投稿',
       ], highlight: true,
     },
     {
-      name: 'Proプラン', price: '15,000円', desc: '大規模イベント<br />（結婚式・企業パーティ<br />地域イベント・フェス）', features: [
-        '画像無制限', '1年間', '枚数制限なし', '長期間の保存・共有が可能', '写真のモデレーションや<br />カスタマイズ機能付き', '専用サポート対応',
+      name: 'Proプラン', price: '10,000円', desc: '大規模イベント<br />（結婚式・企業パーティ<br />地域イベント・フェス）', features: [
+        '画像無制限', '半年間', '枚数制限なし', '長期間の保存・共有が可能', '写真のモデレーションや<br />カスタマイズ機能付き', '専用サポート対応',
       ], highlight: false,
     },
   ];
 
-  // ログイン状態を確認
-  useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setIsLoggedIn(!!user);
-      } catch (error) {
-        console.error('Login status check error:', error);
-        setIsLoggedIn(false);
-      }
-    };
-    checkLoginStatus();
-
-    // 認証状態の変更を監視
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsLoggedIn(!!session?.user);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  // 認証状態の監視はuseAuthのisLoggedIn依存で十分
 
   // 今すぐ始めるボタンでイベントページへ
   const handleStart = () => router.push('/events');
@@ -131,7 +112,10 @@ export default function LPMain() {
       {/* LoginModal */}
       <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
       <section className="hero-section flex flex-col items-center justify-start relative overflow-hidden w-full min-h-screen pt-[56px] mt-4 bg-white">
-        <div className="w-full max-w-2xl lg:max-w-4xl mx-auto" style={{margin: '0 auto', boxSizing: 'border-box', paddingLeft: '1rem', paddingRight: '1rem', overflowX: 'hidden'}}>
+        <div className="w-full max-w-6xl mx-auto" style={{
+          width: '100%',
+          maxWidth: 'clamp(300px, 95vw, 1200px)'
+        }}>
           <h1
             className="mb-6 mt-2 text-5xl sm:text-6xl lg:text-7xl font-extrabold text-center bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent drop-shadow-lg"
             style={{
@@ -140,36 +124,72 @@ export default function LPMain() {
               lineHeight: 1.1,
               wordBreak: 'keep-all',
               maxWidth: '100%',
-              marginLeft: 'auto',
-              marginRight: 'auto',
+              margin: 'clamp(1rem, 3vw, 2rem) auto',
               overflowWrap: 'break-word',
-              fontSize: 'clamp(2.6rem, 8vw, 5rem)',
+              fontSize: 'clamp(3rem, 10vw, 6.5rem)',
+              boxSizing: 'border-box'
             }}
           >
             FesSnap
           </h1>
-          <div className="mb-8 mt-4">
+          <div className="mb-8 mt-4" style={{
+            marginBottom: 'clamp(2rem, 6vw, 3rem)', 
+            marginTop: 'clamp(1rem, 3vw, 1.5rem)',
+            width: '100%',
+            maxWidth: 'clamp(280px, 95vw, 1400px)',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            padding: '0 clamp(1rem, 4vw, 3rem)',
+            boxSizing: 'border-box'
+          }}>
             <h2
               className="font-extrabold text-white tracking-tight leading-tight drop-shadow-xl text-center sm:text-center"
               style={{
                 fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
                 letterSpacing: '0.04em',
                 textShadow: '0 4px 24px rgba(0,0,0,0.18)',
-                fontSize: 'clamp(1.3rem, 6vw, 2.4rem)',
+                fontSize: 'clamp(1.1rem, 6vw, 4.5rem)',
                 lineHeight: 1.15,
                 maxWidth: '100%',
-                marginLeft: 'auto',
-                marginRight: 'auto',
+                margin: '0 auto',
                 wordBreak: 'keep-all',
+                width: '100%',
+                boxSizing: 'border-box'
               }}
             >
-              <span className="block w-full text-center mx-auto max-w-sm sm:max-w-lg">
-                <span className="block font-bold mb-2 sm:mb-3 text-lg sm:text-xl text-black">
-                  <span className="bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent text-xl sm:text-2xl align-middle">QRコード</span>でつながった人だけが
+              <span className="block w-full text-center mx-auto" style={{
+                maxWidth: '100%',
+                width: '100%'
+              }}>
+                <span className="block font-bold mb-2 sm:mb-3 text-lg sm:text-xl text-black" style={{
+                  fontSize: 'clamp(0.95rem, 4.5vw, 2.5rem)',
+                  marginBottom: 'clamp(0.5rem, 2vw, 0.75rem)',
+                  lineHeight: '1.3',
+                  wordBreak: 'keep-all',
+                  maxWidth: '100%',
+                  width: '100%'
+                }}>
+                  <span className="bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent text-xl sm:text-2xl align-middle" style={{fontSize: 'clamp(1.05rem, 5vw, 3rem)'}}>QRコード</span>でつながった人だけが
                 </span>
-                <span className="block font-bold bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 bg-clip-text text-transparent mb-2 sm:mb-3 text-2xl sm:text-3xl">写真を投稿・閲覧できる</span>
-                <span className="block font-bold mb-2 sm:mb-3 text-lg sm:text-xl text-black">
-                  <span className="bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent text-xl sm:text-2xl align-middle">クローズドな空間</span>を提供します。
+                <span className="block font-bold bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 bg-clip-text text-transparent mb-2 sm:mb-3 text-2xl sm:text-3xl lg:inline lg:whitespace-nowrap" style={{
+                  fontSize: 'clamp(1.3rem, 5.5vw, 3.2rem)',
+                  marginBottom: 'clamp(0.5rem, 2vw, 0.75rem)',
+                  lineHeight: '1.2',
+                  wordBreak: 'keep-all',
+                  maxWidth: '100%',
+                  width: '100%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>写真を投稿・閲覧できる</span>
+                <span className="block font-bold mb-2 sm:mb-3 text-lg sm:text-xl text-black lg:block lg:ml-2" style={{
+                  fontSize: 'clamp(0.95rem, 4.5vw, 2.2rem)',
+                  marginBottom: 'clamp(0.5rem, 2vw, 0.75rem)',
+                  lineHeight: '1.3',
+                  wordBreak: 'keep-all',
+                  maxWidth: '100%',
+                  width: '100%'
+                }}>
+                  <span className="bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent text-xl sm:text-2xl align-middle" style={{fontSize: 'clamp(1.05rem, 5vw, 2.8rem)'}}>クローズドな空間</span>を提供します。
                 </span>
               </span>
             </h2>
@@ -177,7 +197,7 @@ export default function LPMain() {
               className="font-light mx-auto leading-relaxed sm:leading-normal w-full text-center mt-6"
               style={{
                 fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
-                fontSize: 'clamp(1.05rem, 3.5vw, 1.25rem)',
+                fontSize: 'clamp(0.95rem, 4vw, 2.5rem)',
                 maxWidth: '100%',
                 margin: '0 auto',
                 wordBreak: 'keep-all',
@@ -187,31 +207,70 @@ export default function LPMain() {
                 letterSpacing: '0.01em',
                 boxSizing: 'border-box',
                 overflowX: 'hidden',
-                paddingLeft: '0.5rem',
-                paddingRight: '0.5rem',
+                padding: '0',
+                marginTop: 'clamp(1.5rem, 4vw, 2rem)',
+                width: '100%'
               }}
             >
-              <span className="block text-xl sm:text-2xl font-bold mt-4">
-                <span className="bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 bg-clip-text text-transparent">あの写真誰が撮ったんだっけ？</span><br />
-                <span className="text-black">をなくすサービスです。</span>
+              <span className="block text-xl sm:text-2xl font-bold mt-4 lg:inline" style={{
+                fontSize: 'clamp(1.1rem, 4.5vw, 3rem)',
+                marginTop: 'clamp(1rem, 3vw, 1.5rem)',
+                lineHeight: '1.3',
+                wordBreak: 'keep-all',
+                maxWidth: '100%',
+                width: '100%'
+              }}>
+                <span className="bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 bg-clip-text text-transparent">あの写真誰が撮ったんだっけ？</span><span className="hidden lg:inline"> </span><br className="lg:hidden" />
+                <span className="text-black lg:inline">をなくすサービスです。</span>
               </span>
             </p>
           </div>
           {/* QRコード画像カード・使い方・下向き矢印 */}
-          <div className="flex flex-col items-center w-full mb-4">
-            <div className="bg-white rounded-2xl shadow-lg p-3 max-w-[150px] md:max-w-[180px] lg:max-w-[220px] w-full aspect-square flex items-center justify-center cursor-pointer" onClick={() => router.push('/events')}>
+          <div className="flex flex-col items-center w-full mb-4" style={{
+            marginBottom: 'clamp(1rem, 4vw, 2rem)',
+            width: '100%',
+            maxWidth: '100%',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            padding: '0',
+            boxSizing: 'border-box'
+          }}>
+            <div className="bg-white rounded-2xl shadow-lg p-3 w-full aspect-square flex items-center justify-center cursor-pointer" style={{
+              maxWidth: 'clamp(110px, 22vw, 260px)',
+              padding: 'clamp(0.5rem, 2vw, 0.75rem)',
+              width: '100%',
+              boxSizing: 'border-box'
+            }} onClick={() => router.push('/events')}>
               <img src="/QR_code.jpg" alt="QRコード" className="w-full h-full object-contain rounded-xl aspect-square" />
             </div>
             {/* 使い方はこちら文言 */}
-            <div className="w-full flex justify-center mt-4 mb-6">
-              <span className="text-2xl md:text-3xl font-semibold text-gray-700 text-center select-none cursor-pointer" onClick={() => {
+            <div className="w-full flex justify-center mt-4 mb-6" style={{
+              marginTop: 'clamp(1rem, 3vw, 1.5rem)',
+              marginBottom: 'clamp(1.5rem, 4vw, 2rem)',
+              width: '100%'
+            }}>
+              <span className="text-2xl md:text-3xl font-semibold text-gray-700 text-center select-none cursor-pointer" style={{
+                fontSize: 'clamp(1.2rem, 5vw, 2.8rem)',
+                lineHeight: '1.3',
+                wordBreak: 'keep-all',
+                maxWidth: '100%',
+                width: '100%'
+              }} onClick={() => {
                 const el = document.getElementById('howto');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}>使い方はこちら</span>
             </div>
             {/* 下向き矢印アニメーション */}
-            <div className="flex justify-center mt-2 mb-6 overflow-visible">
-              <span className="block text-6xl md:text-7xl lg:text-8xl font-black text-[#00c6fb] select-none" style={{filter:'drop-shadow(0 2px 8px rgba(0,0,0,0.10))', lineHeight: '1'}}>
+            <div className="flex justify-center mt-2 mb-6 overflow-visible" style={{
+              marginTop: 'clamp(0.5rem, 2vw, 1rem)',
+              marginBottom: 'clamp(1.5rem, 4vw, 2rem)',
+              width: '100%'
+            }}>
+              <span className="block text-6xl md:text-7xl lg:text-8xl font-black text-[#00c6fb] select-none" style={{
+                fontSize: 'clamp(2.5rem, 12vw, 7rem)',
+                filter:'drop-shadow(0 2px 8px rgba(0,0,0,0.10))', 
+                lineHeight: '1'
+              }}>
                 ↓
               </span>
             </div>
@@ -219,48 +278,146 @@ export default function LPMain() {
         </div>
       </section>
       {/* Features Section（使い方） */}
-      <section id="howto" className="px-4 bg-gradient-to-b from-blue-50 to-white w-full" style={{overflowX: 'hidden'}}>
-        <div className="w-full max-w-screen-lg mx-auto px-2" style={{overflowX: 'hidden'}}>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-center mb-4 md:mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg tracking-wide mt-12" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", letterSpacing: '0.08em'}}>使い方</h2>
-          <div className="w-full flex justify-center mb-6">
-            <p className="text-center text-base sm:text-lg md:text-xl font-bold text-gray-700 leading-relaxed mx-auto max-w-sm sm:max-w-lg" style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", lineHeight: '1.7', whiteSpace: 'pre-line'}}>
-              <span className="text-[#2563EB]">１：イベントを作成してQRコードを取得</span><br />
-              <span className="text-pink-500">２：QRコードをシェアして実際に画像を投稿！</span>
+      <section id="howto" className="px-4 bg-gradient-to-b from-blue-50 to-white w-full" style={{overflowX: 'hidden', padding: 'clamp(1rem, 4vw, 2rem)'}}>
+        <div className="w-full max-w-6xl mx-auto px-2" style={{overflowX: 'hidden', padding: 'clamp(0.5rem, 2vw, 1rem)'}}>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg tracking-wide" style={{
+            fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", 
+            letterSpacing: '0.08em',
+            fontSize: 'clamp(1.8rem, 6vw, 2.5rem)',
+            margin: 'clamp(3rem, 8vw, 4rem) auto clamp(1rem, 4vw, 2rem) auto',
+            padding: 'clamp(1rem, 3vw, 2rem) 0',
+            width: '100%',
+            minHeight: 'clamp(4rem, 10vw, 6rem)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            lineHeight: '1.2'
+          }}>使い方</h2>
+          <div className="w-full flex justify-center mb-6" style={{marginBottom: 'clamp(1.5rem, 4vw, 2rem)'}}>
+            <p className="text-center text-base sm:text-lg md:text-xl font-bold text-gray-700 leading-relaxed mx-auto max-w-sm sm:max-w-2xl lg:max-w-4xl" style={{
+              fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", 
+              lineHeight: '1.7', 
+              whiteSpace: 'pre-line',
+              fontSize: 'clamp(0.6rem, 3.5vw, 1.8rem)',
+              maxWidth: 'clamp(280px, 95vw, 1400px)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              <span className="text-[#2563EB] block lg:block" style={{
+                fontSize: 'clamp(0.6rem, 3.5vw, 1.8rem)',
+                lineHeight: '1.3',
+                wordBreak: 'keep-all',
+                maxWidth: '100%',
+                width: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>１：イベントを作成してQRコードを取得</span>
+              <span className="text-pink-500 block lg:block" style={{
+                fontSize: 'clamp(0.6rem, 3.5vw, 1.8rem)',
+                lineHeight: '1.3',
+                wordBreak: 'keep-all',
+                maxWidth: '100%',
+                width: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>２：QRコードをシェアして実際に画像を投稿！</span>
             </p>
           </div>
-          <div className="relative flex flex-col md:flex-row gap-8 md:gap-12 justify-center items-stretch w-full" style={{overflowX: 'hidden'}}>
+          <div className="relative flex flex-col md:flex-row gap-8 md:gap-12 justify-center items-stretch w-full" style={{
+            overflowX: 'hidden',
+            gap: 'clamp(2rem, 6vw, 3rem)'
+          }}>
             {/* 並び順を逆に：まずイベント作成、次にQRコード読み込み */}
-            <div className="flex flex-col items-center mb-10 w-full max-w-[240px] mx-auto">
-              <h3 className="text-lg font-bold mb-2 text-center text-[#2563EB]" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>1：イベント作成</h3>
+            <div className="flex flex-col items-center mb-10 w-full max-w-[240px] md:max-w-[320px] mx-auto" style={{
+              marginBottom: 'clamp(2.5rem, 6vw, 3rem)',
+              maxWidth: 'clamp(200px, 60vw, 320px)'
+            }}>
+              <h3 className="text-lg font-bold mb-2 text-center text-[#2563EB]" style={{
+                fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
+                fontSize: 'clamp(1.1rem, 4vw, 1.25rem)',
+                marginBottom: 'clamp(0.5rem, 2vw, 0.75rem)'
+              }}>1：イベント作成</h3>
               <VideoWithPlayButton src="/create_event.mp4" />
-              <Button className="mt-3 w-full bg-[#2563EB] text-white font-bold py-2 rounded-full shadow-md hover:bg-blue-700 transition" onClick={() => router.push('/admin')}>イベントを作成してみる</Button>
+              <Button className="mt-3 w-full bg-[#2563EB] text-white font-bold py-2 rounded-full shadow-md hover:bg-blue-700 transition" style={{
+                marginTop: 'clamp(0.75rem, 2vw, 1rem)',
+                padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)'
+              }} onClick={() => router.push('/admin')}>イベントを作成してみる</Button>
             </div>
-            <div className="flex flex-col items-center mb-6 w-full max-w-[240px] mx-auto">
-              <h3 className="text-lg font-bold mb-2 text-center text-pink-500 whitespace-pre-line" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>2：画像投稿</h3>
+            <div className="flex flex-col items-center mb-6 w-full max-w-[240px] md:max-w-[320px] mx-auto" style={{
+              marginBottom: 'clamp(1.5rem, 4vw, 2rem)',
+              maxWidth: 'clamp(200px, 60vw, 320px)'
+            }}>
+              <h3 className="text-lg font-bold mb-2 text-center text-pink-500 whitespace-pre-line" style={{
+                fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
+                fontSize: 'clamp(1.1rem, 4vw, 1.25rem)',
+                marginBottom: 'clamp(0.5rem, 2vw, 0.75rem)'
+              }}>2：画像投稿</h3>
               <VideoWithPlayButton src="/publish_image_demo.mp4" />
-              <Button className="mt-3 w-full bg-pink-500 text-white font-bold py-2 rounded-full shadow-md hover:bg-pink-600 transition" onClick={() => router.push('/events/630316dc-a3a3-4a16-98c5-ae7a3094533e/post')}>画像投稿を試してみる</Button>
+              <Button className="mt-3 w-full bg-pink-500 text-white font-bold py-2 rounded-full shadow-md hover:bg-pink-600 transition" style={{
+                marginTop: 'clamp(0.75rem, 2vw, 1rem)',
+                padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)'
+              }} onClick={() => router.push('/events/630316dc-a3a3-4a16-98c5-ae7a3094533e/post')}>画像投稿を試してみる</Button>
             </div>
           </div>
-          <div className="mt-4" />
+          <div className="mt-4" style={{marginTop: 'clamp(1rem, 3vw, 1.5rem)'}} />
         </div>
       </section>
       {/* Event Examples Section */}
-      <section className="py-16 px-4 overflow-hidden w-full" style={{overflowX: 'hidden'}}>
-        <div className="w-full mx-auto px-2" style={{overflowX: 'hidden'}}>
-          <h2 className="text-3xl font-bold text-center mb-12 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg text-balance" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", fontSize: 'clamp(1.3rem, 4vw, 2.2rem)', maxWidth: '28ch', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance'}}>
+      <section className="py-16 px-4 overflow-hidden w-full" style={{
+        overflowX: 'hidden',
+        padding: 'clamp(1rem, 4vw, 2rem) clamp(1rem, 4vw, 2rem)'
+      }}>
+        <div className="w-full mx-auto px-2" style={{
+          overflowX: 'hidden',
+          padding: 'clamp(0.5rem, 2vw, 1rem)'
+        }}>
+          <h2 className="text-3xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg text-balance" style={{
+            fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", 
+            fontSize: 'clamp(1.3rem, 4vw, 2.2rem)', 
+            maxWidth: '28ch', 
+            margin: 'clamp(1rem, 3vw, 2rem) auto',
+            padding: 'clamp(0.5rem, 2vw, 1rem) 0',
+            width: '100%',
+            minHeight: 'clamp(2rem, 5vw, 3rem)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            lineHeight: '1.2',
+            wordBreak: 'keep-all', 
+            WebkitTextWrap: 'balance', 
+            textWrap: 'balance'
+          }}>
             開催イベント例
           </h2>
-          <div className="flex gap-4 overflow-x-auto pb-4 max-w-full" style={{overflowX: 'auto'}}>
+          <div className="flex gap-4 overflow-x-auto pb-4 max-w-full" style={{
+            overflowX: 'auto',
+            gap: 'clamp(1rem, 3vw, 1.5rem)',
+            paddingBottom: 'clamp(1rem, 3vw, 1.5rem)'
+          }}>
             {eventExamples.map((ev, i) => (
-              <Card key={i} className="event-card w-full sm:w-64 min-w-0 sm:min-w-[260px] flex-shrink-0 bg-white rounded-lg shadow-md overflow-hidden">
-                <div className="h-40 overflow-hidden">
+              <Card key={i} className="event-card w-full sm:w-64 min-w-0 sm:min-w-[260px] flex-shrink-0 bg-white rounded-lg shadow-md overflow-hidden" style={{
+                minWidth: 'clamp(200px, 60vw, 260px)'
+              }}>
+                <div className="h-40 overflow-hidden" style={{height: 'clamp(120px, 25vw, 160px)'}}>
                   <img src={ev.img} alt={`${ev.title}のイベント写真｜FesSnapイベント写真共有サービス`} className="w-full max-w-full h-auto object-cover block" />
                 </div>
-                <div className="p-4">
-                  <h3 className="font-semibold mb-1 text-gray-900">{ev.title}</h3>
-                  <p className="text-sm text-gray-800 mb-2">{ev.date}</p>
-                  <div className="flex items-center text-sm text-gray-800">
-                    <Icon type="user" className="w-4 h-4 mr-1" />
+                <div className="p-4" style={{padding: 'clamp(0.75rem, 3vw, 1rem)'}}>
+                  <h3 className="font-semibold mb-1 text-gray-900" style={{
+                    fontSize: 'clamp(1rem, 3vw, 1.1rem)',
+                    marginBottom: 'clamp(0.25rem, 1vw, 0.5rem)'
+                  }}>{ev.title}</h3>
+                  <p className="text-sm text-gray-800 mb-2" style={{
+                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
+                    marginBottom: 'clamp(0.5rem, 1.5vw, 0.75rem)'
+                  }}>{ev.date}</p>
+                  <div className="flex items-center text-sm text-gray-800" style={{fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'}}>
+                    <Icon type="user" className="w-4 h-4 mr-1" style={{
+                      width: 'clamp(0.8rem, 2.5vw, 1rem)',
+                      height: 'clamp(0.8rem, 2.5vw, 1rem)',
+                      marginRight: 'clamp(0.25rem, 1vw, 0.5rem)'
+                    }} />
                     <span>参加者: {ev.participants}</span>
                   </div>
                 </div>
@@ -270,64 +427,178 @@ export default function LPMain() {
         </div>
       </section>
       {/* Testimonials Section */}
-      <section className="pb-16 px-4 bg-gray-50 w-full" style={{overflowX: 'hidden'}}>
-        <div className="w-full mx-auto px-2" style={{overflowX: 'hidden'}}>
-          <h2 className="text-3xl font-bold text-center mt-4 mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg text-balance" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", fontSize: 'clamp(1.3rem, 4vw, 2.2rem)', maxWidth: '28ch', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance'}}>
+      <section className="pb-16 px-4 bg-gray-50 w-full" style={{
+        overflowX: 'hidden',
+        padding: 'clamp(2rem, 6vw, 4rem) clamp(1rem, 4vw, 2rem)'
+      }}>
+        <div className="w-full mx-auto px-2" style={{
+          overflowX: 'hidden',
+          padding: 'clamp(0.5rem, 2vw, 1rem)'
+        }}>
+          <h2 className="text-3xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg text-balance" style={{
+            fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", 
+            fontSize: 'clamp(1.3rem, 4vw, 2.2rem)', 
+            maxWidth: '28ch', 
+            margin: 'clamp(1rem, 3vw, 1.5rem) auto',
+            padding: 'clamp(1rem, 3vw, 2rem) 0',
+            width: '100%',
+            minHeight: 'clamp(3rem, 8vw, 5rem)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            lineHeight: '1.2',
+            wordBreak: 'keep-all', 
+            WebkitTextWrap: 'balance', 
+            textWrap: 'balance'
+          }}>
             利用者の声
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" style={{
+            gap: 'clamp(2rem, 5vw, 3rem)'
+          }}>
             {testimonials.map((t, i) => (
-              <Card key={i} className="bg-white p-6 rounded-lg shadow-md">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden mr-4">
+              <Card key={i} className="bg-white p-6 rounded-lg shadow-md" style={{
+                padding: 'clamp(1.5rem, 4vw, 2rem)'
+              }}>
+                <div className="flex items-center mb-4" style={{
+                  marginBottom: 'clamp(1rem, 3vw, 1.5rem)'
+                }}>
+                  <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden mr-4" style={{
+                    width: 'clamp(2.5rem, 8vw, 3rem)',
+                    height: 'clamp(2.5rem, 8vw, 3rem)',
+                    marginRight: 'clamp(1rem, 3vw, 1.5rem)'
+                  }}>
                     <img src={t.img} alt={`${t.name}さんの顔写真｜FesSnap利用者の声`} className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-black" style={{color:'#000'}}>{t.name}</h4>
-                    <p className="text-sm text-black" style={{color:'#000'}}>{t.role}</p>
+                    <h4 className="font-semibold text-black" style={{
+                      color:'#000',
+                      fontSize: 'clamp(1rem, 3vw, 1.1rem)'
+                    }}>{t.name}</h4>
+                    <p className="text-sm text-black" style={{
+                      color:'#000',
+                      fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
+                    }}>{t.role}</p>
                   </div>
                 </div>
-                <p className="text-black" style={{color:'#000'}}>&quot;{t.comment}&quot;</p>
+                <p className="text-black" style={{
+                  color:'#000',
+                  fontSize: 'clamp(0.9rem, 2.8vw, 1rem)',
+                  lineHeight: '1.6'
+                }}>&quot;{t.comment}&quot;</p>
               </Card>
             ))}
           </div>
         </div>
       </section>
       {/* Pricing Section（洗練・装飾追加） */}
-      <section className="px-4 w-full bg-gradient-to-br from-blue-100 via-white to-pink-100" style={{overflowX: 'hidden'}}>
-        <div className="w-full mx-auto px-2" style={{overflowX: 'hidden'}}>
-          <h2 className="mt-8 text-4xl font-extrabold text-center mb-4 tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg text-balance" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", letterSpacing: '0.1em', fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', maxWidth: '28ch', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance'}}>
+      <section className="px-4 w-full bg-gradient-to-br from-blue-100 via-white to-pink-100" style={{
+        overflowX: 'hidden',
+        padding: 'clamp(2rem, 6vw, 4rem) clamp(1rem, 4vw, 2rem)'
+      }}>
+        <div className="w-full mx-auto px-2" style={{
+          overflowX: 'hidden',
+          padding: 'clamp(0.5rem, 2vw, 1rem)'
+        }}>
+          <h2 className="text-4xl font-extrabold text-center tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg text-balance" style={{
+            fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", 
+            letterSpacing: '0.1em', 
+            fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', 
+            maxWidth: '28ch', 
+            margin: 'clamp(2rem, 5vw, 3rem) auto 0 auto',
+            padding: 'clamp(1rem, 3vw, 2rem) 0',
+            width: '100%',
+            minHeight: 'clamp(4rem, 10vw, 6rem)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            lineHeight: '1.2',
+            wordBreak: 'keep-all', 
+            WebkitTextWrap: 'balance', 
+            textWrap: 'balance'
+          }}>
             料金プラン
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8" style={{
+            gap: 'clamp(2rem, 5vw, 3rem)'
+          }}>
             {plans.map((plan, i) => (
-              <Card key={i} className={`relative bg-white rounded-3xl shadow-xl overflow-hidden border ${plan.highlight ? 'border-blue-600 scale-105 z-10 shadow-2xl' : 'border-gray-100'} transition-all hover:shadow-2xl p-0 md:max-w-xl mb-4`}>
-                <div className={`p-8 border-b ${plan.highlight ? 'bg-gradient-to-r from-blue-500 via-blue-400 to-pink-400 text-white relative' : ''}`} style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
-                  {plan.highlight && <div className="absolute top-4 right-4 bg-white text-blue-600 text-xs font-bold px-3 py-1 rounded-full shadow">人気</div>}
-                  <h3 className="text-2xl font-bold mb-2 tracking-wide drop-shadow-sm text-center md:text-3xl md:mb-4 text-black" style={{color:'#000'}}>
-                    <span className="text-3xl md:text-4xl">{plan.name.split('プラン')[0]}</span>
-                    <span className="text-lg md:text-xl ml-1">プラン</span>
+              <Card key={i} className={`relative bg-white rounded-3xl shadow-xl overflow-hidden border ${plan.highlight ? 'border-blue-600 scale-105 z-10 shadow-2xl' : 'border-gray-100'} transition-all hover:shadow-2xl p-0 md:max-w-xl mb-4`} style={{
+                marginBottom: 'clamp(1rem, 3vw, 1.5rem)'
+              }}>
+                <div className={`p-8 border-b ${plan.highlight ? 'bg-gradient-to-r from-blue-500 via-blue-400 to-pink-400 text-white relative' : ''}`} style={{
+                  fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
+                  padding: 'clamp(2rem, 5vw, 3rem)'
+                }}>
+                  {plan.highlight && <div className="absolute top-4 right-4 bg-white text-blue-600 text-xs font-bold px-3 py-1 rounded-full shadow" style={{
+                    top: 'clamp(1rem, 3vw, 1.5rem)',
+                    right: 'clamp(1rem, 3vw, 1.5rem)',
+                    padding: 'clamp(0.25rem, 1vw, 0.5rem) clamp(0.75rem, 2vw, 1rem)',
+                    fontSize: 'clamp(0.7rem, 2vw, 0.8rem)'
+                  }}>人気</div>}
+                  <h3 className="text-2xl font-bold mb-2 tracking-wide drop-shadow-sm text-center md:text-3xl md:mb-4 text-black" style={{
+                    color:'#000',
+                    fontSize: 'clamp(1.5rem, 4vw, 2rem)',
+                    marginBottom: 'clamp(0.5rem, 2vw, 1rem)'
+                  }}>
+                    <span className="text-3xl md:text-4xl" style={{fontSize: 'clamp(1.8rem, 5vw, 2.5rem)'}}>{plan.name.split('プラン')[0]}</span>
+                    <span className="text-lg md:text-xl ml-1" style={{
+                      fontSize: 'clamp(1rem, 3vw, 1.25rem)',
+                      marginLeft: 'clamp(0.25rem, 1vw, 0.5rem)'
+                    }}>プラン</span>
                   </h3>
-                  <div className="flex items-end justify-center md:justify-center mb-4 md:mb-6 gap-1 md:gap-2">
-                    <span className={`text-4xl md:text-5xl font-extrabold drop-shadow-sm whitespace-nowrap ${plan.price === '0円' ? 'text-blue-500' : 'text-pink-500'}`}>{plan.price}</span>
-                    <span className={`ml-1 ${plan.highlight ? 'text-white text-opacity-80' : 'text-black'} text-sm md:text-base whitespace-nowrap`} style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", maxWidth: '5.5ch', fontSize: 'clamp(0.8rem, 1.2vw, 1.05rem)', color: plan.highlight ? undefined : '#000'}}>/イベント</span>
+                  <div className="flex items-end justify-center md:justify-center mb-4 md:mb-6 gap-1 md:gap-2" style={{
+                    marginBottom: 'clamp(1rem, 3vw, 1.5rem)',
+                    gap: 'clamp(0.25rem, 1vw, 0.5rem)'
+                  }}>
+                    <span className={`text-4xl md:text-5xl font-extrabold drop-shadow-sm whitespace-nowrap ${plan.price === '0円' ? 'text-blue-500' : 'text-pink-500'}`} style={{
+                      fontSize: 'clamp(2rem, 6vw, 3rem)'
+                    }}>{plan.price}</span>
+                    <span className={`ml-1 ${plan.highlight ? 'text-white text-opacity-80' : 'text-black'} text-sm md:text-base whitespace-nowrap`} style={{
+                      fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", 
+                      maxWidth: '5.5ch', 
+                      fontSize: 'clamp(0.8rem, 1.2vw, 1.05rem)', 
+                      color: plan.highlight ? undefined : '#000',
+                      marginLeft: 'clamp(0.25rem, 1vw, 0.5rem)'
+                    }}>/イベント</span>
                   </div>
-                  <p className={plan.highlight ? 'text-white text-opacity-90' : 'text-black'} style={plan.highlight ? undefined : {color:'#000'}} dangerouslySetInnerHTML={{ __html: plan.desc }}></p>
+                  <p className={plan.highlight ? 'text-white text-opacity-90' : 'text-black'} style={{
+                    ...(plan.highlight ? undefined : {color:'#000'}),
+                    fontSize: 'clamp(0.9rem, 2.5vw, 1rem)'
+                  }} dangerouslySetInnerHTML={{ __html: plan.desc }}></p>
                 </div>
-                <div className="p-8 bg-gradient-to-br from-white via-blue-50 to-pink-50">
-                  <ul className="space-y-3 mb-6">
+                <div className="p-8 bg-gradient-to-br from-white via-blue-50 to-pink-50" style={{
+                  padding: 'clamp(2rem, 5vw, 3rem)'
+                }}>
+                  <ul className="space-y-3 mb-6" style={{
+                    gap: 'clamp(0.75rem, 2vw, 1rem)',
+                    marginBottom: 'clamp(1.5rem, 4vw, 2rem)'
+                  }}>
                     {plan.features.map((f, j) => (
-                      <li key={j} className={`flex items-start ${f.includes('なし') ? 'text-gray-400' : 'text-black'} text-xs md:text-base`} style={f.includes('なし') ? {fontFamily: "'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"} : {fontFamily: "'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", color:'#000'}}>
-                        <svg className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 mt-0.5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <li key={j} className={`flex items-start ${f.includes('なし') ? 'text-gray-400' : 'text-black'} text-xs md:text-base`} style={{
+                        ...(f.includes('なし') ? {fontFamily: "'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"} : {fontFamily: "'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", color:'#000'}),
+                        fontSize: 'clamp(0.8rem, 2.5vw, 1rem)'
+                      }}>
+                        <svg className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 mt-0.5 text-green-500 flex-shrink-0" style={{
+                          width: 'clamp(0.8rem, 2.5vw, 1rem)',
+                          height: 'clamp(0.8rem, 2.5vw, 1rem)',
+                          marginRight: 'clamp(0.25rem, 1vw, 0.5rem)',
+                          marginTop: 'clamp(0.1rem, 0.5vw, 0.2rem)'
+                        }} fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                         <span className={`whitespace-nowrap md:whitespace-normal break-words ${f.includes('枚') || f.includes('日間') || f.includes('画像無制限') || f.includes('年間') || f.includes('制限なし') ? 'text-blue-600 font-semibold' : ''}`} dangerouslySetInnerHTML={{ __html: f }}></span>
                       </li>
                     ))}
                   </ul>
-                  <div className="flex flex-col md:flex-row gap-4 justify-center">
+                  <div className="flex flex-col md:flex-row gap-4 justify-center" style={{
+                    gap: 'clamp(1rem, 3vw, 1.5rem)'
+                  }}>
                     <Link href="/stripe">
-                      <button className={`mt-auto px-8 py-3 rounded-full font-bold text-white ${plan.price === '0円' ? 'bg-blue-400' : 'bg-pink-500'} shadow-lg hover:opacity-90 transition disabled:opacity-60 w-full text-sm sm:text-base`}>
+                      <button className={`mt-auto px-8 py-3 rounded-full font-bold text-white ${plan.price === '0円' ? 'bg-blue-400' : 'bg-pink-500'} shadow-lg hover:opacity-90 transition disabled:opacity-60 w-full text-sm sm:text-base`} style={{
+                        padding: 'clamp(0.75rem, 2vw, 1rem) clamp(2rem, 5vw, 3rem)',
+                        fontSize: 'clamp(0.9rem, 2.5vw, 1rem)'
+                      }}>
                         {plan.price === '0円'
                           ? '無料で始める'
                           : plan.price === '15,000円'
@@ -346,24 +617,83 @@ export default function LPMain() {
         </div>
       </section>
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-blue-600 text-white w-full" style={{overflowX: 'hidden'}}>
-        <div className="w-full mx-auto px-2 text-center" style={{overflowX: 'hidden'}}>
-          <h2 className="text-3xl font-bold mb-6 text-balance" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", fontSize: 'clamp(1.3rem, 4vw, 2.2rem)', maxWidth: '28ch', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance'}}>
+      <section className="py-20 px-4 bg-blue-600 text-white w-full" style={{
+        overflowX: 'hidden',
+        padding: 'clamp(4rem, 10vw, 6rem) clamp(1rem, 4vw, 2rem)'
+      }}>
+        <div className="w-full mx-auto px-2 text-center" style={{
+          overflowX: 'hidden',
+          padding: 'clamp(0.5rem, 2vw, 1rem)'
+        }}>
+          <h2 className="text-3xl font-bold text-balance" style={{
+            fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", 
+            fontSize: 'clamp(1.3rem, 4vw, 2.2rem)', 
+            maxWidth: '28ch', 
+            margin: '0 auto clamp(1.5rem, 4vw, 2rem) auto',
+            padding: 'clamp(1rem, 3vw, 2rem) 0',
+            width: '100%',
+            minHeight: 'clamp(3rem, 8vw, 5rem)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            lineHeight: '1.2',
+            wordBreak: 'keep-all', 
+            WebkitTextWrap: 'balance', 
+            textWrap: 'balance'
+          }}>
             イベントをもっと特別な体験に
           </h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto text-balance" style={{fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", fontSize: 'clamp(1rem, 3vw, 1.3rem)', maxWidth: '32ch', marginLeft: 'auto', marginRight: 'auto', wordBreak: 'keep-all', WebkitTextWrap: 'balance', textWrap: 'balance'}}>
+          <p className="text-xl mb-8 max-w-2xl mx-auto text-balance" style={{
+            fontFamily: "'Quicksand', 'Noto Sans JP', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", 
+            fontSize: 'clamp(1rem, 3vw, 1.3rem)', 
+            maxWidth: '32ch', 
+            marginLeft: 'auto', 
+            marginRight: 'auto', 
+            wordBreak: 'keep-all', 
+            WebkitTextWrap: 'balance', 
+            textWrap: 'balance',
+            marginBottom: 'clamp(2rem, 5vw, 3rem)'
+          }}>
             FesSnapで、参加者全員の視点からイベントを記録しましょう。思い出はみんなで作るもの。
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button className="bg-white text-white px-8 py-4 rounded-full text-lg font-medium hover:bg-opacity-90 transition-all shadow-lg border border-white hover:bg-blue-100 hover:text-blue-600" style={{background: 'linear-gradient(90deg, #2563EB 0%, #60A5FA 100%)'}} onClick={handleStart}>イベントを探す</Button>
-            <Button className="bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 text-white px-8 py-4 rounded-full text-lg font-medium hover:from-blue-400 hover:to-pink-400 transition-all shadow-lg" onClick={()=>router.push('/admin')}>イベント作成</Button>
+          <div className="flex flex-col sm:flex-row justify-center gap-4" style={{
+            gap: 'clamp(1rem, 3vw, 1.5rem)'
+          }}>
+            <Button className="bg-white text-white px-8 py-4 rounded-full text-lg font-medium hover:bg-opacity-90 transition-all shadow-lg border border-white hover:bg-blue-100 hover:text-blue-600" style={{
+              background: 'linear-gradient(90deg, #2563EB 0%, #60A5FA 100%)',
+              padding: 'clamp(1rem, 3vw, 1.5rem) clamp(2rem, 5vw, 3rem)',
+              fontSize: 'clamp(1rem, 3vw, 1.25rem)'
+            }} onClick={handleStart}>イベントを探す</Button>
+            <Button className="bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 text-white px-8 py-4 rounded-full text-lg font-medium hover:from-blue-400 hover:to-pink-400 transition-all shadow-lg" style={{
+              padding: 'clamp(1rem, 3vw, 1.5rem) clamp(2rem, 5vw, 3rem)',
+              fontSize: 'clamp(1rem, 3vw, 1.25rem)'
+            }} onClick={()=>router.push('/admin')}>イベント作成</Button>
           </div>
         </div>
       </section>
       {/* Footer */}
-      <footer className="bg-white border-gray-100 py-6 px-4 w-full mt-8 pt-8" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: 0}}>
-        <div className="w-full mx-auto px-2" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: 0}}>
-          <div className="flex flex-col items-center w-full" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box'}}>
+      <footer className="bg-white border-gray-100 py-6 px-4 w-full mt-8 pt-8" style={{
+        overflowX: 'hidden', 
+        width: '100%', 
+        maxWidth: '100%', 
+        boxSizing: 'border-box', 
+        padding: 'clamp(1.5rem, 4vw, 2rem) clamp(1rem, 4vw, 2rem)',
+        marginTop: 'clamp(2rem, 5vw, 3rem)',
+        paddingTop: 'clamp(2rem, 5vw, 3rem)'
+      }}>
+        <div className="w-full mx-auto px-2" style={{
+          overflowX: 'hidden', 
+          width: '100%', 
+          maxWidth: '100%', 
+          boxSizing: 'border-box', 
+          padding: 'clamp(0.5rem, 2vw, 1rem)'
+        }}>
+          <div className="flex flex-col items-center w-full" style={{
+            overflowX: 'hidden', 
+            width: '100%', 
+            maxWidth: '100%', 
+            boxSizing: 'border-box'
+          }}>
             <h2
               className="mb-4 mt-2 text-5xl sm:text-6xl lg:text-7xl font-extrabold text-center bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent drop-shadow-lg"
               style={{
@@ -376,13 +706,24 @@ export default function LPMain() {
                 marginRight: 'auto',
                 overflowWrap: 'break-word',
                 fontSize: 'clamp(2.6rem, 8vw, 5rem)',
+                marginBottom: 'clamp(1rem, 3vw, 1.5rem)',
+                marginTop: 'clamp(0.5rem, 2vw, 1rem)'
               }}
             >
               FesSnap
             </h2>
           </div>
-          <div className="border-gray-100 pt-8 flex flex-col items-center text-sm text-gray-500 w-full" style={{overflowX: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box'}}>
-            <div className="flex flex-col items-center w-full gap-1">
+          <div className="border-gray-100 pt-8 flex flex-col items-center text-sm text-gray-500 w-full" style={{
+            overflowX: 'hidden', 
+            width: '100%', 
+            maxWidth: '100%', 
+            boxSizing: 'border-box',
+            paddingTop: 'clamp(2rem, 5vw, 3rem)',
+            fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
+          }}>
+            <div className="flex flex-col items-center w-full gap-1" style={{
+              gap: 'clamp(0.25rem, 1vw, 0.5rem)'
+            }}>
               <span className="text-center w-full">© 2025 FesSnap.</span>
               <span className="text-center w-full">All rights reserved.</span>
             </div>

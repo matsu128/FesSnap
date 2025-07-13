@@ -12,6 +12,7 @@ import LoginModal from '../molecules/LoginModal';
 import PrefectureSelect from '../atoms/PrefectureSelect';
 import DatePickerModal from '../atoms/DatePickerModal';
 import CategorySelectModal from '../atoms/CategorySelectModal';
+import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
 
 const PAGE_SIZE = 5;
@@ -23,7 +24,7 @@ export default function EventListMain() {
   const [filtered, setFiltered] = useState([]);
   const [filterState, setFilterState] = useState({ region: '', date: '', category: '' });
   const [page, setPage] = useState(1);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isLoggedIn, user } = useAuth();
   const router = useRouter();
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -34,36 +35,7 @@ export default function EventListMain() {
   // 動画のラストフレームで止めるためのref
   const videoRef = useRef(null);
 
-  // ログイン状態を確認
-  useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setIsLoggedIn(!!user);
-      } catch (error) {
-        console.error('Login status check error:', error);
-        setIsLoggedIn(false);
-      }
-    };
-    checkLoginStatus();
-
-    // 認証状態の変更を監視
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsLoggedIn(!!session?.user);
-      
-      // ログイン成功時にイベントリストを更新
-      if (event === 'SIGNED_IN' && session?.user) {
-        fetch('/api/events')
-          .then(res => res.json())
-          .then(data => {
-            setEvents(data);
-            setFiltered(data);
-          });
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  // 認証状態の監視・イベントリスト更新はuseAuthのisLoggedIn依存で十分
 
   // 動画の強制再生（Safari対策）
   useEffect(() => {
@@ -91,17 +63,39 @@ export default function EventListMain() {
   useEffect(() => {
     fetch('/api/events')
       .then(res => res.json())
-      .then(data => {
+      .then(async data => {
+        // エラーレスポンスの場合は配列でない可能性がある
+        if (!Array.isArray(data)) {
+          console.error('API response is not an array:', data);
+          setEvents([]);
+          setFiltered([]);
+          return;
+        }
+        
         setEvents(data);
-        // ログインしていない場合はデモイベントのみ表示
         if (!isLoggedIn) {
           const demoEvent = data.find(event => event.id === DEMO_EVENT_ID);
           setFiltered(demoEvent ? [demoEvent] : []);
+        } else if (user && user.id) {
+          // 1. 自分が投稿した画像のeventIdリストを取得
+          const { data: myImages } = await supabase
+            .from('images')
+            .select('eventId')
+            .eq('user', user.id);
+          const postedEventIds = (myImages || []).map(img => img.eventId);
+          // 2. 投稿者のイベントのみ抽出（ownerカラムがないため、投稿者のみ）
+          const filteredEvents = data.filter(ev => postedEventIds.includes(ev.id));
+          setFiltered(filteredEvents);
         } else {
-          setFiltered(data);
+          setFiltered([]);
         }
+      })
+      .catch(error => {
+        console.error('Failed to fetch events:', error);
+        setEvents([]);
+        setFiltered([]);
       });
-  }, [isLoggedIn]);
+  }, [isLoggedIn, user]);
 
   // フィルタ適用（ログインしている場合のみ）
   useEffect(() => {
@@ -135,19 +129,13 @@ export default function EventListMain() {
   // ログインモーダルが閉じられた時の処理
   const handleLoginModalClose = () => {
     setLoginModalOpen(false);
-    // ログイン状態を再確認
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setIsLoggedIn(!!user);
-      if (user) {
-        // ログイン成功時は全イベントを表示
-        fetch('/api/events')
-          .then(res => res.json())
-          .then(data => {
-            setEvents(data);
-            setFiltered(data);
-          });
-      }
-    });
+    // ログイン成功時は全イベントを表示
+    fetch('/api/events')
+      .then(res => res.json())
+      .then(data => {
+        setEvents(data);
+        setFiltered(data);
+      });
   };
 
   return (
