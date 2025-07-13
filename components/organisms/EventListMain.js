@@ -81,7 +81,7 @@ export default function EventListMain() {
           const { data: myImages } = await supabase
             .from('images')
             .select('eventId')
-            .eq('user', user.id);
+            .eq('user_id', user.id);
           const postedEventIds = (myImages || []).map(img => img.eventId);
           // 2. 投稿者のイベントのみ抽出（ownerカラムがないため、投稿者のみ）
           const filteredEvents = data.filter(ev => postedEventIds.includes(ev.id));

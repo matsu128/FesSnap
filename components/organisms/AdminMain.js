@@ -10,6 +10,10 @@ import QRCode from 'react-qr-code';
 import html2canvas from 'html2canvas';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
+import { useAuth } from '../../contexts/AuthContext';
+import { planLimits } from '../../lib/supabaseClient';
+import PlanSelectionModal from '../molecules/PlanSelectionModal';
+import { loadStripe } from '@stripe/stripe-js';
 
 function isIOS() {
   if (typeof window === 'undefined') return false;
@@ -31,6 +35,15 @@ export default function AdminMain() {
   const [qrEventId, setQrEventId] = useState(null);
   const [likeEnabled, setLikeEnabled] = useState(false);
   const router = useRouter();
+  const { user } = useAuth();
+
+  // イベント規模・保存期間の選択状態
+  const [eventScale, setEventScale] = useState('');
+  const [storagePeriod, setStoragePeriod] = useState('');
+  const [recommendedPlan, setRecommendedPlan] = useState(null);
+  const [showQuestions, setShowQuestions] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [selectedPlanType, setSelectedPlanType] = useState('free');
 
   // イベントデータ取得
   useEffect(() => {
@@ -45,6 +58,42 @@ export default function AdminMain() {
         setLikeEnabled(false);
       });
   }, []);
+
+  // 決済成功後の処理
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const sessionId = urlParams.get('session_id');
+    const planType = urlParams.get('plan_type');
+    const canceled = urlParams.get('canceled');
+
+    if (success === 'true' && sessionId && planType) {
+      // 決済成功後の処理
+      setSelectedPlanType(planType);
+      // URLパラメータをクリア
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (canceled === 'true') {
+      // 決済キャンセル時の処理
+      alert('決済がキャンセルされました');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  // おすすめプランの計算
+  useEffect(() => {
+    if (eventScale && storagePeriod) {
+      let plan = 'free';
+      
+      if (eventScale === 'large' || storagePeriod === '6months') {
+        plan = 'pro';
+      } else if (eventScale === 'medium' || storagePeriod === '1month') {
+        plan = 'plus';
+      }
+      
+      setRecommendedPlan(plan);
+      setSelectedPlanType(plan);
+    }
+  }, [eventScale, storagePeriod]);
 
   // イベント切り替え
   const handleEventSwitch = (event) => {
@@ -64,20 +113,67 @@ export default function AdminMain() {
       setQr('');
       return;
     }
+
+    // 有料プランの場合はStripe決済
+    if (selectedPlanType !== 'free') {
+      try {
+        const response = await fetch('/api/stripe/create-checkout-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            planType: selectedPlanType,
+            userId: user.id
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || '決済セッションの作成に失敗しました');
+        }
+
+        const { sessionId } = await response.json();
+        
+        // Stripe決済ページにリダイレクト
+        const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+        if (stripe) {
+          const { error } = await stripe.redirectToCheckout({
+            sessionId,
+          });
+          if (error) {
+            setQrError('決済エラーが発生しました: ' + error.message);
+          }
+        } else {
+          setQrError('Stripeが設定されていません');
+        }
+        return;
+      } catch (error) {
+        console.error('Stripe error:', error);
+        setQrError('決済処理中にエラーが発生しました: ' + error.message);
+        return;
+      }
+    }
+
+    // 無料プランの場合は通常のQRコード生成
     try {
       const res = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: selectedEvent?.title,
-          like_enabled: likeEnabled
+          like_enabled: likeEnabled,
+          plan_type: selectedPlanType
         })
       });
-      const data = await res.json();
+      
       if (!res.ok) {
-        setQrError(data.error || 'イベント作成に失敗しました');
+        const errorData = await res.json();
+        setQrError(errorData.error || 'イベント作成に失敗しました');
         return;
       }
+      
+      const data = await res.json();
       // 返却IDでQRコードURL生成
       const qrValue = `https://fes-snap.vercel.app/events/${data.id}/post`;
       setQr(qrValue);
@@ -130,7 +226,8 @@ export default function AdminMain() {
         }
       }, 100);
     } catch (e) {
-      setQrError('サーバーエラーが発生しました :(');
+      console.error('QR generation error:', e);
+      setQrError('サーバーエラーが発生しました: ' + e.message);
     }
   };
 
@@ -190,6 +287,122 @@ export default function AdminMain() {
             setSelectedEvent({ ...selectedEvent, title: e.target.value.slice(0,10) });
           }} placeholder="タイトル" maxLength={10} className={`mb-1 text-lg py-3 text-black text-center ${(qrTouched && missingFields.includes('title')) ? 'ring-2 ring-red-400' : ''}`} />
         </div>
+        
+        {/* プラン選択ボタン */}
+        <div className="flex flex-col items-center">
+          <button
+            onClick={() => setShowPlanModal(true)}
+            className="w-full max-w-xs bg-white text-gray-700 py-3 px-6 rounded-full font-semibold text-base shadow-lg hover:shadow-xl border border-gray-200 hover:border-gray-300 transition-all duration-300 transform hover:scale-105"
+          >
+            プランを調べてみる
+          </button>
+        </div>
+
+        {/* 質問セクション（初期では非表示） */}
+        {showQuestions && (
+          <>
+            {/* イベント規模選択 */}
+            <div className="flex flex-col items-center">
+              <div className="text-base font-bold text-gray-700 mb-3 text-center">イベントの規模は？</div>
+              <div className="flex flex-col gap-2 w-full">
+                <button 
+                  onClick={() => setEventScale('small')} 
+                  className={`py-3 px-4 rounded-2xl text-sm transition-all duration-300 hover:scale-105 ${
+                    eventScale === 'small' 
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg' 
+                      : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300'
+                  }`}
+                >
+                  小規模（〜5人）<br />
+                  <span className="text-xs opacity-80">誕生日会、家族旅行など</span>
+                </button>
+                <button 
+                  onClick={() => setEventScale('medium')} 
+                  className={`py-3 px-4 rounded-2xl text-sm transition-all duration-300 hover:scale-105 ${
+                    eventScale === 'medium' 
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' 
+                      : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300'
+                  }`}
+                >
+                  中規模（〜25人）<br />
+                  <span className="text-xs opacity-80">結婚式、サークルイベントなど</span>
+                </button>
+                <button 
+                  onClick={() => setEventScale('large')} 
+                  className={`py-3 px-4 rounded-2xl text-sm transition-all duration-300 hover:scale-105 ${
+                    eventScale === 'large' 
+                      ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg' 
+                      : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300'
+                  }`}
+                >
+                  大規模（無制限）<br />
+                  <span className="text-xs opacity-80">企業パーティ、フェスなど</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 保存期間選択 */}
+            <div className="flex flex-col items-center">
+              <div className="text-base font-bold text-gray-700 mb-3 text-center">保存期間は？</div>
+              <div className="flex flex-col gap-2 w-full">
+                <button 
+                  onClick={() => setStoragePeriod('1week')} 
+                  className={`py-3 px-4 rounded-2xl text-sm transition-all duration-300 hover:scale-105 ${
+                    storagePeriod === '1week' 
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg' 
+                      : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300'
+                  }`}
+                >
+                  1週間<br />
+                  <span className="text-xs opacity-80">短期間のイベント</span>
+                </button>
+                <button 
+                  onClick={() => setStoragePeriod('1month')} 
+                  className={`py-3 px-4 rounded-2xl text-sm transition-all duration-300 hover:scale-105 ${
+                    storagePeriod === '1month' 
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' 
+                      : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300'
+                  }`}
+                >
+                  1ヶ月<br />
+                  <span className="text-xs opacity-80">中期的な保存</span>
+                </button>
+                <button 
+                  onClick={() => setStoragePeriod('6months')} 
+                  className={`py-3 px-4 rounded-2xl text-sm transition-all duration-300 hover:scale-105 ${
+                    storagePeriod === '6months' 
+                      ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg' 
+                      : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300'
+                  }`}
+                >
+                  半年<br />
+                  <span className="text-xs opacity-80">長期間の保存</span>
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* おすすめプラン表示 */}
+        {showQuestions && recommendedPlan && (
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-2xl p-4">
+            <div className="text-center">
+              <div className="text-sm font-bold text-blue-900 mb-2">
+                おすすめプラン
+              </div>
+              <div className="text-lg font-bold text-blue-600 mb-2">
+                {recommendedPlan === 'free' ? 'Freeプラン' : 
+                 recommendedPlan === 'plus' ? 'Plusプラン' : 'Proプラン'}
+              </div>
+              <div className="text-xs text-blue-700">
+                {recommendedPlan === 'free' ? '画像25枚・7日間保存' :
+                 recommendedPlan === 'plus' ? '画像125枚・30日間保存' :
+                 '画像無制限・半年間保存'}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* いいね機能トグル */}
         <div className="flex items-center gap-2 justify-center mt-2">
           <input type="checkbox" id="likeEnabled" checked={likeEnabled} onChange={e => setLikeEnabled(e.target.checked)} className="w-5 h-5 accent-pink-500" />
@@ -207,9 +420,39 @@ export default function AdminMain() {
           {missingFields.includes('title') && 'タイトルが未入力です'}
         </div>
       )}
+      
+      {/* プラン選択ボタン（QRコード生成ボタンの上） */}
+      <div className="w-full max-w-[400px] flex gap-2 mb-4 px-2 sm:px-0">
+        <button 
+          onClick={() => setSelectedPlanType(selectedPlanType === 'plus' ? 'free' : 'plus')} 
+          className={`flex-1 py-2 px-3 rounded-2xl text-sm font-semibold transition-all duration-300 hover:scale-105 ${
+            selectedPlanType === 'plus' 
+              ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-lg' 
+              : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300'
+          }`}
+        >
+          Plusプラン
+        </button>
+        <button 
+          onClick={() => setSelectedPlanType(selectedPlanType === 'pro' ? 'free' : 'pro')} 
+          className={`flex-1 py-2 px-3 rounded-2xl text-sm font-semibold transition-all duration-300 hover:scale-105 ${
+            selectedPlanType === 'pro' 
+              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' 
+              : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300'
+          }`}
+        >
+          Proプラン
+        </button>
+      </div>
+
       {/* QRコード生成ボタン */}
       <div className="flex w-full max-w-[400px] gap-4 mb-8 px-2 sm:px-0">
-        <Button onClick={handleGenerateQr} className="flex-1 text-base py-4 bg-slate-700">QRコード生成</Button>
+        <Button 
+          onClick={handleGenerateQr} 
+          className="flex-1 text-base py-4"
+        >
+          {selectedPlanType === 'free' ? 'QRコード生成' : '決済してQRコード生成'}
+        </Button>
       </div>
       {/* QRコード表示＋投稿ボタン */}
       {qr && (
@@ -219,9 +462,12 @@ export default function AdminMain() {
           </div>
           <div className="text-xs text-gray-400 mt-1">タップで拡大・保存</div>
           {qrEventId && (
-            <Button onClick={() => router.push(`/events/${qrEventId}`)} className="w-full mt-2 text-base py-4 bg-blue-600">
+            <button 
+              onClick={() => router.push(`/events/${qrEventId}`)} 
+              className="w-full mt-2 text-base py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            >
               イベントページへ
-            </Button>
+            </button>
           )}
         </div>
       )}
@@ -257,7 +503,12 @@ export default function AdminMain() {
             </div>
           </div>
           <div className="flex gap-4 mt-4">
-            <Button onClick={handleShareQrInfo} className="bg-slate-700 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />保存</Button>
+            <button 
+              onClick={handleShareQrInfo} 
+              className="bg-gradient-to-r from-slate-700 to-slate-800 flex items-center gap-1 text-white px-4 py-2 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            >
+              <Icon type="download" className="w-5 h-5" />保存
+            </button>
           </div>
           {isIOS() && (
             <div className="mt-3 text-xs text-gray-500 text-center">iPhoneの方は画像を長押しして「写真に追加」してください</div>
@@ -269,10 +520,42 @@ export default function AdminMain() {
         <div className="flex flex-col items-center">
           <div className="mb-2 text-lg font-bold">イベント切り替え</div>
           {events.map(ev => (
-            <Button key={ev.id} onClick={() => handleEventSwitch(ev)} className="mb-1 w-40 bg-slate-700">{ev.title}</Button>
+            <button 
+              key={ev.id} 
+              onClick={() => handleEventSwitch(ev)} 
+              className="mb-1 w-40 bg-gradient-to-r from-slate-700 to-slate-800 text-white py-2 px-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            >
+              {ev.title}
+            </button>
           ))}
         </div>
       </Modal>
+      {/* プラン選択モーダル */}
+      <PlanSelectionModal 
+        isOpen={showPlanModal} 
+        onClose={() => {
+          setShowPlanModal(false);
+          // モーダルが閉じられた時は質問を非表示にする
+          setShowQuestions(false);
+        }} 
+        onPlanSelected={(plan) => {
+          setShowPlanModal(false);
+          // プラン選択に応じて初期表示のボタンを更新
+          if (plan.id === 'free') {
+            setSelectedPlanType('free');
+            // Freeプランの場合は質問を表示しない
+            setShowQuestions(false);
+          } else if (plan.id === 'plus') {
+            setSelectedPlanType('plus');
+            // Plus/Proプランの場合は質問を表示
+            setShowQuestions(true);
+          } else if (plan.id === 'pro') {
+            setSelectedPlanType('pro');
+            // Plus/Proプランの場合は質問を表示
+            setShowQuestions(true);
+          }
+        }}
+      />
     </div>
   );
 } 

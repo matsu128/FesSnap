@@ -671,65 +671,6 @@ export default function LPMain() {
           </div>
         </div>
       </section>
-      {/* Footer */}
-      <footer className="bg-white border-gray-100 py-6 px-4 w-full mt-8 pt-8" style={{
-        overflowX: 'hidden', 
-        width: '100%', 
-        maxWidth: '100%', 
-        boxSizing: 'border-box', 
-        padding: 'clamp(1.5rem, 4vw, 2rem) clamp(1rem, 4vw, 2rem)',
-        marginTop: 'clamp(2rem, 5vw, 3rem)',
-        paddingTop: 'clamp(2rem, 5vw, 3rem)'
-      }}>
-        <div className="w-full mx-auto px-2" style={{
-          overflowX: 'hidden', 
-          width: '100%', 
-          maxWidth: '100%', 
-          boxSizing: 'border-box', 
-          padding: 'clamp(0.5rem, 2vw, 1rem)'
-        }}>
-          <div className="flex flex-col items-center w-full" style={{
-            overflowX: 'hidden', 
-            width: '100%', 
-            maxWidth: '100%', 
-            boxSizing: 'border-box'
-          }}>
-            <h2
-              className="mb-4 mt-2 text-5xl sm:text-6xl lg:text-7xl font-extrabold text-center bg-gradient-to-r from-[#00c6fb] to-[#005bea] bg-clip-text text-transparent drop-shadow-lg"
-              style={{
-                fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
-                letterSpacing: '0.15em',
-                lineHeight: 1.1,
-                wordBreak: 'keep-all',
-                maxWidth: '100%',
-                marginLeft: 'auto',
-                marginRight: 'auto',
-                overflowWrap: 'break-word',
-                fontSize: 'clamp(2.6rem, 8vw, 5rem)',
-                marginBottom: 'clamp(1rem, 3vw, 1.5rem)',
-                marginTop: 'clamp(0.5rem, 2vw, 1rem)'
-              }}
-            >
-              FesSnap
-            </h2>
-          </div>
-          <div className="border-gray-100 pt-8 flex flex-col items-center text-sm text-gray-500 w-full" style={{
-            overflowX: 'hidden', 
-            width: '100%', 
-            maxWidth: '100%', 
-            boxSizing: 'border-box',
-            paddingTop: 'clamp(2rem, 5vw, 3rem)',
-            fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-          }}>
-            <div className="flex flex-col items-center w-full gap-1" style={{
-              gap: 'clamp(0.25rem, 1vw, 0.5rem)'
-            }}>
-              <span className="text-center w-full">© 2025 FesSnap.</span>
-              <span className="text-center w-full">All rights reserved.</span>
-            </div>
-          </div>
-        </div>
-      </footer>
       {/* QRコード拡大モーダル */}
       {showQRModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowQRModal(false)}>

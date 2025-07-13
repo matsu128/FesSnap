@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabaseClient';
 import LoginModal from '../molecules/LoginModal';
 import LikeButton from '../atoms/LikeButton';
 import { useAuth } from '../../contexts/AuthContext';
+import UpgradePlanModal from '../molecules/UpgradePlanModal';
 
 function getPageSize() {
   if (typeof window !== 'undefined') {
@@ -85,6 +86,7 @@ export default function PostMain() {
   const [likeEnabled, setLikeEnabled] = useState(false);
   const [showLikeLoginGuideModal, setShowLikeLoginGuideModal] = useState(false);
   const [showAlreadyLikedModal, setShowAlreadyLikedModal] = useState(false); // 追加
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setPageSize(getPageSize());
@@ -228,17 +230,16 @@ export default function PostMain() {
       typeof navigator.mediaDevices.getUserMedia === 'function'
     );
   };
-  // 画像投稿ボタンでカメラ起動 or エラー or 選択モーダル
+  // 投稿ボタン押下時の制限チェック
   const handlePostImage = () => {
-    if (!isPostAllowed) {
-      setShowPostError(true);
-      return;
+    if (userPlan && userPlan.current_plan) {
+      const planLimit = planLimits[userPlan.current_plan];
+      if (planLimit.imageLimit !== -1 && currentImageCount >= planLimit.imageLimit) {
+        setShowUpgradeModal(true);
+        return;
+      }
     }
-    if (isMobile()) {
-      setShowSelectModal(true);
-    } else {
-      setShowCameraAlert(true);
-    }
+    setShowPostModal(true);
   };
   // input/captureで撮影画像をstateにセット
   const handleCapture = (e) => {
@@ -304,15 +305,15 @@ export default function PostMain() {
         return;
       }
       // DBに保存
-      const { error: dbError } = await supabase
-        .from('images')
-        .insert([{ 
-          eventId, 
-          url: publicUrl, 
-          user: user ? user.id : null, // uuidを入れる
-          date: new Date().toISOString().slice(0, 10),
-          like_count: 0
-        }]);
+              const { error: dbError } = await supabase
+          .from('images')
+          .insert([{ 
+            eventId, 
+            url: publicUrl, 
+            user_id: user ? user.id : null, // uuidを入れる
+            date: new Date().toISOString().slice(0, 10),
+            like_count: 0
+          }]);
       if (dbError) {
         console.error('DB保存失敗:', dbError.message, dbError);
         setUploadError('DB保存失敗: ' + dbError.message);
@@ -430,7 +431,7 @@ export default function PostMain() {
           .insert([{ 
             eventId, 
             url: publicUrl, 
-            user: user ? user.id : null, // uuidを入れる
+            user_id: user ? user.id : null, // uuidを入れる
             date: new Date().toISOString().slice(0, 10),
             like_count: 0
           }]);
@@ -673,6 +674,8 @@ export default function PostMain() {
           <Button onClick={() => setShowAlreadyLikedModal(false)} className="w-32 bg-slate-700">閉じる</Button>
         </div>
       </Modal>
+      {/* アップグレードプランモーダル */}
+      <UpgradePlanModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
       {/* 戻るボタン */}
       <Button onClick={handleBack} className="mb-8 mt-2 px-8 py-3 bg-slate-700 w-full max-w-[400px]">イベント詳細ページへ戻る</Button>
     </div>

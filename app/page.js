@@ -1,6 +1,7 @@
 "use client";
 // LP（紹介ページ）
 import LPMain from '../components/organisms/LPMain';
+import Footer from '../components/molecules/Footer';
 import Head from 'next/head';
 import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -45,6 +46,7 @@ function HomePageInner() {
       </Head>
       <h1 style={{position:'absolute',left:'-9999px',height:'1px',width:'1px',overflow:'hidden'}}>FesSnap（フェススナップ）｜イベント写真共有サービス</h1>
       <LPMain />
+      <Footer />
     </>
   );
 }
