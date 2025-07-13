@@ -23,27 +23,10 @@ function LineAuthPageInner() {
         let sessionData;
         
         if (jwtToken) {
-          // JWTトークンのみの場合、セッションデータを構築
-          const base64Url = jwtToken.split('.')[1];
-          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-          const payload = JSON.parse(window.atob(base64));
-          
+          // JWTトークンのみの場合、Supabaseが自動でユーザー情報をデコードする
           sessionData = {
             access_token: jwtToken,
             refresh_token: jwtToken,
-            expires_in: 3600,
-            expires_at: Math.floor(Date.now() / 1000) + 3600,
-            token_type: 'bearer',
-            user: {
-              id: payload.sub,
-              aud: payload.aud,
-              role: payload.role,
-              email: payload.user_metadata?.email,
-              user_metadata: payload.user_metadata,
-              app_metadata: payload.app_metadata,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
           };
         } else {
           // セッションデータをデコード
