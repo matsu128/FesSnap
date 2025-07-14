@@ -138,7 +138,7 @@ export default function LPMain() {
     if (heroSubtitleRef.current) {
       gsap.fromTo(heroSubtitleRef.current, 
         { x: -100, opacity: 0 },
-        { x: 0, opacity: 1, duration: 1, ease: 'power2.out', delay: 2 }
+        { x: 0, opacity: 1, duration: 1, ease: 'power2.out', delay: 0.5 }
       );
     }
 
@@ -146,7 +146,7 @@ export default function LPMain() {
     if (heroDescriptionRef.current) {
       gsap.fromTo(heroDescriptionRef.current,
         { y: 50, opacity: 0 },
-        { y: 0, opacity: 1, duration: 1, ease: 'power2.out', delay: 2 }
+        { y: 0, opacity: 1, duration: 1, ease: 'power2.out', delay: 0.5 }
       );
     }
 
@@ -154,7 +154,7 @@ export default function LPMain() {
     if (heroButtonRef.current) {
       gsap.fromTo(heroButtonRef.current,
         { scale: 0, opacity: 0 },
-        { scale: 1, opacity: 1, duration: 0.8, ease: 'back.out(1.7)', delay: 2 }
+        { scale: 1, opacity: 1, duration: 0.8, ease: 'back.out(1.7)', delay: 0.5 }
       );
     }
 
@@ -243,10 +243,11 @@ export default function LPMain() {
     if (pricingSectionRef.current && pricingCardsRef.current) {
       const cards = Array.from(pricingCardsRef.current.children);
       if (cards.length >= 3) {
-        // 初期状態：3つのカードが同じ場所に重なって表示（Freeが最前面）
-        gsap.set(cards[0], { position: 'absolute', left: '50%', top: '50%', x: '-50%', y: '-50%', zIndex: 3, scale: 1, opacity: 1 }); // Free
-        gsap.set(cards[1], { position: 'absolute', left: '50%', top: '50%', x: '-50%', y: '-50%', zIndex: 2, scale: 0.95, opacity: 0.8 }); // Plus
-        gsap.set(cards[2], { position: 'absolute', left: '50%', top: '50%', x: '-50%', y: '-50%', zIndex: 1, scale: 0.9, opacity: 0.6 }); // Pro
+        // 初期状態：1枚だけ表示
+        cards.forEach((card, idx) => {
+          gsap.set(card, { position: 'absolute', left: '50%', top: '50%', x: '-50%', y: '-50%', zIndex: 2, scale: 0.9, opacity: 0 });
+        });
+        gsap.set(cards[0], { scale: 1, opacity: 1, zIndex: 3 });
 
         ScrollTrigger.create({
           trigger: pricingSectionRef.current,
@@ -256,56 +257,31 @@ export default function LPMain() {
           scrub: true,
           onUpdate: (self) => {
             const progress = self.progress;
-            
+            let activeIdx = 0;
             if (progress < 0.33) {
-              // 0-33%: Freeが最前面
-              gsap.set(cards[0], { zIndex: 3, scale: 1, opacity: 1 });
-              gsap.set(cards[1], { zIndex: 2, scale: 0.95, opacity: 0.8 });
-              gsap.set(cards[2], { zIndex: 1, scale: 0.9, opacity: 0.6 });
+              activeIdx = 0;
             } else if (progress < 0.66) {
-              // 33-66%: Plusが最前面
-              gsap.set(cards[0], { zIndex: 1, scale: 0.9, opacity: 0.6 });
-              gsap.set(cards[1], { zIndex: 3, scale: 1, opacity: 1 });
-              gsap.set(cards[2], { zIndex: 2, scale: 0.95, opacity: 0.8 });
+              activeIdx = 1;
             } else {
-              // 66-100%: Proが最前面
-              gsap.set(cards[0], { zIndex: 1, scale: 0.9, opacity: 0.6 });
-              gsap.set(cards[1], { zIndex: 2, scale: 0.95, opacity: 0.8 });
-              gsap.set(cards[2], { zIndex: 3, scale: 1, opacity: 1 });
+              activeIdx = 2;
             }
+            cards.forEach((card, idx) => {
+              if (idx === activeIdx) {
+                gsap.set(card, { scale: 1, opacity: 1, zIndex: 3 });
+              } else {
+                gsap.set(card, { scale: 0.9, opacity: 0, zIndex: 2 });
+              }
+            });
           },
           onLeave: () => {
             // pin解除後、Proカードのみを表示し、FreeとPlusは非表示
-            gsap.set(cards[0], { 
-              position: 'absolute', 
-              left: '50%', 
-              top: '50%', 
-              x: '-50%', 
-              y: '-50%', 
-              zIndex: 3, 
-              scale: 1, 
-              opacity: 0 
-            }); // Freeを非表示
-            gsap.set(cards[1], { 
-              position: 'absolute', 
-              left: '50%', 
-              top: '50%', 
-              x: '-50%', 
-              y: '-50%', 
-              zIndex: 2, 
-              scale: 1, 
-              opacity: 0 
-            }); // Plusを非表示
-            gsap.set(cards[2], { 
-              position: 'absolute', 
-              left: '50%', 
-              top: '50%', 
-              x: '-50%', 
-              y: '-50%', 
-              zIndex: 1, 
-              scale: 1, 
-              opacity: 1 
-            }); // Proのみ表示
+            cards.forEach((card, idx) => {
+              if (idx === 2) {
+                gsap.set(card, { scale: 1, opacity: 1, zIndex: 3 });
+              } else {
+                gsap.set(card, { scale: 0.9, opacity: 0, zIndex: 2 });
+              }
+            });
           }
         });
       }
