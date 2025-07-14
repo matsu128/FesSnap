@@ -13,66 +13,43 @@ function LineAuthPageInner() {
     
     if (!sessionParam && !jwtToken) {
       console.log('認証パラメータがありません');
-      router.replace('/');
+      router.replace('/?error=line_no_session');
       return;
     }
 
-    // 高速認証処理
     (async () => {
       try {
         let sessionData;
-        
         if (jwtToken) {
-          // JWTトークンのみの場合、Supabaseが自動でユーザー情報をデコードする
           sessionData = {
             access_token: jwtToken,
             refresh_token: jwtToken,
           };
         } else {
-          // セッションデータをデコード
           sessionData = JSON.parse(decodeURIComponent(sessionParam));
         }
-        
         console.log('Session data:', sessionData);
-        
-        // 現在のセッション状態を確認
-        const { data: currentSession } = await supabase.auth.getSession();
-        console.log('Current session before:', currentSession);
-        
-        // セッションを確実に設定
+        // セッションをセット
         const { data, error } = await supabase.auth.setSession(sessionData);
         console.log('setSession result:', { data, error });
-        
-        if (!error && data.session) {
-          console.log('LINE認証成功:', data.session);
-          
-          // セッションが正しく設定されたか再確認
-          const { data: newSession } = await supabase.auth.getSession();
-          console.log('New session after:', newSession);
-          
-          // 確実にセッションが設定されるまで待機
-          if (newSession.session) {
-            console.log('セッション設定完了、リダイレクト');
-            router.replace('/');
-          } else {
-            console.log('セッション設定失敗、再試行');
-            // 再試行
-            setTimeout(async () => {
-              const { data: retryData } = await supabase.auth.setSession(sessionData);
-              if (retryData.session) {
-                router.replace('/');
-              } else {
-                router.replace('/');
-              }
-            }, 1000);
-          }
-        } else {
-          console.log('LINE認証エラー:', error);
+        // ユーザー取得を最大5回リトライ
+        let user = null;
+        for (let i = 0; i < 5; i++) {
+          const { data: userData } = await supabase.auth.getUser();
+          user = userData.user;
+          if (user) break;
+          await new Promise(res => setTimeout(res, 400));
+        }
+        if (user) {
+          console.log('LINE認証成功:', user);
           router.replace('/');
+        } else {
+          console.log('LINE認証後もユーザー取得できず');
+          router.replace('/?error=line_session_failed');
         }
       } catch (e) {
         console.log('LINE認証例外:', e);
-        router.replace('/');
+        router.replace('/?error=line_session_exception');
       }
     })();
   }, [params, router]);
