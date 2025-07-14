@@ -235,10 +235,14 @@ export default function PostMain() {
     );
   };
   // 投稿ボタン押下時の制限チェック
-  const handlePostImage = () => {
-    // 画像枚数制限チェック
+  const handlePostImage = async () => {
+    // 最新の画像枚数をDBから取得して上限チェック
     if (eventImageLimit !== null && eventImageLimit !== undefined && eventImageLimit !== -1) {
-      if (images.length >= eventImageLimit) {
+      const { count } = await supabase
+        .from('images')
+        .select('*', { count: 'exact', head: true })
+        .eq('eventId', eventId);
+      if (count >= eventImageLimit) {
         setShowLimitModal(true);
         return;
       }
@@ -286,6 +290,18 @@ export default function PostMain() {
     setUploadError("");
     try {
       setIsUploading(true);
+      // 最新の画像枚数を取得して上限チェック
+      const { count } = await supabase
+        .from('images')
+        .select('*', { count: 'exact', head: true })
+        .eq('eventId', eventId);
+      if (eventImageLimit !== null && eventImageLimit !== undefined && eventImageLimit !== -1) {
+        if (count >= eventImageLimit) {
+          setShowLimitModal(true);
+          setIsUploading(false);
+          return;
+        }
+      }
       // 画像をbase64からBlobに変換
       const res = await fetch(capturedImage);
       const blob = await res.blob();
@@ -417,6 +433,18 @@ export default function PostMain() {
     setUploadError("");
     try {
       setIsUploading(true);
+      // 最新の画像枚数を取得して上限チェック
+      const { count } = await supabase
+        .from('images')
+        .select('*', { count: 'exact', head: true })
+        .eq('eventId', eventId);
+      if (eventImageLimit !== null && eventImageLimit !== undefined && eventImageLimit !== -1) {
+        if (count >= eventImageLimit) {
+          setShowLimitModal(true);
+          setIsUploading(false);
+          return;
+        }
+      }
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const fileExt = file.name.split('.').pop();
@@ -434,6 +462,18 @@ export default function PostMain() {
           console.error('画像URL取得失敗');
           setUploadError('画像URL取得失敗');
           continue;
+        }
+        // 再度最新の画像枚数を取得して上限チェック（多重アップロード対策）
+        const { count: currentCount } = await supabase
+          .from('images')
+          .select('*', { count: 'exact', head: true })
+          .eq('eventId', eventId);
+        if (eventImageLimit !== null && eventImageLimit !== undefined && eventImageLimit !== -1) {
+          if (currentCount >= eventImageLimit) {
+            setShowLimitModal(true);
+            setIsUploading(false);
+            break;
+          }
         }
         const { error: dbError } = await supabase
           .from('images')
