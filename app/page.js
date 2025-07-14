@@ -3,21 +3,35 @@
 import LPMain from '../components/organisms/LPMain';
 import Footer from '../components/molecules/Footer';
 import Head from 'next/head';
-import { useEffect, Suspense } from 'react';
+import { useEffect, Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 function HomePageInner() {
   const searchParams = useSearchParams();
+  const [errorMsg, setErrorMsg] = useState('');
   
   useEffect(() => {
     // URLパラメータからエラーを確認
     const error = searchParams.get('error');
-    
+    let msg = '';
     if (error === 'line_interaction_required') {
-      alert('LINEアプリでの認証が必要です。再度LINEログインをお試しください。');
+      msg = 'LINEアプリでの認証が必要です。再度LINEログインをお試しください。';
     } else if (error === 'line_auth_failed') {
-      alert('LINE認証に失敗しました。再度お試しください。');
+      msg = 'LINE認証に失敗しました。再度お試しください。';
+    } else if (error === 'line_no_code') {
+      msg = 'LINE認証コードが取得できませんでした。';
+    } else if (error === 'line_token_error') {
+      msg = 'LINE認証のアクセストークン取得に失敗しました。';
+    } else if (error === 'line_profile_error') {
+      msg = 'LINEプロフィール取得に失敗しました。';
+    } else if (error === 'line_user_create') {
+      msg = 'LINEユーザー作成に失敗しました。';
+    } else if (error === 'line_session_failed') {
+      msg = 'LINEログイン後のセッション確立に失敗しました。';
+    } else if (error === 'line_session_exception') {
+      msg = 'LINEログイン処理中に例外が発生しました。';
     }
+    setErrorMsg(msg);
   }, [searchParams]);
 
   return (
@@ -44,6 +58,11 @@ function HomePageInner() {
           "description": "イベントの感動をその場でみんなと共有できる新しい写真共有サービス"
         })}} />
       </Head>
+      {errorMsg && (
+        <div className="bg-red-100 text-red-700 p-4 rounded mb-4 text-center z-50" style={{position:'fixed',top:0,left:0,right:0}}>
+          {errorMsg}
+        </div>
+      )}
       <h1 style={{position:'absolute',left:'-9999px',height:'1px',width:'1px',overflow:'hidden'}}>FesSnap（フェススナップ）｜イベント写真共有サービス</h1>
       <LPMain />
       <Footer />
