@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   
   // 1. codeがなければエラー
   if (!code) {
-    return res.status(400).send('認可コードがありません');
+    return res.redirect('/?error=line_no_code');
   }
 
   // 環境変数の取得
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
     
     if (!tokenJson.access_token) {
       console.error('LINE token error:', tokenJson);
-      return res.status(400).send('アクセストークン取得失敗: ' + (tokenJson.error_description || tokenJson.error || 'Unknown error'));
+      return res.redirect('/?error=line_token_error');
     }
 
     // 2. プロフィール取得
@@ -69,32 +69,49 @@ export default async function handler(req, res) {
     
     if (!profile.userId) {
       console.error('LINE profile error:', profile);
-      return res.status(400).send('プロフィール取得失敗: ' + (profile.error_description || profile.error || 'Unknown error'));
+      return res.redirect('/?error=line_profile_error');
     }
 
     // 3. Supabaseユーザーを作成/検索
     console.log('Creating/Searching Supabase user for LINE ID:', profile.userId);
     
-    // 既存ユーザーを検索
-    const { data: existingUser, error: searchError } = await supabase
-      .from('auth.users')
-      .select('*')
-      .eq('raw_user_meta_data->>provider', 'line')
-      .eq('raw_user_meta_data->>sub', profile.userId)
-      .single();
-
     let userId;
-    
-    if (existingUser) {
-      // 既存ユーザーが見つかった場合
-      console.log('Existing user found:', existingUser.id);
-      userId = existingUser.id;
-    } else {
+    let existingUser = null;
+
+    // まずメールアドレスが取得できた場合は、そのメールアドレスで既存ユーザーを検索
+    if (tokenJson.email) {
+      const { data: emailUser, error: emailSearchError } = await supabase
+        .from('auth.users')
+        .select('*')
+        .eq('email', tokenJson.email)
+        .single();
+      if (emailUser) {
+        console.log('既存メールアドレスユーザーでログイン:', emailUser.id);
+        userId = emailUser.id;
+        existingUser = emailUser;
+      }
+    }
+
+    // メールアドレスで見つからなければ、LINE userIdで検索
+    if (!userId) {
+      const { data: lineUser, error: searchError } = await supabase
+        .from('auth.users')
+        .select('*')
+        .eq('raw_user_meta_data->>provider', 'line')
+        .eq('raw_user_meta_data->>sub', profile.userId)
+        .single();
+      if (lineUser) {
+        console.log('LINE IDで既存ユーザー発見:', lineUser.id);
+        userId = lineUser.id;
+        existingUser = lineUser;
+      }
+    }
+
+    if (!userId) {
       // 新規ユーザーを作成
       console.log('Creating new user for LINE ID:', profile.userId);
-      
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-        email: `${profile.userId}@line.local`, // 仮のメールアドレス
+        email: tokenJson.email || `${profile.userId}@line.local`, // LINEから取得できれば本物、なければ仮
         password: Math.random().toString(36).substring(2), // ランダムパスワード
         user_metadata: {
           name: profile.displayName,
@@ -108,12 +125,10 @@ export default async function handler(req, res) {
         },
         email_confirm: true // メール確認をスキップ
       });
-      
       if (createError) {
         console.error('User creation error:', createError);
-        return res.status(500).send('ユーザー作成失敗: ' + createError.message);
+        return res.redirect('/?error=line_user_create');
       }
-      
       userId = newUser.user.id;
       console.log('New user created:', userId);
     }
@@ -175,6 +190,6 @@ export default async function handler(req, res) {
     }
   } catch (e) {
     console.error('LINE auth error:', e);
-    res.status(500).send('LINE認証エラー: ' + e.message);
+    return res.redirect('/?error=line_auth_exception');
   }
 } 
