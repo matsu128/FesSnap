@@ -3,6 +3,7 @@ import Button from '../atoms/Button';
 import Icon from '../atoms/Icon';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function LoginModal({ isOpen, onClose }) {
   const { isLoggedIn, signIn, signUp, signInWithOAuth } = useAuth();
@@ -155,38 +156,15 @@ function EmailLoginForm({ isSignUp, onSwitch, onEmailConfirm, onClose }) {
 }
 
 function OAuthButton({ provider, label, icon, isLine }) {
-  const { signInWithOAuth } = useAuth();
+  // const { signInWithOAuth } = useAuth();
   const handleOAuth = () => {
     if (isLine) {
-      const clientId = process.env.NEXT_PUBLIC_LINE_CLIENT_ID || (typeof window !== 'undefined' ? window.NEXT_PUBLIC_LINE_CLIENT_ID : '');
-      const redirectUri = encodeURIComponent(`${window.location.origin}/api/auth/line-callback`);
-      const state = Math.random().toString(36).substring(2);
-      const scope = 'profile openid email';
-      
-      // LINE認証URL（シンプルな認証フロー）
-      const lineAuthUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
-      
-      // 環境変数チェック
-      if (!clientId) {
-        alert('LINE認証の設定が不完全です。管理者にお問い合わせください。');
-        return;
-      }
-      
-      // 直接LINE認証ページに遷移
-      window.location.href = lineAuthUrl;
+      // 標準Supabase OAuthフローでLINEログイン
+      supabase.auth.signInWithOAuth({ provider: 'line' });
     } else {
-      signInWithOAuth(provider)
-        .then(({ data, error }) => {
-          if (error) {
-            alert('OAuth認証に失敗しました: ' + error.message);
-          }
-        })
-        .catch((e) => {
-          alert('OAuth認証でエラーが発生しました: ' + e.message);
-        });
+      supabase.auth.signInWithOAuth({ provider });
     }
   };
-  
   return (
     <button onClick={handleOAuth} className={`flex items-center justify-center w-full py-3 rounded shadow-sm border bg-white text-base font-bold gap-2 ${provider === 'google' ? 'border-gray-200' : ''}`}>
       {icon}
