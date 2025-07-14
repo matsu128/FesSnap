@@ -156,11 +156,18 @@ function EmailLoginForm({ isSignUp, onSwitch, onEmailConfirm, onClose }) {
 }
 
 function OAuthButton({ provider, label, icon, isLine }) {
-  // const { signInWithOAuth } = useAuth();
   const handleOAuth = () => {
     if (isLine) {
-      // 標準Supabase OAuthフローでLINEログイン
-      supabase.auth.signInWithOAuth({ provider: 'line' });
+      const clientId = process.env.NEXT_PUBLIC_LINE_CLIENT_ID || (typeof window !== 'undefined' ? window.NEXT_PUBLIC_LINE_CLIENT_ID : '');
+      const redirectUri = encodeURIComponent(`${window.location.origin}/api/auth/line-callback`);
+      const state = Math.random().toString(36).substring(2);
+      const scope = 'profile openid email';
+      if (!clientId) {
+        alert('LINE認証の設定が不完全です。管理者にお問い合わせください。');
+        return;
+      }
+      const lineAuthUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
+      window.location.href = lineAuthUrl;
     } else {
       supabase.auth.signInWithOAuth({ provider });
     }

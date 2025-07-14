@@ -8,30 +8,26 @@ import { useSearchParams } from 'next/navigation';
 
 function HomePageInner() {
   const searchParams = useSearchParams();
-  const [errorMsg, setErrorMsg] = useState('');
-  
+  const [modalError, setModalError] = useState('');
+
   useEffect(() => {
-    // URLパラメータからエラーを確認
-    const error = searchParams.get('error');
-    let msg = '';
-    if (error === 'line_interaction_required') {
-      msg = 'LINEアプリでの認証が必要です。再度LINEログインをお試しください。';
-    } else if (error === 'line_auth_failed') {
-      msg = 'LINE認証に失敗しました。再度お試しください。';
-    } else if (error === 'line_no_code') {
-      msg = 'LINE認証コードが取得できませんでした。';
-    } else if (error === 'line_token_error') {
-      msg = 'LINE認証のアクセストークン取得に失敗しました。';
-    } else if (error === 'line_profile_error') {
-      msg = 'LINEプロフィール取得に失敗しました。';
-    } else if (error === 'line_user_create') {
-      msg = 'LINEユーザー作成に失敗しました。';
-    } else if (error === 'line_session_failed') {
-      msg = 'LINEログイン後のセッション確立に失敗しました。';
-    } else if (error === 'line_session_exception') {
-      msg = 'LINEログイン処理中に例外が発生しました。';
+    // クエリパラメータまたはlocalStorageからエラー取得
+    let error = searchParams.get('error') || localStorage.getItem('line_error');
+    if (error) {
+      let msg = '認証エラーが発生しました。再度お試しください。';
+      if (error === 'line_user_create') msg = 'LINEユーザー作成に失敗しました。';
+      if (error === 'line_token_error') msg = 'LINE認証のアクセストークン取得に失敗しました。';
+      if (error === 'line_profile_error') msg = 'LINEプロフィール取得に失敗しました。';
+      if (error === 'line_session_failed') msg = 'LINEログイン後のセッション確立に失敗しました。';
+      setModalError(msg);
+      localStorage.removeItem('line_error');
+      // クエリパラメータを消す
+      if (window && window.history && error === searchParams.get('error')) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('error');
+        window.history.replaceState({}, document.title, url.pathname);
+      }
     }
-    setErrorMsg(msg);
   }, [searchParams]);
 
   return (
@@ -58,9 +54,12 @@ function HomePageInner() {
           "description": "イベントの感動をその場でみんなと共有できる新しい写真共有サービス"
         })}} />
       </Head>
-      {errorMsg && (
-        <div className="bg-red-100 text-red-700 p-4 rounded mb-4 text-center z-50" style={{position:'fixed',top:0,left:0,right:0}}>
-          {errorMsg}
+      {modalError && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl p-6 shadow-xl text-center">
+            <div className="text-red-600 font-bold mb-2">{modalError}</div>
+            <button className="mt-4 px-6 py-2 bg-blue-500 text-white rounded" onClick={()=>setModalError('')}>閉じる</button>
+          </div>
         </div>
       )}
       <h1 style={{position:'absolute',left:'-9999px',height:'1px',width:'1px',overflow:'hidden'}}>FesSnap（フェススナップ）｜イベント写真共有サービス</h1>
