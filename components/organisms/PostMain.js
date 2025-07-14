@@ -332,8 +332,8 @@ export default function PostMain() {
       let uploadResult;
       try {
         uploadResult = await supabase.storage
-          .from('event-image')
-          .upload(fileName, blob, { contentType: 'image/jpeg' });
+        .from('event-image')
+        .upload(fileName, blob, { contentType: 'image/jpeg' });
       } catch (err) {
         setUploadError('アップロード失敗: ' + err.message);
         setIsUploading(false);
@@ -355,11 +355,11 @@ export default function PostMain() {
       const userIdForInsert = user ? user.id : visitorId;
       // DBに保存
       const insertObj = {
-        eventId,
-        url: publicUrl,
+            eventId, 
+            url: publicUrl, 
         user_id: userIdForInsert,
-        date: new Date().toISOString().slice(0, 10),
-        like_count: 0
+            date: new Date().toISOString().slice(0, 10),
+            like_count: 0
       };
       const { error: dbError } = await supabase
         .from('images')
@@ -491,8 +491,8 @@ export default function PostMain() {
         let uploadResult;
         try {
           uploadResult = await supabase.storage
-            .from('event-image')
-            .upload(fileName, file, { contentType: file.type });
+          .from('event-image')
+          .upload(fileName, file, { contentType: file.type });
         } catch (err) {
           setUploadError('アップロード失敗: ' + err.message);
           continue;
