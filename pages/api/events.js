@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     // イベント一覧取得
     const { data, error } = await supabase
       .from('events')
-      .select('id, title, like_enabled, created_at, plan_type, expires_at, owner');
+      .select('id, title, like_enabled, created_at, plan_type, expires_at, owner, image_limit, storage_period_days');
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json(data);
   }

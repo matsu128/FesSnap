@@ -244,13 +244,19 @@ export default function PostMain() {
   };
   // 投稿ボタン押下時の制限チェック
   const handlePostImage = async () => {
-    // 最新の画像枚数をDBから取得して上限チェック
-    if (eventImageLimit !== null && eventImageLimit !== undefined && eventImageLimit !== -1) {
-      const { count } = await supabase
-        .from('images')
-        .select('*', { count: 'exact', head: true })
-        .eq('eventId', eventId);
-      if (count >= eventImageLimit) {
+    // 最新のイベント情報と画像枚数を取得
+    const eventRes = await fetch('/api/events');
+    const eventList = await eventRes.json();
+    const event = eventList.find(e => e.id === eventId);
+    const imageLimit = event?.image_limit ?? null;
+    const eventTitle = event?.title ?? '';
+    const { count: currentCount } = await supabase
+      .from('images')
+      .select('*', { count: 'exact', head: true })
+      .eq('eventId', eventId);
+    const remain = (imageLimit !== null && imageLimit !== undefined && imageLimit !== -1) ? (imageLimit - currentCount) : '無制限';
+    if (imageLimit !== null && imageLimit !== undefined && imageLimit !== -1) {
+      if (currentCount >= imageLimit) {
         setShowLimitModal(true);
         return;
       }
@@ -298,13 +304,20 @@ export default function PostMain() {
     setUploadError("");
     try {
       setIsUploading(true);
-      // 最新の画像枚数を取得して上限チェック
-      const { count } = await supabase
+      // 最新のイベント情報と画像枚数を取得
+      const eventRes = await fetch('/api/events');
+      const eventList = await eventRes.json();
+      const event = eventList.find(e => e.id === eventId);
+      const imageLimit = event?.image_limit ?? null;
+      const eventTitle = event?.title ?? '';
+      const { count: beforeCount } = await supabase
         .from('images')
         .select('*', { count: 'exact', head: true })
         .eq('eventId', eventId);
-      if (eventImageLimit !== null && eventImageLimit !== undefined && eventImageLimit !== -1) {
-        if (count >= eventImageLimit) {
+      const remain = (imageLimit !== null && imageLimit !== undefined && imageLimit !== -1) ? (imageLimit - beforeCount) : '無制限';
+      const fileName = `${eventId}_${Date.now()}.jpg`;
+      if (imageLimit !== null && imageLimit !== undefined && imageLimit !== -1) {
+        if (beforeCount >= imageLimit) {
           setShowLimitModal(true);
           setIsUploading(false);
           return;
@@ -313,8 +326,6 @@ export default function PostMain() {
       // 画像をbase64からBlobに変換
       const res = await fetch(capturedImage);
       const blob = await res.blob();
-      const fileExt = 'jpg';
-      const fileName = `${eventId}_${Date.now()}.${fileExt}`;
       // ストレージにアップロード
       let uploadResult;
       try {
@@ -356,13 +367,11 @@ export default function PostMain() {
         setIsUploading(false);
         return;
       }
-      // DB保存後に未ログインなら案内モーダル発火
-      const { data: { user: supaUser } } = await supabase.auth.getUser();
-      if (!supaUser) {
-        setShowLoginGuideModal(true);
-        setSelectedImage({ url: publicUrl });
-        setShowImageModal(true);
-      }
+      // 投稿後の枚数
+      const { count: afterCount } = await supabase
+        .from('images')
+        .select('*', { count: 'exact', head: true })
+        .eq('eventId', eventId);
       fetchImages();
       setIsUploading(false);
     } catch (e) {
@@ -449,78 +458,75 @@ export default function PostMain() {
     setUploadError("");
     try {
       setIsUploading(true);
-      // 最新の画像枚数を取得して上限チェック
-      let { count } = await supabase
+      // 最新のイベント情報と画像枚数を取得
+      const eventRes = await fetch('/api/events');
+      const eventList = await eventRes.json();
+      const event = eventList.find(e => e.id === eventId);
+      const imageLimit = event?.image_limit ?? null;
+      const eventTitle = event?.title ?? '';
+      let { count: beforeCount } = await supabase
         .from('images')
         .select('*', { count: 'exact', head: true })
         .eq('eventId', eventId);
-      if (eventImageLimit !== null && eventImageLimit !== undefined && eventImageLimit !== -1) {
-        if (count >= eventImageLimit) {
-          setShowLimitModal(true);
-          setIsUploading(false);
-          return;
-        }
-      }
+      const remain = (imageLimit !== null && imageLimit !== undefined && imageLimit !== -1) ? (imageLimit - beforeCount) : '無制限';
+      let added = 0;
       for (let i = 0; i < files.length; i++) {
         // アップロード前に毎回最新枚数を取得
         const { count: currentCount } = await supabase
           .from('images')
           .select('*', { count: 'exact', head: true })
           .eq('eventId', eventId);
-        if (eventImageLimit !== null && eventImageLimit !== undefined && eventImageLimit !== -1) {
-          if (currentCount >= eventImageLimit) {
-            setShowLimitModal(true);
-            setIsUploading(false);
-            break;
-          }
+        const currentRemain = (imageLimit !== null && imageLimit !== undefined && imageLimit !== -1) ? (imageLimit - currentCount) : '無制限';
+        const file = files[i];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${eventId}_${Date.now()}_${i}.${fileExt}`;
+        if (imageLimit !== null && imageLimit !== undefined && imageLimit !== -1 && currentCount >= imageLimit) {
+          setShowLimitModal(true);
+          setIsUploading(false);
+          break;
         }
-        if (eventImageLimit === null || eventImageLimit === undefined || eventImageLimit === -1 || currentCount < eventImageLimit) {
-          const file = files[i];
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${eventId}_${Date.now()}_${i}.${fileExt}`;
-          let uploadResult;
-          try {
-            uploadResult = await supabase.storage
-              .from('event-image')
-              .upload(fileName, file, { contentType: file.type });
-          } catch (err) {
-            setUploadError('アップロード失敗: ' + err.message);
-            continue;
-          }
-          const { error: uploadError } = uploadResult || {};
-          if (uploadError) {
-            setUploadError('アップロード失敗: ' + uploadError.message);
-            continue; // 他のファイルは続行
-          }
-          const { publicUrl } = supabase.storage.from('event-image').getPublicUrl(fileName).data;
-          if (!publicUrl) {
-            setUploadError('画像URL取得失敗');
-            continue;
-          }
-          // user_id決定ロジック
-          const userIdForInsert = user ? user.id : visitorId;
-          const insertObj = {
-            eventId,
-            url: publicUrl,
-            user_id: userIdForInsert,
-            date: new Date().toISOString().slice(0, 10),
-            like_count: 0
-          };
-          const { error: dbError } = await supabase
-            .from('images')
-            .insert([insertObj]);
-          if (dbError) {
-            setUploadError('DB保存失敗: ' + dbError.message);
-            continue;
-          }
-          // DB保存後に未ログインなら案内モーダル発火
-          const { data: { user: currentUser } } = await supabase.auth.getUser();
-          if (!currentUser) {
-            setShowLoginGuideModal(true);
-            setSelectedImage({ url: publicUrl });
-            setShowImageModal(true);
-          }
+        // 投稿可能
+        let uploadResult;
+        try {
+          uploadResult = await supabase.storage
+            .from('event-image')
+            .upload(fileName, file, { contentType: file.type });
+        } catch (err) {
+          setUploadError('アップロード失敗: ' + err.message);
+          continue;
         }
+        const { error: uploadError } = uploadResult || {};
+        if (uploadError) {
+          setUploadError('アップロード失敗: ' + uploadError.message);
+          continue; // 他のファイルは続行
+        }
+        const { publicUrl } = supabase.storage.from('event-image').getPublicUrl(fileName).data;
+        if (!publicUrl) {
+          setUploadError('画像URL取得失敗');
+          continue;
+        }
+        // user_id決定ロジック
+        const userIdForInsert = user ? user.id : visitorId;
+        const insertObj = {
+          eventId,
+          url: publicUrl,
+          user_id: userIdForInsert,
+          date: new Date().toISOString().slice(0, 10),
+          like_count: 0
+        };
+        const { error: dbError } = await supabase
+          .from('images')
+          .insert([insertObj]);
+        if (dbError) {
+          setUploadError('DB保存失敗: ' + dbError.message);
+          continue;
+        }
+        // 投稿後の枚数
+        const { count: afterCount } = await supabase
+          .from('images')
+          .select('*', { count: 'exact', head: true })
+          .eq('eventId', eventId);
+        added++;
       }
       fetchImages();
       setIsUploading(false);
