@@ -83,8 +83,11 @@ export default function EventListMain() {
             .select('eventId')
             .eq('user_id', user.id);
           const postedEventIds = (myImages || []).map(img => img.eventId);
-          // 2. 投稿者のイベントのみ抽出（ownerカラムがないため、投稿者のみ）
-          const filteredEvents = data.filter(ev => postedEventIds.includes(ev.id));
+          // 2. 自分がownerのイベントIDリスト
+          const ownedEventIds = data.filter(ev => ev.owner === user.id).map(ev => ev.id);
+          // 3. 投稿またはownerのイベントIDを重複なく結合
+          const allEventIds = Array.from(new Set([...postedEventIds, ...ownedEventIds]));
+          const filteredEvents = data.filter(ev => allEventIds.includes(ev.id));
           setFiltered(filteredEvents);
         } else {
           setFiltered([]);
