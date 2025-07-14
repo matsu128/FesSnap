@@ -330,8 +330,13 @@ export default function PostMain() {
       fetchImages();
       setIsUploading(false);
     } catch (e) {
-      console.error('予期せぬエラー:', e);
-      setUploadError('予期せぬエラー: ' + e.message);
+      let jpMsg = '予期せぬエラーが発生しました';
+      if (e.message && e.message.includes('Anonymous sign-ins are disabled')) {
+        jpMsg = '匿名サインインは無効化されています。メールアドレスでログインしてください';
+      } else if (e.message) {
+        jpMsg = 'エラー: ' + e.message;
+      }
+      setUploadError(jpMsg);
       setIsUploading(false);
     }
     setCapturedImage(null);
@@ -451,8 +456,13 @@ export default function PostMain() {
       fetchImages();
       setIsUploading(false);
     } catch (e) {
-      console.error('予期せぬエラー:', e);
-      setUploadError('予期せぬエラー: ' + e.message);
+      let jpMsg = '予期せぬエラーが発生しました';
+      if (e.message && e.message.includes('Anonymous sign-ins are disabled')) {
+        jpMsg = '匿名サインインは無効化されています。メールアドレスでログインしてください';
+      } else if (e.message) {
+        jpMsg = 'エラー: ' + e.message;
+      }
+      setUploadError(jpMsg);
       setIsUploading(false);
     }
   };
