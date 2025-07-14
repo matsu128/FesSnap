@@ -1,7 +1,7 @@
 // イベントリストページのメイン部分を構成するorganism
 // Header, FilterBar, イベントカードリスト、ページネーションを含む
 // APIからイベントデータを取得し、フィルタ・ページネーションも実装
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import Header from '../molecules/Header';
 import FilterBar from '../molecules/FilterBar';
 import Card from '../atoms/Card';
@@ -129,12 +129,12 @@ export default function EventListMain() {
   // ログインモーダルが閉じられた時の処理
   const handleLoginModalClose = () => {
     setLoginModalOpen(false);
-    // ログイン成功時は全イベントを表示
+    // ログイン成功時もsetFilteredは呼ばず、useEffectのフィルタリングに任せる
     fetch('/api/events')
       .then(res => res.json())
       .then(data => {
         setEvents(data);
-        setFiltered(data);
+        // setFiltered(data); ← これを削除
       });
   };
 
