@@ -434,7 +434,7 @@ export default function PostMain() {
     try {
       setIsUploading(true);
       // 最新の画像枚数を取得して上限チェック
-      const { count } = await supabase
+      let { count } = await supabase
         .from('images')
         .select('*', { count: 'exact', head: true })
         .eq('eventId', eventId);
@@ -446,24 +446,7 @@ export default function PostMain() {
         }
       }
       for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${eventId}_${Date.now()}_${i}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from('event-image')
-          .upload(fileName, file, { contentType: file.type });
-        if (uploadError) {
-          console.error('アップロード失敗:', uploadError.message, uploadError);
-          setUploadError('アップロード失敗: ' + uploadError.message);
-          continue; // 他のファイルは続行
-        }
-        const { publicUrl } = supabase.storage.from('event-image').getPublicUrl(fileName).data;
-        if (!publicUrl) {
-          console.error('画像URL取得失敗');
-          setUploadError('画像URL取得失敗');
-          continue;
-        }
-        // 再度最新の画像枚数を取得して上限チェック（多重アップロード対策）
+        // アップロード前に毎回最新枚数を取得
         const { count: currentCount } = await supabase
           .from('images')
           .select('*', { count: 'exact', head: true })
@@ -475,26 +458,45 @@ export default function PostMain() {
             break;
           }
         }
-        const { error: dbError } = await supabase
-          .from('images')
-          .insert([{ 
-            eventId, 
-            url: publicUrl, 
-            user_id: user ? user.id : null, // uuidを入れる
-            date: new Date().toISOString().slice(0, 10),
-            like_count: 0
-          }]);
-        if (dbError) {
-          console.error('DB保存失敗:', dbError.message, dbError);
-          setUploadError('DB保存失敗: ' + dbError.message);
-          continue;
-        }
-        // DB保存後に未ログインなら案内モーダル発火
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (!currentUser) {
-          setShowLoginGuideModal(true);
-          setSelectedImage({ url: publicUrl });
-          setShowImageModal(true);
+        if (currentCount < eventImageLimit) {
+          const file = files[i];
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${eventId}_${Date.now()}_${i}.${fileExt}`;
+          const { error: uploadError } = await supabase.storage
+            .from('event-image')
+            .upload(fileName, file, { contentType: file.type });
+          if (uploadError) {
+            console.error('アップロード失敗:', uploadError.message, uploadError);
+            setUploadError('アップロード失敗: ' + uploadError.message);
+            continue; // 他のファイルは続行
+          }
+          const { publicUrl } = supabase.storage.from('event-image').getPublicUrl(fileName).data;
+          if (!publicUrl) {
+            console.error('画像URL取得失敗');
+            setUploadError('画像URL取得失敗');
+            continue;
+          }
+          const { error: dbError } = await supabase
+            .from('images')
+            .insert([{ 
+              eventId, 
+              url: publicUrl, 
+              user_id: user ? user.id : null, // uuidを入れる
+              date: new Date().toISOString().slice(0, 10),
+              like_count: 0
+            }]);
+          if (dbError) {
+            console.error('DB保存失敗:', dbError.message, dbError);
+            setUploadError('DB保存失敗: ' + dbError.message);
+            continue;
+          }
+          // DB保存後に未ログインなら案内モーダル発火
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          if (!currentUser) {
+            setShowLoginGuideModal(true);
+            setSelectedImage({ url: publicUrl });
+            setShowImageModal(true);
+          }
         }
       }
       fetchImages();
@@ -737,7 +739,7 @@ export default function PostMain() {
         <div className="flex flex-col items-center p-6">
           <div className="font-bold text-lg text-black mb-2">これ以上投稿できません</div>
           <div className="text-base text-gray-700 mb-4">このイベントの画像投稿枚数がプランの上限に達しています。</div>
-          <Button onClick={() => { setShowLimitModal(false); setShowUpgradeModal(true); }} className="w-full py-3 text-base font-bold rounded-full bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 text-white shadow-lg">プランをアップグレード</Button>
+          <Button onClick={() => { setShowLimitModal(false); window.location.href = '/stripe'; }} className="w-full py-3 text-base font-bold rounded-full bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 text-white shadow-lg">プランをアップグレード</Button>
         </div>
       </Modal>
       {/* 戻るボタン */}
