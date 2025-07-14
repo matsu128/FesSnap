@@ -169,7 +169,7 @@ export default async function handler(req, res) {
   } catch (e) {
     return res.send(`
       <script>
-        localStorage.setItem('line_error', 'line_auth_exception');
+        localStorage.setItem('line_error', 'line_auth_exception:' + ${JSON.stringify(e.message)});
         window.location.href = '/';
       </script>
     `);
