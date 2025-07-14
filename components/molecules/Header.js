@@ -8,7 +8,7 @@ import Logo from '../atoms/Logo';
 import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
 
-export default function Header({ type = 'default', onMenuClick, onLoginClick, menuColor }) {
+export default function Header({ type = 'default', onMenuClick, onLoginClick, menuColor, children }) {
   const router = useRouter();
   const pathname = usePathname();
   const { isLoggedIn, user, signOut } = useAuth();
@@ -59,6 +59,7 @@ export default function Header({ type = 'default', onMenuClick, onLoginClick, me
             <Icon type="menu" className={`w-7 h-7 ${menuColor === 'white' ? 'text-white' : 'text-gray-700'}`} />
           </button>
         )}
+        {children}
       </div>
     </header>
   );

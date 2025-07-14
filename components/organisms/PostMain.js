@@ -87,6 +87,8 @@ export default function PostMain() {
   const [showLikeLoginGuideModal, setShowLikeLoginGuideModal] = useState(false);
   const [showAlreadyLikedModal, setShowAlreadyLikedModal] = useState(false); // 追加
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [eventImageLimit, setEventImageLimit] = useState(null);
+  const [eventStoragePeriod, setEventStoragePeriod] = useState(null);
 
   useEffect(() => {
     const handleResize = () => setPageSize(getPageSize());
@@ -193,7 +195,7 @@ export default function PostMain() {
     return sortedImages;
   };
 
-  // イベント作成日・タイトル・いいね有効フラグ取得
+  // イベント作成日・タイトル・いいね有効フラグ・画像上限・保存期間取得
   useEffect(() => {
     if (!eventId) return;
     fetch('/api/events')
@@ -203,6 +205,8 @@ export default function PostMain() {
         setEventCreatedAt(event?.created_at || null);
         setEventTitle(event?.title || "");
         setLikeEnabled(!!event?.like_enabled);
+        setEventImageLimit(event?.image_limit ?? null);
+        setEventStoragePeriod(event?.storage_period_days ?? null);
       });
   }, [eventId]);
 
@@ -232,9 +236,9 @@ export default function PostMain() {
   };
   // 投稿ボタン押下時の制限チェック
   const handlePostImage = () => {
-    if (userPlan && userPlan.current_plan) {
-      const planLimit = planLimits[userPlan.current_plan];
-      if (planLimit.imageLimit !== -1 && currentImageCount >= planLimit.imageLimit) {
+    // 画像枚数制限チェック
+    if (eventImageLimit !== null && eventImageLimit !== undefined && eventImageLimit !== -1) {
+      if (images.length >= eventImageLimit) {
         setShowUpgradeModal(true);
         return;
       }
@@ -467,6 +471,12 @@ export default function PostMain() {
     }
   };
 
+  // Stripe決済ページ遷移用
+  const handleUpgradePlan = () => {
+    // Stripeのプランアップグレードページに遷移（仮実装: plusプランに遷移）
+    window.location.href = '/stripe';
+  };
+
   return (
     <div className="w-full min-h-screen bg-white flex flex-col items-center px-2 sm:px-0">
       {/* ヘッダー（ハンバーガーメニュー） */}
@@ -684,8 +694,13 @@ export default function PostMain() {
           <Button onClick={() => setShowAlreadyLikedModal(false)} className="w-32 bg-slate-700">閉じる</Button>
         </div>
       </Modal>
-      {/* アップグレードプランモーダル */}
-      <UpgradePlanModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+      {/* 画像枚数制限時のアップグレードモーダル */}
+      <UpgradePlanModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        onUpgrade={handleUpgradePlan}
+        currentPlanLimit={eventImageLimit}
+      />
       {/* 戻るボタン */}
       <Button onClick={handleBack} className="mb-8 mt-2 px-8 py-3 bg-slate-700 w-full max-w-[400px]">イベント詳細ページへ戻る</Button>
     </div>

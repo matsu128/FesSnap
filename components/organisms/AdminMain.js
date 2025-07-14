@@ -11,9 +11,10 @@ import html2canvas from 'html2canvas';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
-import { planLimits } from '../../lib/supabaseClient';
+import { PLAN_LIMITS } from '../../lib/planLimits';
 import PlanSelectionModal from '../molecules/PlanSelectionModal';
 import { loadStripe } from '@stripe/stripe-js';
+import LoginModal from '../molecules/LoginModal';
 
 function isIOS() {
   if (typeof window === 'undefined') return false;
@@ -35,7 +36,10 @@ export default function AdminMain() {
   const [qrEventId, setQrEventId] = useState(null);
   const [likeEnabled, setLikeEnabled] = useState(false);
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isLoggedIn } = useAuth();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showLoginGuideModal, setShowLoginGuideModal] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   // イベント規模・保存期間の選択状態
   const [eventScale, setEventScale] = useState('');
@@ -104,18 +108,32 @@ export default function AdminMain() {
 
   // QRコード生成
   const handleGenerateQr = async () => {
+    console.log('[QR生成] handleGenerateQr開始', { user, isLoggedIn, selectedEvent, selectedPlanType });
+    console.log('[QR生成] user:', user);
+    if (user) {
+      console.log('[QR生成] user.id:', user.id);
+    } else {
+      console.log('[QR生成] userがnullまたはundefined');
+    }
+    setShowLoginGuideModal(false); // まずモーダルを必ず閉じる
     setQrTouched(true);
     setQrError('');
     const newMissing = [];
     if (!selectedEvent?.title) newMissing.push('title');
     setMissingFields(newMissing);
     if (newMissing.length > 0) {
+      console.log('[QR生成] タイトル未入力エラー');
       setQr('');
+      // エラー内容はモーダル外にも表示される
       return;
     }
-
+    if (!user || !user.id) {
+      console.log('[QR生成] userまたはuser.idがnull（未ログインなのでダミーUUIDで進行）', user);
+      // returnせず、ダミーUUIDでAPIリクエストを送る
+    }
     // 有料プランの場合はStripe決済
     if (selectedPlanType !== 'free') {
+      console.log('[QR生成] 有料プラン決済処理開始');
       try {
         const response = await fetch('/api/stripe/create-checkout-session', {
           method: 'POST',
@@ -129,6 +147,7 @@ export default function AdminMain() {
         });
 
         if (!response.ok) {
+          console.log('[QR生成] Stripe APIエラー', response);
           const errorData = await response.json();
           throw new Error(errorData.error || '決済セッションの作成に失敗しました');
         }
@@ -149,31 +168,50 @@ export default function AdminMain() {
         }
         return;
       } catch (error) {
-        console.error('Stripe error:', error);
+        console.log('[QR生成] Stripe決済catch', error);
         setQrError('決済処理中にエラーが発生しました: ' + error.message);
         return;
       }
     }
 
     // 無料プランの場合は通常のQRコード生成
+    console.log('[QR生成] 無料プランAPIリクエスト開始');
     try {
+      // プランごとの制限値を取得
+      const limits = PLAN_LIMITS[selectedPlanType] || PLAN_LIMITS['free'];
+      // ownerフィールドはuserがいればuser.id、いなければダミーUUID
+      const eventBody = {
+        title: selectedEvent?.title,
+        like_enabled: likeEnabled,
+        plan_type: selectedPlanType,
+        image_limit: limits.image_limit,
+        storage_period_days: limits.storage_period_days,
+        owner: (user && user.id) ? user.id : '00000000-0000-0000-0000-000000000000'
+      };
       const res = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: selectedEvent?.title,
-          like_enabled: likeEnabled,
-          plan_type: selectedPlanType
-        })
+        body: JSON.stringify(eventBody)
       });
+      console.log('[QR生成] /api/events POST完了', res);
       
       if (!res.ok) {
         const errorData = await res.json();
-        setQrError(errorData.error || 'イベント作成に失敗しました');
+        // 英語エラーを日本語に変換
+        let jpError = errorData.error;
+        if (jpError && jpError.includes('null value in column "owner"')) {
+          jpError = 'イベント作成に失敗しました（ログイン情報が正しく取得できませんでした）';
+        } else if (jpError && jpError.includes('violates not-null constraint')) {
+          jpError = 'イベント作成に失敗しました（必要な情報が不足しています）';
+        } else if (!jpError) {
+          jpError = 'イベント作成に失敗しました';
+        }
+        setQrError(jpError);
         return;
       }
       
       const data = await res.json();
+      console.log('[QR生成] /api/events レスポンスOK', data);
       // 返却IDでQRコードURL生成
       const qrValue = `https://fes-snap.vercel.app/events/${data.id}/post`;
       setQr(qrValue);
@@ -226,8 +264,12 @@ export default function AdminMain() {
         }
       }, 100);
     } catch (e) {
-      console.error('QR generation error:', e);
-      setQrError('サーバーエラーが発生しました: ' + e.message);
+      console.log('[QR生成] catch節', e);
+      if (e.message && e.message.includes("Cannot read properties of null (reading 'id')")) {
+        setQrError('ログイン情報が取得できませんでした。再度ログインしてください');
+      } else {
+        setQrError('サーバーエラーが発生しました');
+      }
     }
   };
 
@@ -270,9 +312,78 @@ export default function AdminMain() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex flex-col items-center">
-      {/* ヘッダー */}
-      <Header type="default" />
+    <div className="w-full min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex flex-col items-center px-2 sm:px-0" style={{fontFamily: "'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
+      <div className="relative z-20 w-full flex flex-col items-center">
+        {/* ヘッダー */}
+        <Header
+          type="menu"
+          onLoginClick={() => { console.log('[Header] ログインボタンクリック'); setShowLoginModal(true); }}
+          onMenuClick={() => { console.log('[Header] ハンバーガーメニュークリック'); setShowMenu(true); }}
+        />
+      </div>
+      {/* ログイン推奨モーダル */}
+      <Modal isOpen={showLoginGuideModal} onClose={() => setShowLoginGuideModal(false)}>
+        <div className="flex flex-col items-center p-6 w-full max-w-xs mx-auto text-center relative">
+          <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl font-bold" onClick={() => setShowLoginGuideModal(false)}>&times;</button>
+          <h2
+            className="text-2xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow text-center"
+            style={{
+              fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
+              letterSpacing: '0.05em',
+              lineHeight: 1.15
+            }}
+          >
+            ログインを推奨します
+          </h2>
+          <div
+            className="mb-4 text-base sm:text-lg text-gray-600 font-medium text-center"
+            style={{
+              fontFamily: "'Quicksand', 'Noto Sans JP', 'Poppins', 'Nunito', 'Rubik', 'Rounded Mplus 1c', sans-serif",
+              letterSpacing: '0.02em',
+              lineHeight: 1.6
+            }}
+          >
+            ログインしないままイベントを作成すると<br className="sm:hidden" />イベントを探すことが出来なくなります。
+          </div>
+          {/* エラー表示（モーダル内） */}
+          {missingFields.length > 0 && (
+            <div className="w-full text-center text-red-500 text-base mb-2 font-bold">{missingFields.includes('title') && 'タイトルが未入力です'}</div>
+          )}
+          <div className="flex flex-col w-full gap-2 mt-2">
+            <Button
+              onClick={handleGenerateQr}
+              className="w-full py-3 text-lg font-bold rounded-full bg-gradient-to-r from-green-400 via-blue-400 to-blue-600 shadow-lg hover:from-blue-400 hover:to-green-400 transition-all duration-200 border-0"
+              style={{
+                fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
+                letterSpacing: '0.04em'
+              }}
+            >
+              生成する
+            </Button>
+            <Button
+              onClick={() => { setShowLoginGuideModal(false); setShowLoginModal(true); }}
+              className="w-full py-3 text-lg font-bold rounded-full bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 shadow-lg hover:from-pink-400 hover:to-blue-500 transition-all duration-200 border-0"
+              style={{
+                fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
+                letterSpacing: '0.04em'
+              }}
+            >
+              ログイン
+            </Button>
+          </div>
+        </div>
+      </Modal>
+      {/* ログインモーダル */}
+      <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
+      {/* ハンバーガーメニューの中身（例: モーダル） */}
+      <Modal isOpen={showMenu} onClose={() => setShowMenu(false)}>
+        <div className="flex flex-col items-center p-6 w-full max-w-xs mx-auto text-center relative">
+          <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl font-bold" onClick={() => setShowMenu(false)}>&times;</button>
+          <div className="text-lg font-bold mb-4">メニュー</div>
+          <Button onClick={() => { setShowMenu(false); router.push('/events'); }} className="w-full mb-2 py-3 text-base font-bold rounded-full bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 text-white shadow-lg">イベント一覧へ</Button>
+          <Button onClick={() => { setShowMenu(false); setShowLoginModal(true); }} className="w-full py-3 text-base font-bold rounded-full bg-gradient-to-r from-red-500 via-pink-400 to-blue-600 text-white shadow-lg">ログアウト</Button>
+        </div>
+      </Modal>
       {/* ページタイトル */}
       <div className="w-full max-w-[400px] mt-24 mb-8 px-2 sm:px-0">
         <h1 className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 mb-2" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", letterSpacing: '0.05em'}}>
@@ -448,7 +559,24 @@ export default function AdminMain() {
       {/* QRコード生成ボタン */}
       <div className="flex w-full max-w-[400px] gap-4 mb-8 px-2 sm:px-0">
         <Button 
-          onClick={handleGenerateQr} 
+          onClick={() => {
+            // まずタイトル必須チェック
+            if (!selectedEvent?.title) {
+              setQrTouched(true);
+              setMissingFields(['title']);
+              setQrError('');
+              console.log('[QR生成] ボタン押下: タイトル未入力でreturn');
+              return;
+            }
+            console.log('[QR生成] ボタン押下: isLoggedIn=', isLoggedIn, 'user=', user);
+            if (!isLoggedIn) {
+              console.log('[QR生成] 未ログインなので推奨モーダル表示');
+              setShowLoginGuideModal(true);
+            } else {
+              console.log('[QR生成] ログイン済みなので生成処理へ');
+              handleGenerateQr();
+            }
+          }} 
           className="flex-1 text-base py-4"
         >
           {selectedPlanType === 'free' ? 'QRコード生成' : '決済してQRコード生成'}
@@ -462,9 +590,10 @@ export default function AdminMain() {
           </div>
           <div className="text-xs text-gray-400 mt-1">タップで拡大・保存</div>
           {qrEventId && (
-            <button 
-              onClick={() => router.push(`/events/${qrEventId}`)} 
-              className="w-full mt-2 text-base py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            <button
+              onClick={() => router.push(`/events/${qrEventId}`)}
+              className="flex-1 text-base py-4 bg-gradient-to-r from-green-400 via-blue-400 to-blue-600 text-white rounded-full font-bold shadow-lg hover:from-blue-400 hover:to-green-400 transition-all duration-200 border-0 mt-2"
+              style={{ fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif", letterSpacing: '0.04em' }}
             >
               イベントページへ
             </button>
