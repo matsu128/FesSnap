@@ -31,6 +31,7 @@ export default function EventListMain() {
   const [showPrefModal, setShowPrefModal] = useState(false);
   const [showDateModal, setShowDateModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // 動画のラストフレームで止めるためのref
   const videoRef = useRef(null);
@@ -61,6 +62,7 @@ export default function EventListMain() {
 
   // APIからイベントデータを取得
   useEffect(() => {
+    setLoading(true);
     fetch('/api/events')
       .then(res => res.json())
       .then(async data => {
@@ -69,6 +71,7 @@ export default function EventListMain() {
           console.error('API response is not an array:', data);
           setEvents([]);
           setFiltered([]);
+          setLoading(false);
           return;
         }
         
@@ -76,6 +79,7 @@ export default function EventListMain() {
         if (!isLoggedIn) {
           const demoEvent = data.find(event => event.id === DEMO_EVENT_ID);
           setFiltered(demoEvent ? [demoEvent] : []);
+          setLoading(false);
         } else if (user && user.id) {
           // 1. 自分が投稿した画像のeventIdリストを取得
           const { data: myImages } = await supabase
@@ -89,14 +93,17 @@ export default function EventListMain() {
           const allEventIds = Array.from(new Set([...postedEventIds, ...ownedEventIds]));
           const filteredEvents = data.filter(ev => allEventIds.includes(ev.id));
           setFiltered(filteredEvents);
+          setLoading(false);
         } else {
           setFiltered([]);
+          setLoading(false);
         }
       })
       .catch(error => {
         console.error('Failed to fetch events:', error);
         setEvents([]);
         setFiltered([]);
+        setLoading(false);
       });
   }, [isLoggedIn, user]);
 
@@ -201,6 +208,10 @@ export default function EventListMain() {
         <PrefectureSelect show={showPrefModal} value={filterState.region} onChange={v=>setFilterState(s=>({...s,region:v}))} onClose={()=>setShowPrefModal(false)} label="エリアを選択" />
         <DatePickerModal show={showDateModal} value={filterState.date} onChange={v=>setFilterState(s=>({...s,date:v}))} onClose={()=>setShowDateModal(false)} label="日付を選択" />
         <CategorySelectModal show={showCategoryModal} value={filterState.category} onChange={v=>setFilterState(s=>({...s,category:v}))} onClose={()=>setShowCategoryModal(false)} label="カテゴリーを選択" />
+        {/* ローディング分岐ここまで */}
+        {loading && (
+          <div className="w-full text-center text-black py-12 font-bold text-lg">読み込み中...</div>
+        )}
         {/* イベントリスト：おしゃれな浮遊カードのみ */}
         <div className="w-full max-w-[400px] flex flex-col gap-8 mt-2 mb-8 px-2 sm:px-0">
           {pagedEvents.length === 0 && (
