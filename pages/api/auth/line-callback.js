@@ -125,7 +125,7 @@ export default async function handler(req, res) {
       if (createError) {
         return res.send(`
           <script>
-            localStorage.setItem('line_error', 'line_user_create');
+            localStorage.setItem('line_error', 'line_user_create:' + ${JSON.stringify(createError.message)});
             window.location.href = '/';
           </script>
         `);
