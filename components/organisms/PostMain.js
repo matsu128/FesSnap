@@ -91,6 +91,8 @@ export default function PostMain() {
   const [eventImageLimit, setEventImageLimit] = useState(null);
   const [eventStoragePeriod, setEventStoragePeriod] = useState(null);
   const [visitorId, setVisitorId] = useState(null);
+  const [showMyPosts, setShowMyPosts] = useState(false); // 自分の投稿モード
+  const [selectedImages, setSelectedImages] = useState([]); // 選択中画像idリスト
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const id = getVisitorId();
@@ -548,6 +550,30 @@ export default function PostMain() {
     window.location.href = '/stripe';
   };
 
+  // 自分の投稿のみ抽出
+  const myImages = images.filter(img => {
+    if (user && user.id) return img.user_id === user.id;
+    if (visitorId) return img.user_id === visitorId;
+    return false;
+  });
+
+  // 選択状態切替
+  const toggleSelectImage = (imgId) => {
+    setSelectedImages(prev => prev.includes(imgId) ? prev.filter(id => id !== imgId) : [...prev, imgId]);
+  };
+  // 全選択解除
+  const clearSelection = () => setSelectedImages([]);
+  // 削除処理
+  const handleDeleteSelected = async () => {
+    if (selectedImages.length === 0) return;
+    // supabaseのdeleteで選択画像を削除
+    const { error } = await supabase.from('images').delete().in('id', selectedImages);
+    if (!error) {
+      fetchImages();
+      setSelectedImages([]);
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-white flex flex-col items-center px-2 sm:px-0">
       {/* ヘッダー（ハンバーガーメニュー） */}
@@ -576,7 +602,18 @@ export default function PostMain() {
         >
           {eventTitle}
         </div>
-        <div className="w-full flex justify-end items-center gap-2">
+        <div className="w-full flex items-center gap-2 justify-between">
+          {/* 自分の投稿ボタン（左寄せ） */}
+          <Button
+            onClick={() => {
+              setShowMyPosts(v => !v);
+              setSelectedImages([]);
+            }}
+            className={`text-base py-3 px-4 ${showMyPosts ? 'bg-blue-600 text-white' : 'bg-gray-200 text-slate-700'} rounded-full`}
+          >
+            {showMyPosts ? '全て表示' : '自分の投稿'}
+          </Button>
+          <div className="flex-1" />
           <Button onClick={handlePostImage} className="text-base py-3 px-6 bg-slate-700" disabled={isUploading}>画像投稿</Button>
           <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => {
             if (e.target.files && e.target.files.length > 0) handleUpload(Array.from(e.target.files));
@@ -653,25 +690,28 @@ export default function PostMain() {
       </Modal>
       {/* 画像グリッド */}
       <div className="w-full max-w-[400px] grid grid-cols-3 md:grid-cols-5 gap-2 mb-8 md:mb-4 px-2 sm:px-0">
-        {sortedImages.length === 0 && (
+        {(showMyPosts ? myImages : sortedImages).length === 0 && (
           <div className="w-full text-center text-gray-400 py-12">画像を投稿しよう！</div>
         )}
-        {sortedImages.map((img, idx) => {
+        {(showMyPosts ? myImages : sortedImages).map((img, idx) => {
           const startIdx = (page - 1) * pageSize;
           const endIdx = page * pageSize;
-          if (idx < startIdx || idx >= endIdx) return null;
-
+          if (!showMyPosts && (idx < startIdx || idx >= endIdx)) return null;
           // idが「630316dc-a3a3-4a16-98c5-ae7a3094533e」の場合はいいね機能を表示しない
           const showLike = likeEnabled && eventId !== '630316dc-a3a3-4a16-98c5-ae7a3094533e';
-
+          // 選択モード時の選択状態
+          const isSelected = showMyPosts && selectedImages.includes(img.id);
           return (
             <div
               key={img.id}
-              className={`aspect-square bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 rounded-lg flex items-center justify-center cursor-pointer relative transition-all duration-150 group`}
-              onClick={() => handleImageClick(img)}
+              className={`aspect-square bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 rounded-lg flex items-center justify-center cursor-pointer relative transition-all duration-150 group border-2 ${isSelected ? 'border-blue-500 ring-2 ring-blue-400' : 'border-transparent'}`}
+              onClick={() => showMyPosts ? toggleSelectImage(img.id) : handleImageClick(img)}
             >
-              <img src={img.url} alt="投稿画像" className="w-full h-full object-cover rounded-lg" />
-              {showLike && (
+              <img src={img.url} alt="投稿画像" className="w-full h-full object-cover rounded-lg opacity-100" style={isSelected ? {filter:'brightness(0.7)'} : {}} />
+              {showMyPosts && (
+                <span className={`absolute top-1 left-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isSelected ? 'bg-blue-600 text-white' : 'bg-white text-blue-600 border border-blue-600'}`}>{isSelected ? '✓' : ''}</span>
+              )}
+              {!showMyPosts && showLike && (
                 <LikeButton
                   imageId={img.id}
                   likeCount={img.like_count}
@@ -768,8 +808,15 @@ export default function PostMain() {
           <Button onClick={() => { setShowLimitModal(false); window.location.href = '/stripe'; }} className="w-full py-3 text-base font-bold rounded-full bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 text-white shadow-lg">プランをアップグレード</Button>
         </div>
       </Modal>
+      {/* 選択モード時の操作ボタン */}
+      {showMyPosts && selectedImages.length > 0 && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex gap-4 bg-white/90 rounded-full shadow-lg px-4 py-2 border border-blue-200">
+          <Button onClick={clearSelection} className="bg-gray-200 text-slate-700 px-4 py-2 rounded-full text-sm">選択解除</Button>
+          <Button onClick={handleDeleteSelected} className="bg-red-500 text-white px-4 py-2 rounded-full text-sm">削除</Button>
+        </div>
+      )}
       {/* 戻るボタン */}
-      <Button onClick={handleBack} className="mb-8 mt-2 px-8 py-3 bg-slate-700 w-full max-w-[400px]">イベント詳細ページへ戻る</Button>
+      <Button onClick={handleBack} className={`mb-8 mt-2 px-8 py-3 bg-slate-700 w-full max-w-[400px]${showMyPosts && selectedImages.length > 0 ? ' mb-16' : ''}`}>イベント詳細ページへ戻る</Button>
     </div>
   );
 } 
