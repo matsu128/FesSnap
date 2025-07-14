@@ -61,7 +61,6 @@ export default function PostMain() {
   const { isLoggedIn, user, signOut, signIn, signUp, signInWithOAuth } = useAuth();
   const [images, setImages] = useState([]);
   const [showMenu, setShowMenu] = useState(false);
-  const [showPostModal, setShowPostModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [page, setPage] = useState(1);
@@ -87,6 +86,7 @@ export default function PostMain() {
   const [showLikeLoginGuideModal, setShowLikeLoginGuideModal] = useState(false);
   const [showAlreadyLikedModal, setShowAlreadyLikedModal] = useState(false); // 追加
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
   const [eventImageLimit, setEventImageLimit] = useState(null);
   const [eventStoragePeriod, setEventStoragePeriod] = useState(null);
 
@@ -239,11 +239,11 @@ export default function PostMain() {
     // 画像枚数制限チェック
     if (eventImageLimit !== null && eventImageLimit !== undefined && eventImageLimit !== -1) {
       if (images.length >= eventImageLimit) {
-        setShowUpgradeModal(true);
+        setShowLimitModal(true);
         return;
       }
     }
-    setShowPostModal(true);
+    setShowSelectModal(true);
   };
   // input/captureで撮影画像をstateにセット
   const handleCapture = (e) => {
@@ -564,15 +564,6 @@ export default function PostMain() {
           </div>
         </div>
       )}
-      {/* 投稿不可エラーモーダル */}
-      <Modal isOpen={showPostError} onClose={() => setShowPostError(false)}>
-        <div className="flex flex-col items-center p-6">
-          <div className="font-bold text-lg text-red-600 mb-2">投稿できません</div>
-          <div className="text-base text-gray-700 mb-2">このイベントの投稿受付期間は終了しました</div>
-          <div className="text-sm text-red-400 mb-4">※イベント作成日から7日間のみ投稿可能です</div>
-          <Button onClick={() => setShowPostError(false)} className="w-32 bg-slate-700">閉じる</Button>
-        </div>
-      </Modal>
       {/* 撮影/アップロード選択モーダル */}
       <Modal isOpen={showSelectModal} onClose={() => setShowSelectModal(false)}>
         <div className="flex flex-col items-center p-4">
@@ -701,6 +692,14 @@ export default function PostMain() {
         onUpgrade={handleUpgradePlan}
         currentPlanLimit={eventImageLimit}
       />
+      {/* 投稿上限到達モーダル */}
+      <Modal isOpen={showLimitModal} onClose={() => setShowLimitModal(false)}>
+        <div className="flex flex-col items-center p-6">
+          <div className="font-bold text-lg text-black mb-2">これ以上投稿できません</div>
+          <div className="text-base text-gray-700 mb-4">このイベントの画像投稿枚数がプランの上限に達しています。</div>
+          <Button onClick={() => { setShowLimitModal(false); setShowUpgradeModal(true); }} className="w-full py-3 text-base font-bold rounded-full bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 text-white shadow-lg">プランをアップグレード</Button>
+        </div>
+      </Modal>
       {/* 戻るボタン */}
       <Button onClick={handleBack} className="mb-8 mt-2 px-8 py-3 bg-slate-700 w-full max-w-[400px]">イベント詳細ページへ戻る</Button>
     </div>
