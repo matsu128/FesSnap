@@ -13,6 +13,7 @@ import LoginModal from '../molecules/LoginModal';
 import LikeButton from '../atoms/LikeButton';
 import { useAuth } from '../../contexts/AuthContext';
 import UpgradePlanModal from '../molecules/UpgradePlanModal';
+import { getVisitorId } from '../../lib/visitorId';
 
 function getPageSize() {
   if (typeof window !== 'undefined') {
@@ -89,6 +90,13 @@ export default function PostMain() {
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [eventImageLimit, setEventImageLimit] = useState(null);
   const [eventStoragePeriod, setEventStoragePeriod] = useState(null);
+  const [visitorId, setVisitorId] = useState(null);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const id = getVisitorId();
+      setVisitorId(id);
+    }
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setPageSize(getPageSize());
@@ -308,41 +316,49 @@ export default function PostMain() {
       const fileExt = 'jpg';
       const fileName = `${eventId}_${Date.now()}.${fileExt}`;
       // ストレージにアップロード
-      const { error: uploadError } = await supabase.storage
-        .from('event-image')
-        .upload(fileName, blob, { contentType: 'image/jpeg' });
+      let uploadResult;
+      try {
+        uploadResult = await supabase.storage
+          .from('event-image')
+          .upload(fileName, blob, { contentType: 'image/jpeg' });
+      } catch (err) {
+        setUploadError('アップロード失敗: ' + err.message);
+        setIsUploading(false);
+        return;
+      }
+      const { error: uploadError } = uploadResult || {};
       if (uploadError) {
-        console.error('アップロード失敗:', uploadError.message, uploadError);
         setUploadError('アップロード失敗: ' + uploadError.message);
         setIsUploading(false);
         return;
       }
       const { publicUrl } = supabase.storage.from('event-image').getPublicUrl(fileName).data;
       if (!publicUrl) {
-        console.error('画像URL取得失敗');
         setUploadError('画像URL取得失敗');
         setIsUploading(false);
         return;
       }
+      // user_id決定ロジック
+      const userIdForInsert = user ? user.id : visitorId;
       // DBに保存
-              const { error: dbError } = await supabase
-          .from('images')
-          .insert([{ 
-            eventId, 
-            url: publicUrl, 
-            user_id: user ? user.id : null, // uuidを入れる
-            date: new Date().toISOString().slice(0, 10),
-            like_count: 0
-          }]);
+      const insertObj = {
+        eventId,
+        url: publicUrl,
+        user_id: userIdForInsert,
+        date: new Date().toISOString().slice(0, 10),
+        like_count: 0
+      };
+      const { error: dbError } = await supabase
+        .from('images')
+        .insert([insertObj]);
       if (dbError) {
-        console.error('DB保存失敗:', dbError.message, dbError);
         setUploadError('DB保存失敗: ' + dbError.message);
         setIsUploading(false);
         return;
       }
       // DB保存後に未ログインなら案内モーダル発火
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { user: supaUser } } = await supabase.auth.getUser();
+      if (!supaUser) {
         setShowLoginGuideModal(true);
         setSelectedImage({ url: publicUrl });
         setShowImageModal(true);
@@ -458,35 +474,42 @@ export default function PostMain() {
             break;
           }
         }
-        if (currentCount < eventImageLimit) {
+        if (eventImageLimit === null || eventImageLimit === undefined || eventImageLimit === -1 || currentCount < eventImageLimit) {
           const file = files[i];
           const fileExt = file.name.split('.').pop();
           const fileName = `${eventId}_${Date.now()}_${i}.${fileExt}`;
-          const { error: uploadError } = await supabase.storage
-            .from('event-image')
-            .upload(fileName, file, { contentType: file.type });
+          let uploadResult;
+          try {
+            uploadResult = await supabase.storage
+              .from('event-image')
+              .upload(fileName, file, { contentType: file.type });
+          } catch (err) {
+            setUploadError('アップロード失敗: ' + err.message);
+            continue;
+          }
+          const { error: uploadError } = uploadResult || {};
           if (uploadError) {
-            console.error('アップロード失敗:', uploadError.message, uploadError);
             setUploadError('アップロード失敗: ' + uploadError.message);
             continue; // 他のファイルは続行
           }
           const { publicUrl } = supabase.storage.from('event-image').getPublicUrl(fileName).data;
           if (!publicUrl) {
-            console.error('画像URL取得失敗');
             setUploadError('画像URL取得失敗');
             continue;
           }
+          // user_id決定ロジック
+          const userIdForInsert = user ? user.id : visitorId;
+          const insertObj = {
+            eventId,
+            url: publicUrl,
+            user_id: userIdForInsert,
+            date: new Date().toISOString().slice(0, 10),
+            like_count: 0
+          };
           const { error: dbError } = await supabase
             .from('images')
-            .insert([{ 
-              eventId, 
-              url: publicUrl, 
-              user_id: user ? user.id : null, // uuidを入れる
-              date: new Date().toISOString().slice(0, 10),
-              like_count: 0
-            }]);
+            .insert([insertObj]);
           if (dbError) {
-            console.error('DB保存失敗:', dbError.message, dbError);
             setUploadError('DB保存失敗: ' + dbError.message);
             continue;
           }
@@ -676,7 +699,14 @@ export default function PostMain() {
           <div className="fixed inset-0 bg-black z-50 flex flex-col justify-between items-center">
             {/* 上部バツボタン */}
             <div className="w-full flex justify-end p-4">
-              <button onClick={handleCloseImageModal} className="text-white text-3xl font-bold">×</button>
+              <button
+                onClick={handleCloseImageModal}
+                className="flex items-center justify-center w-12 h-12 rounded-full bg-white/90 hover:bg-slate-200 shadow-lg text-slate-700 hover:text-red-500 text-3xl font-extrabold transition-all duration-200 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                aria-label="閉じる"
+                style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}
+              >
+                ×
+              </button>
             </div>
             {/* 画像本体＋左右ボタン */}
             <div className="flex-1 flex items-center justify-center w-full relative min-h-[400px]">
@@ -690,20 +720,10 @@ export default function PostMain() {
             </div>
             {/* 下部保存ボタン or 未ログイン案内 */}
             <div className="w-full flex justify-center p-4 fixed bottom-0 left-0 bg-black bg-opacity-80 z-50">
-              {showLoginGuideModal ? (
-                <div className="w-full flex flex-col items-center justify-center">
-                  <div className="text-white text-center font-extrabold text-base sm:text-lg leading-relaxed mb-3" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
-                    ログインをして画像を保存しよう！<br />
-                    <span className="text-sm sm:text-base font-normal">ログインをすると<br className="sm:hidden" />過去イベントの閲覧および<br className="sm:hidden" />投稿した画像を確認することができます</span>
-                  </div>
-                  <Button onClick={() => { setLoginModalOpen(true); setShowLoginGuideModal(false); }} className="w-48 bg-white text-blue-600 font-bold py-2 rounded-full shadow-md hover:bg-blue-100 transition text-base">ログイン</Button>
-                </div>
+              {isMobile() ? (
+                <Button onClick={handleShareSave} className="w-64 bg-slate-700 text-lg py-3 flex items-center justify-center"><span className="text-center w-full">保存</span></Button>
               ) : (
-                isMobile() ? (
-                  <Button onClick={handleShareSave} className="w-64 bg-slate-700 text-lg py-3 flex items-center justify-center gap-2"><Icon type="download" className="w-5 h-5" /><span className="text-center w-full">保存</span></Button>
-                ) : (
-                  <Button onClick={handleDownload} className="w-64 bg-slate-700 text-lg py-3 flex items-center justify-center gap-2"><Icon type="download" className="w-5 h-5" /><span className="text-center w-full">保存</span></Button>
-                )
+                <Button onClick={handleDownload} className="w-64 bg-slate-700 text-lg py-3 flex items-center justify-center"><span className="text-center w-full">保存</span></Button>
               )}
             </div>
           </div>
