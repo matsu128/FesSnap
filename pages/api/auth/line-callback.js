@@ -1,10 +1,8 @@
-import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
   const { code, state, error, error_description } = req.query;
 
-  // エラーパラメータがある場合はトップページにリダイレクト＋localStorageにエラー内容をセット
   if (error) {
     return res.send(`
       <script>
@@ -25,11 +23,11 @@ export default async function handler(req, res) {
   const clientId = process.env.NEXT_PUBLIC_LINE_CLIENT_ID;
   const clientSecret = process.env.LINE_CLIENT_SECRET;
   const redirectUri = `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}/api/auth/line-callback`;
-  const supabaseJwtSecret = process.env.SUPABASE_JWT_SECRET;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!clientId || !clientSecret || !supabaseJwtSecret || !supabaseUrl || !supabaseServiceKey) {
+  if (!clientId || !clientSecret || !supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
     return res.send(`
       <script>
         localStorage.setItem('line_error', 'line_env_error');
@@ -41,7 +39,7 @@ export default async function handler(req, res) {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    // 1. LINEのトークンエンドポイントでアクセストークン取得
+    // 1. LINEのトークンエンドポイントでid_tokenも取得
     const tokenRes = await fetch('https://api.line.me/oauth2/v2.1/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -54,7 +52,7 @@ export default async function handler(req, res) {
       })
     });
     const tokenJson = await tokenRes.json();
-    if (!tokenJson.access_token) {
+    if (!tokenJson.id_token) {
       return res.send(`
         <script>
           localStorage.setItem('line_error', 'line_token_error');
@@ -63,105 +61,28 @@ export default async function handler(req, res) {
       `);
     }
 
-    // 2. プロフィール取得
-    const actualProfileRes = await fetch('https://api.line.me/v2/profile', {
-      headers: { Authorization: `Bearer ${tokenJson.access_token}` }
+    // 2. Supabase公式APIでセッション発行
+    const { data, error: supaError } = await supabase.auth.admin.signInWithIdToken({
+      provider: 'oidc',
+      id_token: tokenJson.id_token,
+      nonce: state || ''
     });
-    const profile = await actualProfileRes.json();
-    if (!profile.userId) {
+    if (supaError || !data || !data.session) {
       return res.send(`
         <script>
-          localStorage.setItem('line_error', 'line_profile_error');
+          localStorage.setItem('line_error', 'line_supabase_session_error:' + ${JSON.stringify(supaError?.message || 'no session')});
           window.location.href = '/';
         </script>
       `);
     }
 
-    // 3. Supabaseユーザーを作成/検索
-    let userId;
-    let existingUser = null;
-    // 1. まずメールアドレスで既存ユーザーを検索
-    if (tokenJson.email) {
-      const { data: emailUser } = await supabase
-        .from('auth.users')
-        .select('*')
-        .eq('email', tokenJson.email)
-        .single();
-      if (emailUser) {
-        userId = emailUser.id;
-        existingUser = emailUser;
-      }
-    }
-    // 2. メールアドレスで見つからなければ、LINE userIdで検索
-    if (!userId) {
-      const { data: lineUser } = await supabase
-        .from('auth.users')
-        .select('*')
-        .eq('raw_user_meta_data->>provider', 'line')
-        .eq('raw_user_meta_data->>sub', profile.userId)
-        .single();
-      if (lineUser) {
-        userId = lineUser.id;
-        existingUser = lineUser;
-      }
-    }
-    // 3. どちらにも該当しなければ新規作成
-    if (!userId) {
-      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-        email: tokenJson.email || `${profile.userId}@line.local`,
-        password: Math.random().toString(36).substring(2),
-        user_metadata: {
-          name: profile.displayName,
-          picture: profile.pictureUrl,
-          provider: 'line',
-          sub: profile.userId
-        },
-        app_metadata: {
-          provider: 'line',
-          providers: ['line']
-        },
-        email_confirm: true
-      });
-      if (createError) {
-        return res.send(`
-          <script>
-            localStorage.setItem('line_error', 'line_user_create:' + ${JSON.stringify(createError.message)});
-            window.location.href = '/';
-          </script>
-        `);
-      }
-      userId = newUser.user.id;
-    }
-
-    // 4. Supabase用JWT生成
-    const payload = {
-      sub: userId,
-      aud: 'authenticated',
-      exp: Math.floor(Date.now() / 1000) + 60 * 60,
-      iat: Math.floor(Date.now() / 1000),
-      iss: 'supabase',
-      role: 'authenticated',
-      user_metadata: {
-        name: profile.displayName,
-        picture: profile.pictureUrl,
-        email: tokenJson.email || '',
-        provider: 'line',
-        providers: ['line']
-      },
-      app_metadata: {
-        provider: 'line',
-        providers: ['line']
-      }
-    };
-    const token = jwt.sign(payload, supabaseJwtSecret, { algorithm: 'HS256' });
-
-    // 5. クライアントでセッションをセットするスクリプトを返す
+    // 3. クライアントで公式セッションをセット
     return res.send(`
       <script>
         (async () => {
           const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
-          const supabase = createClient('${supabaseUrl}', '${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}');
-          await supabase.auth.setSession({ access_token: '${token}', refresh_token: '${token}' });
+          const supabase = createClient('${supabaseUrl}', '${supabaseAnonKey}');
+          await supabase.auth.setSession(${JSON.stringify(data.session)});
           window.location.href = '/';
         })();
       </script>
