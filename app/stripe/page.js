@@ -15,7 +15,7 @@ const plans = [
     ],
   },
   {
-    name: 'Plusプラン', price: '3,000円', desc: '中規模イベント<br />（小規模結婚式、子ども会、サークルイベント）', priceId: 'price_1Rh8TUINMH35xP4j7P5hiLq1', highlight: true,
+    name: 'Plusプラン', price: '3,000円', desc: '中規模イベント<br />（小規模結婚式、子ども会、サークルイベント）', priceId: 'price_1Rl5iCINMH35xP4jXDQJEXZf', highlight: true,
     features: [
       '画像125枚（最大25人分想定）',
       '30日間',
@@ -25,7 +25,7 @@ const plans = [
     ],
   },
   {
-    name: 'Proプラン', price: '10,000円', desc: '大規模イベント<br />（結婚式・企業パーティ<br />地域イベント・フェス）', priceId: 'price_1Rh8TiINMH35xP4jqYvfj0YC', highlight: false,
+    name: 'Proプラン', price: '10,000円', desc: '大規模イベント<br />（結婚式・企業パーティ<br />地域イベント・フェス）', priceId: 'price_1Rl5u3INMH35xP4jdbyrUZcn', highlight: false,
     features: [
       '画像無制限',
       '半年間',
