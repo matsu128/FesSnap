@@ -760,9 +760,10 @@ export default function LPMain() {
             ref={pricingCardsRef}
             >
               {plans.map((plan, i) => (
-                <Card key={i} className={`relative bg-white rounded-3xl shadow-xl overflow-hidden border ${plan.highlight ? 'border-blue-600 scale-105 z-10 shadow-2xl' : 'border-gray-100'} transition-all hover:shadow-2xl p-0 md:max-w-xl mb-4`} style={{
-                  marginBottom: 'clamp(1rem, 3vw, 1.5rem)'
-                }}>
+                <Card key={i} disableHover
+                  className={`relative bg-white rounded-3xl shadow-xl overflow-hidden border ${plan.highlight ? 'border-blue-600 scale-105 z-10 shadow-2xl' : 'border-gray-100'} transition-all hover:shadow-2xl p-0 md:max-w-xl mb-4`} style={{
+                    marginBottom: 'clamp(1rem, 3vw, 1.5rem)'
+                  }}>
                   <div className={`p-8 border-b ${plan.highlight ? 'bg-gradient-to-r from-blue-500 via-blue-400 to-pink-400 text-white relative' : ''}`} style={{
                     fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
                     padding: 'clamp(2rem, 5vw, 3rem)'
