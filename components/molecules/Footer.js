@@ -75,9 +75,7 @@ export default function Footer() {
               <Link href="/privacy" className="hover:text-black transition-colors">
                 プライバシーポリシー
               </Link>
-              <Link href="/legal" className="hover:text-black transition-colors">
-                特定商取引法に基づく表記
-              </Link>
+              <a href="/legal" className="text-xs text-gray-500 hover:underline">特定商取引法に基づく表記</a>
             </div>
             <div className="text-sm text-gray-500">
               © 2024 FesSnap. All rights reserved.
