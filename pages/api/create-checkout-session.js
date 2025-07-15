@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   }
   try {
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: ['card', 'pay_pay'],
       line_items: [
         {
           price: priceId,
@@ -28,11 +28,15 @@ export default async function handler(req, res) {
         },
       ],
       mode: 'payment',
+      payment_intent_data: {
+        statement_descriptor: 'FESSNAP',
+        description: 'Fessnap イベント決済',
+      },
       success_url: `${req.headers.origin}/success`,
       cancel_url: `${req.headers.origin}/cancel`,
     });
     res.status(200).json({ url: session.url });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: '決済処理中にエラーが発生しました。しばらくしてから再度お試しください。' });
   }
 } 
