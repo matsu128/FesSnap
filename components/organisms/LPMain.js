@@ -266,21 +266,31 @@ export default function LPMain() {
               activeIdx = 2;
             }
             cards.forEach((card, idx) => {
-              if (idx === activeIdx) {
-                gsap.set(card, { scale: 1, opacity: 1, zIndex: 3 });
-              } else {
-                gsap.set(card, { scale: 0.9, opacity: 0, zIndex: 2 });
-              }
+              gsap.set(card, {
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                x: '-50%',
+                y: '-50%',
+                zIndex: idx === activeIdx ? 3 : 2,
+                scale: idx === activeIdx ? 1 : 0.9,
+                opacity: idx === activeIdx ? 1 : 0
+              });
             });
           },
           onLeave: () => {
             // pin解除後、Proカードのみを表示し、FreeとPlusは非表示
             cards.forEach((card, idx) => {
-              if (idx === 2) {
-                gsap.set(card, { scale: 1, opacity: 1, zIndex: 3 });
-              } else {
-                gsap.set(card, { scale: 0.9, opacity: 0, zIndex: 2 });
-              }
+              gsap.set(card, {
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                x: '-50%',
+                y: '-50%',
+                zIndex: idx === 2 ? 3 : 2,
+                scale: idx === 2 ? 1 : 0.9,
+                opacity: idx === 2 ? 1 : 0
+              });
             });
           }
         });
@@ -739,13 +749,13 @@ export default function LPMain() {
             minHeight: 0,
             height: '92vh'
           }}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8" style={{
-              gap: 'clamp(1rem, 3vw, 2rem)',
+            <div className="relative" style={{
               position: 'relative',
               width: '100%',
               maxWidth: '1000px',
               height: '100%',
-              alignItems: 'center'
+              minHeight: '400px', // 必要に応じて高さを調整
+              margin: '0 auto'
             }}
             ref={pricingCardsRef}
             >
