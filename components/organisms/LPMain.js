@@ -832,14 +832,22 @@ export default function LPMain() {
                     <div className="flex flex-col md:flex-row gap-4 justify-center" style={{
                       gap: 'clamp(1rem, 3vw, 1.5rem)'
                     }}>
-                      <Link href="/stripe">
-                        <button className={`mt-auto px-8 py-3 rounded-full font-bold text-white ${plan.price === '0円' ? 'bg-blue-400' : 'bg-pink-500'} shadow-lg hover:opacity-90 transition disabled:opacity-60 w-full text-sm sm:text-base`} style={{
+                      <button
+                        type="button"
+                        className={`mt-auto px-8 py-3 rounded-full font-bold text-white ${plan.price === '0円' ? 'bg-blue-400' : 'bg-pink-500'} shadow-lg hover:opacity-90 transition disabled:opacity-60 w-full text-sm sm:text-base`}
+                        style={{
                           padding: 'clamp(0.75rem, 2vw, 1rem) clamp(2rem, 5vw, 3rem)',
                           fontSize: 'clamp(0.9rem, 2.5vw, 1rem)'
-                        }}>
-                          詳細を見る
-                        </button>
-                      </Link>
+                        }}
+                        onClick={() => {
+                          if (typeof window !== 'undefined') {
+                            sessionStorage.setItem('stripeFrom', 'top');
+                          }
+                          router.push('/stripe');
+                        }}
+                      >
+                        詳細を見る
+                      </button>
                     </div>
                   </div>
                 </Card>

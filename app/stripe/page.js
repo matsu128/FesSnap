@@ -1,8 +1,9 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '../../components/molecules/Header';
 import Button from '../../components/atoms/Button';
+import Modal from '../../components/atoms/Modal';
 
 const plans = [
   {
@@ -41,8 +42,26 @@ export default function StripePage() {
   const [loading, setLoading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showCreateEventModal, setShowCreateEventModal] = useState(false);
   const router = useRouter();
+  const [fromTop, setFromTop] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const flag = sessionStorage.getItem('stripeFrom');
+      if (flag === 'top') {
+        setFromTop(true);
+        sessionStorage.removeItem('stripeFrom');
+      }
+    }
+  }, []);
+
   const handleStripeCheckout = async (priceId) => {
+    // plus/proのみ判定
+    if (fromTop && (priceId === 'price_1Rl5iCINMH35xP4jXDQJEXZf' || priceId === 'price_1Rl5u3INMH35xP4jdbyrUZcn')) {
+      setShowCreateEventModal(true);
+      return;
+    }
     if (!priceId) {
       router.push('/admin');
       return;
@@ -79,6 +98,16 @@ export default function StripePage() {
         <div className="mb-6 w-full max-w-md mx-auto bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-center font-semibold">
           {errorMsg}
         </div>
+      )}
+      {showCreateEventModal && (
+        <Modal isOpen={showCreateEventModal} onClose={() => setShowCreateEventModal(false)}>
+          <div className="p-6 text-center">
+            <div className="text-lg font-bold mb-4">イベントを作成してから支払いをしましょう</div>
+            <Button onClick={() => { setShowCreateEventModal(false); router.push('/admin'); }}>
+              イベント作成ページへ
+            </Button>
+          </div>
+        </Modal>
       )}
       <div className="flex flex-col md:flex-row gap-8 md:gap-12 justify-center items-stretch w-full max-w-4xl">
         {plans.map((plan, i) => (
