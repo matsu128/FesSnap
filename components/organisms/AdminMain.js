@@ -351,10 +351,22 @@ export default function AdminMain() {
         allowTaint: true,
       });
       const dataUrl = canvas.toDataURL('image/png', 0.9);
-      const link = document.createElement('a');
-      link.download = `fes-snap-qr-${selectedEvent?.title || 'event'}.png`;
-      link.href = dataUrl;
-      link.click();
+      // Web Share API対応
+      if (navigator.canShare && navigator.canShare({ files: [new File([], '')] })) {
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], `fes-snap-qr-${selectedEvent?.title || 'event'}.png`, { type: 'image/png' });
+        await navigator.share({
+          files: [file],
+          title: 'FesSnap QRコード',
+          text: 'イベントのQRコードを共有します',
+        });
+      } else {
+        // 従来通りダウンロード
+        const link = document.createElement('a');
+        link.download = `fes-snap-qr-${selectedEvent?.title || 'event'}.png`;
+        link.href = dataUrl;
+        link.click();
+      }
     } catch (error) {
       // 画像保存エラー: error;
     }
