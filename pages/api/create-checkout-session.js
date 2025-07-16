@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     res.setHeader('Allow', 'POST');
     return res.status(405).end('Method Not Allowed');
   }
-  const { priceId } = req.body;
+  const { priceId, returnUrl } = req.body;
   if (!priceId) {
     return res.status(400).json({ error: 'Price ID is required' });
   }
@@ -32,8 +32,8 @@ export default async function handler(req, res) {
         statement_descriptor: 'FESSNAP',
         description: 'Fessnap イベント決済',
       },
-      success_url: `${req.headers.origin}/success`,
-      cancel_url: `${req.headers.origin}/cancel`,
+      success_url: returnUrl ? `${returnUrl}?checkout=success` : `${req.headers.origin}/success`,
+      cancel_url: returnUrl ? `${returnUrl}?checkout=cancel` : `${req.headers.origin}/cancel`,
     });
     res.status(200).json({ url: session.url });
   } catch (err) {

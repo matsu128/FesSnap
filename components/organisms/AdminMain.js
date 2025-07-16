@@ -15,15 +15,40 @@ import { PLAN_LIMITS } from '../../lib/planLimits';
 import PlanSelectionModal from '../molecules/PlanSelectionModal';
 import { loadStripe } from '@stripe/stripe-js';
 import LoginModal from '../molecules/LoginModal';
+import { getVisitorId } from '../../lib/visitorId';
 
 function isIOS() {
   if (typeof window === 'undefined') return false;
   return /iP(hone|od|ad)/.test(window.navigator.userAgent);
 }
 
+// sessionStorageキー
+const ADMIN_FORM_KEY = 'adminForm';
+
+// sessionStorage保存
+function saveAdminFormToStorage({ title, plan, storagePeriod, eventScale, likeEnabled }) {
+  if (typeof window === 'undefined') return;
+  const data = { title: title || '', plan, storagePeriod, eventScale, likeEnabled };
+  sessionStorage.setItem(ADMIN_FORM_KEY, JSON.stringify(data));
+}
+// sessionStorage復元
+function getInitialAdminForm() {
+  if (typeof window === 'undefined') return null;
+  const saved = sessionStorage.getItem(ADMIN_FORM_KEY);
+  if (!saved) return null;
+  try {
+    const parsed = JSON.parse(saved);
+    return parsed;
+  } catch(e) {
+    return null;
+  }
+}
+
 export default function AdminMain() {
+  // デフォルト値
+  const [restored, setRestored] = useState(false);
   const [events, setEvents] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState({ id: '', title: '' });
   const [showEventModal, setShowEventModal] = useState(false);
   const [qr, setQr] = useState('');
   const qrRef = useRef();
@@ -40,6 +65,8 @@ export default function AdminMain() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showLoginGuideModal, setShowLoginGuideModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [visitorId, setVisitorId] = useState(null);
+  const [showPlanLoginRequiredModal, setShowPlanLoginRequiredModal] = useState(false);
 
   // イベント規模・保存期間の選択状態
   const [eventScale, setEventScale] = useState('');
@@ -55,13 +82,16 @@ export default function AdminMain() {
       .then(res => res.json())
       .then(data => {
         setEvents(data);
-        setSelectedEvent({
-          id: '',
-          title: '',
-        });
-        setLikeEnabled(false);
+        // sessionStorageに値がなければ初期化
+        if (restored) {
+          const saved = sessionStorage.getItem(ADMIN_FORM_KEY);
+          if (!saved) {
+            setSelectedEvent({ id: '', title: '' });
+            setLikeEnabled(false);
+          }
+        }
       });
-  }, []);
+  }, [restored]);
 
   // 決済成功後の処理
   useEffect(() => {
@@ -99,6 +129,49 @@ export default function AdminMain() {
     }
   }, [eventScale, storagePeriod]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const id = getVisitorId();
+      setVisitorId(id);
+    }
+  }, []);
+
+  // タイトル入力時にエラーを動的に消す
+  useEffect(() => {
+    if (selectedEvent?.title && missingFields.includes('title')) {
+      setMissingFields(missingFields.filter(f => f !== 'title'));
+    }
+  }, [selectedEvent?.title]);
+
+  // 初期化時にsessionStorageから一括復元、復元完了までUIを描画しない
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = sessionStorage.getItem(ADMIN_FORM_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setSelectedEvent({ id: '', title: parsed.title ?? '' });
+        setSelectedPlanType(parsed.plan ?? 'free');
+        setEventScale(parsed.eventScale ?? '');
+        setStoragePeriod(parsed.storagePeriod ?? '');
+        setLikeEnabled(parsed.likeEnabled ?? false);
+      } catch(e) {}
+    }
+    setRestored(true);
+  }, []);
+
+  // 入力値・選択値が変わるたびにsessionStorageへ保存
+  useEffect(() => {
+    if (!restored) return;
+    saveAdminFormToStorage({
+      title: selectedEvent?.title || '',
+      plan: selectedPlanType,
+      storagePeriod,
+      eventScale,
+      likeEnabled,
+    });
+  }, [selectedEvent?.title, selectedPlanType, storagePeriod, eventScale, likeEnabled, restored]);
+
   // イベント切り替え
   const handleEventSwitch = (event) => {
     setSelectedEvent(event);
@@ -108,13 +181,6 @@ export default function AdminMain() {
 
   // QRコード生成
   const handleGenerateQr = async () => {
-    console.log('[QR生成] handleGenerateQr開始', { user, isLoggedIn, selectedEvent, selectedPlanType });
-    console.log('[QR生成] user:', user);
-    if (user) {
-      console.log('[QR生成] user.id:', user.id);
-    } else {
-      console.log('[QR生成] userがnullまたはundefined');
-    }
     setShowLoginGuideModal(false); // まずモーダルを必ず閉じる
     setQrTouched(true);
     setQrError('');
@@ -122,18 +188,15 @@ export default function AdminMain() {
     if (!selectedEvent?.title) newMissing.push('title');
     setMissingFields(newMissing);
     if (newMissing.length > 0) {
-      console.log('[QR生成] タイトル未入力エラー');
       setQr('');
       // エラー内容はモーダル外にも表示される
       return;
     }
     if (!user || !user.id) {
-      console.log('[QR生成] userまたはuser.idがnull（未ログインなのでダミーUUIDで進行）', user);
       // returnせず、ダミーUUIDでAPIリクエストを送る
     }
     // 有料プランの場合はStripe決済
     if (selectedPlanType !== 'free') {
-      console.log('[QR生成] 有料プラン決済処理開始');
       try {
         const response = await fetch('/api/stripe/create-checkout-session', {
           method: 'POST',
@@ -147,7 +210,6 @@ export default function AdminMain() {
         });
 
         if (!response.ok) {
-          console.log('[QR生成] Stripe APIエラー', response);
           const errorData = await response.json();
           throw new Error(errorData.error || '決済セッションの作成に失敗しました');
         }
@@ -168,14 +230,12 @@ export default function AdminMain() {
         }
         return;
       } catch (error) {
-        console.log('[QR生成] Stripe決済catch', error);
         setQrError('決済処理中にエラーが発生しました: ' + error.message);
         return;
       }
     }
 
     // 無料プランの場合は通常のQRコード生成
-    console.log('[QR生成] 無料プランAPIリクエスト開始');
     try {
       // プランごとの制限値を取得
       const limits = PLAN_LIMITS[selectedPlanType] || PLAN_LIMITS['free'];
@@ -186,14 +246,13 @@ export default function AdminMain() {
         plan_type: selectedPlanType,
         image_limit: limits.image_limit,
         storage_period_days: limits.storage_period_days,
-        owner: (user && user.id) ? user.id : '00000000-0000-0000-0000-000000000000'
+        owner: (user && user.id) ? user.id : visitorId
       };
       const res = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(eventBody)
       });
-      console.log('[QR生成] /api/events POST完了', res);
       
       if (!res.ok) {
         const errorData = await res.json();
@@ -211,7 +270,6 @@ export default function AdminMain() {
       }
       
       const data = await res.json();
-      console.log('[QR生成] /api/events レスポンスOK', data);
       // 返却IDでQRコードURL生成
       const qrValue = `https://fes-snap.vercel.app/events/${data.id}/post`;
       setQr(qrValue);
@@ -264,7 +322,6 @@ export default function AdminMain() {
         }
       }, 100);
     } catch (e) {
-      console.log('[QR生成] catch節', e);
       if (e.message && e.message.includes("Cannot read properties of null (reading 'id')")) {
         setQrError('ログイン情報が取得できませんでした。再度ログインしてください');
       } else {
@@ -311,14 +368,19 @@ export default function AdminMain() {
     }
   }
 
+  // UI描画前に復元が終わっていなければローディング表示
+  if (!restored) {
+    return <div className="w-full min-h-screen flex items-center justify-center text-lg font-bold">読み込み中...</div>;
+  }
+
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 flex flex-col items-center px-2 sm:px-0" style={{fontFamily: "'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
       <div className="relative z-20 w-full flex flex-col items-center">
         {/* ヘッダー */}
         <Header
           type="menu"
-          onLoginClick={() => { console.log('[Header] ログインボタンクリック'); setShowLoginModal(true); }}
-          onMenuClick={() => { console.log('[Header] ハンバーガーメニュークリック'); setShowMenu(true); }}
+          onLoginClick={() => { setShowLoginModal(true); }}
+          onMenuClick={() => { setShowMenu(true); }}
         />
       </div>
       {/* ログイン推奨モーダル */}
@@ -395,14 +457,15 @@ export default function AdminMain() {
         <div className="flex flex-col items-center">
           <div className="text-base font-bold text-gray-700 mb-1 text-center">タイトル <span className="text-gray-300 text-sm font-normal">例: サマー音楽フェス2025</span></div>
           <Input value={selectedEvent?.title || ''} onChange={e => {
-            setSelectedEvent({ ...selectedEvent, title: e.target.value.slice(0,10) });
+            const newTitle = e.target.value.slice(0, 10);
+            setSelectedEvent(ev => { const next = { ...ev, title: newTitle }; return next; });
           }} placeholder="タイトル" maxLength={10} className={`mb-1 text-lg py-3 text-black text-center ${(qrTouched && missingFields.includes('title')) ? 'ring-2 ring-red-400' : ''}`} />
         </div>
         
         {/* プラン選択ボタン */}
         <div className="flex flex-col items-center">
           <button
-            onClick={() => setShowPlanModal(true)}
+            onClick={() => { setShowPlanModal(true); }}
             className="w-full max-w-xs bg-white text-gray-700 py-3 px-6 rounded-full font-semibold text-base shadow-lg hover:shadow-xl border border-gray-200 hover:border-gray-300 transition-all duration-300 transform hover:scale-105"
           >
             プランを調べてみる
@@ -417,7 +480,7 @@ export default function AdminMain() {
               <div className="text-base font-bold text-gray-700 mb-3 text-center">イベントの規模は？</div>
               <div className="flex flex-col gap-2 w-full">
                 <button 
-                  onClick={() => setEventScale('small')} 
+                  onClick={() => { setEventScale('small'); }} 
                   className={`py-3 px-4 rounded-2xl text-sm transition-all duration-300 hover:scale-105 ${
                     eventScale === 'small' 
                       ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg' 
@@ -428,7 +491,7 @@ export default function AdminMain() {
                   <span className="text-xs opacity-80">誕生日会、家族旅行など</span>
                 </button>
                 <button 
-                  onClick={() => setEventScale('medium')} 
+                  onClick={() => { setEventScale('medium'); }} 
                   className={`py-3 px-4 rounded-2xl text-sm transition-all duration-300 hover:scale-105 ${
                     eventScale === 'medium' 
                       ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' 
@@ -439,7 +502,7 @@ export default function AdminMain() {
                   <span className="text-xs opacity-80">結婚式、サークルイベントなど</span>
                 </button>
                 <button 
-                  onClick={() => setEventScale('large')} 
+                  onClick={() => { setEventScale('large'); }} 
                   className={`py-3 px-4 rounded-2xl text-sm transition-all duration-300 hover:scale-105 ${
                     eventScale === 'large' 
                       ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg' 
@@ -457,7 +520,7 @@ export default function AdminMain() {
               <div className="text-base font-bold text-gray-700 mb-3 text-center">保存期間は？</div>
               <div className="flex flex-col gap-2 w-full">
                 <button 
-                  onClick={() => setStoragePeriod('1week')} 
+                  onClick={() => { setStoragePeriod('1week'); }} 
                   className={`py-3 px-4 rounded-2xl text-sm transition-all duration-300 hover:scale-105 ${
                     storagePeriod === '1week' 
                       ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg' 
@@ -468,7 +531,7 @@ export default function AdminMain() {
                   <span className="text-xs opacity-80">短期間のイベント</span>
                 </button>
                 <button 
-                  onClick={() => setStoragePeriod('1month')} 
+                  onClick={() => { setStoragePeriod('1month'); }} 
                   className={`py-3 px-4 rounded-2xl text-sm transition-all duration-300 hover:scale-105 ${
                     storagePeriod === '1month' 
                       ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' 
@@ -479,7 +542,7 @@ export default function AdminMain() {
                   <span className="text-xs opacity-80">中期的な保存</span>
                 </button>
                 <button 
-                  onClick={() => setStoragePeriod('6months')} 
+                  onClick={() => { setStoragePeriod('6months'); }} 
                   className={`py-3 px-4 rounded-2xl text-sm transition-all duration-300 hover:scale-105 ${
                     storagePeriod === '6months' 
                       ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg' 
@@ -516,7 +579,7 @@ export default function AdminMain() {
 
         {/* いいね機能トグル */}
         <div className="flex items-center gap-2 justify-center mt-2">
-          <input type="checkbox" id="likeEnabled" checked={likeEnabled} onChange={e => setLikeEnabled(e.target.checked)} className="w-5 h-5 accent-pink-500" />
+          <input type="checkbox" id="likeEnabled" checked={likeEnabled} onChange={e => { setLikeEnabled(e.target.checked); }} className="w-5 h-5 accent-pink-500" />
           <label htmlFor="likeEnabled" className="text-base font-bold text-pink-500 select-none" style={{fontFamily: "'Baloo 2', 'Noto Sans JP', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif"}}>
             いいね機能をつける
           </label>
@@ -535,7 +598,7 @@ export default function AdminMain() {
       {/* プラン選択ボタン（QRコード生成ボタンの上） */}
       <div className="w-full max-w-[400px] flex gap-2 mb-4 px-2 sm:px-0">
         <button 
-          onClick={() => setSelectedPlanType(selectedPlanType === 'plus' ? 'free' : 'plus')} 
+          onClick={() => { const next = selectedPlanType === 'plus' ? 'free' : 'plus'; setSelectedPlanType(next); }} 
           className={`flex-1 py-2 px-3 rounded-2xl text-sm font-semibold transition-all duration-300 hover:scale-105 ${
             selectedPlanType === 'plus' 
               ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-lg' 
@@ -545,7 +608,7 @@ export default function AdminMain() {
           Plusプラン
         </button>
         <button 
-          onClick={() => setSelectedPlanType(selectedPlanType === 'pro' ? 'free' : 'pro')} 
+          onClick={() => { const next = selectedPlanType === 'pro' ? 'free' : 'pro'; setSelectedPlanType(next); }} 
           className={`flex-1 py-2 px-3 rounded-2xl text-sm font-semibold transition-all duration-300 hover:scale-105 ${
             selectedPlanType === 'pro' 
               ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' 
@@ -565,15 +628,15 @@ export default function AdminMain() {
               setQrTouched(true);
               setMissingFields(['title']);
               setQrError('');
-              console.log('[QR生成] ボタン押下: タイトル未入力でreturn');
               return;
             }
-            console.log('[QR生成] ボタン押下: isLoggedIn=', isLoggedIn, 'user=', user);
             if (!isLoggedIn) {
-              console.log('[QR生成] 未ログインなので推奨モーダル表示');
-              setShowLoginGuideModal(true);
+              if (selectedPlanType === 'plus' || selectedPlanType === 'pro') {
+                setShowPlanLoginRequiredModal(true);
+              } else {
+                setShowLoginGuideModal(true);
+              }
             } else {
-              console.log('[QR生成] ログイン済みなので生成処理へ');
               handleGenerateQr();
             }
           }} 
@@ -677,6 +740,24 @@ export default function AdminMain() {
           }
         }}
       />
+      {/* Plus/Proプラン用ログイン必須モーダル */}
+      <Modal isOpen={showPlanLoginRequiredModal} onClose={() => setShowPlanLoginRequiredModal(false)}>
+        <div className="flex flex-col items-center p-6 w-full max-w-xs mx-auto text-center relative">
+          <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl font-bold" onClick={() => setShowPlanLoginRequiredModal(false)}>&times;</button>
+          <h2 className="text-2xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow text-center">
+            {selectedPlanType === 'plus' ? 'Plusプラン' : 'Proプラン'}でのイベント作成では<br />ログインが必須です。
+          </h2>
+          <div className="mb-4 text-base sm:text-lg text-gray-600 font-medium text-center">
+            ログインしてからイベント作成を進めてください。
+          </div>
+          <Button
+            onClick={() => { setShowPlanLoginRequiredModal(false); setShowLoginModal(true); }}
+            className="w-full py-3 text-lg font-bold rounded-full bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 shadow-lg hover:from-pink-400 hover:to-blue-500 transition-all duration-200 border-0"
+          >
+            ログイン
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 } 

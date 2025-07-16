@@ -241,6 +241,17 @@ export default function EventListMain() {
         {/* ログインモーダル */}
         <LoginModal isOpen={loginModalOpen} onClose={handleLoginModalClose} />
       </div>
+      {/* ログインしていない場合のみ下部に新規イベント作成ボタン */}
+      {!isLoggedIn && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[90vw] max-w-xs flex justify-center">
+          <Button
+            onClick={() => router.push('/admin')}
+            className="w-full py-3 text-base font-bold rounded-full bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 text-white shadow-lg hover:from-pink-400 hover:to-blue-500 transition-all duration-200 border-0"
+          >
+            新規イベント作成
+          </Button>
+        </div>
+      )}
     </div>
   );
 } 

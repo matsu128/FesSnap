@@ -40,21 +40,24 @@ const plans = [
 export default function StripePage() {
   const [loading, setLoading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const router = useRouter();
   const handleStripeCheckout = async (priceId) => {
     if (!priceId) return alert('無料プランは決済不要です');
     setLoading(true);
+    setErrorMsg('');
+    const returnUrl = window.location.href;
     const res = await fetch('/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ priceId }),
+      body: JSON.stringify({ priceId, returnUrl }),
     });
     const data = await res.json();
     setLoading(false);
     if (data.url) {
       window.location.href = data.url;
     } else {
-      alert('決済ページの生成に失敗しました');
+      setErrorMsg(data.error || '決済ページの生成に失敗しました。しばらくしてから再度お試しください。');
     }
   };
   return (
@@ -69,6 +72,11 @@ export default function StripePage() {
         </div>
       )}
       <h1 className="text-3xl sm:text-4xl font-extrabold text-center mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-pink-400 to-blue-600 drop-shadow-lg tracking-wide">FesSnap 料金プラン</h1>
+      {errorMsg && (
+        <div className="mb-6 w-full max-w-md mx-auto bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-center font-semibold">
+          {errorMsg}
+        </div>
+      )}
       <div className="flex flex-col md:flex-row gap-8 md:gap-12 justify-center items-stretch w-full max-w-4xl">
         {plans.map((plan, i) => (
           <div key={i} className={`flex-1 bg-white rounded-3xl p-8 shadow-lg border ${plan.highlight ? 'border-pink-400' : 'border-blue-100'} flex flex-col items-center`}>
