@@ -703,7 +703,7 @@ export default function AdminMain() {
               onClick={handleShareQrInfo} 
               className="bg-gradient-to-r from-slate-700 to-slate-800 flex items-center gap-1 text-white px-4 py-2 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
             >
-              <Icon type="download" className="w-5 h-5" />保存
+              保存
             </button>
           </div>
           {isIOS() && (
