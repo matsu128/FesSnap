@@ -2,7 +2,7 @@
 // props: isOpen（表示/非表示）、onClose（閉じる処理）、children（モーダル内要素）、className（追加クラス）
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function Modal({ isOpen, onClose, children, className = '' }) {
+export default function Modal({ isOpen, onClose, children, className = '', wide = false }) {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -16,7 +16,7 @@ export default function Modal({ isOpen, onClose, children, className = '' }) {
         >
           {/* モーダル本体。クリックバブリング防止 */}
           <motion.div
-            className={`bg-white rounded-2xl shadow-2xl p-6 max-w-full w-[90vw] sm:w-[400px] ${className}`}
+            className={`bg-white rounded-2xl shadow-2xl p-6 max-w-full w-[90vw] sm:w-[400px] ${wide ? 'lg:w-[1100px] lg:max-w-[1100px] w-full' : ''} ${className}`}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}

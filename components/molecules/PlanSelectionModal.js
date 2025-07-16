@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { loadStripe } from '@stripe/stripe-js';
 import Modal from '../atoms/Modal';
@@ -164,9 +164,30 @@ export default function PlanSelectionModal({ isOpen, onClose, onPlanSelected }) 
 
   const recommendedPlan = Object.keys(answers).length > 0 ? getRecommendedPlan() : null;
 
+  // スマホ時のみおすすめプランを一番上に
+  const sortedPlans = useMemo(() => {
+    if (!recommendedPlan) return plans;
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      // スマホ（lg未満）
+      const rec = plans.find(p => p.id === recommendedPlan);
+      const rest = plans.filter(p => p.id !== recommendedPlan);
+      return [rec, ...rest];
+    }
+    // PCはそのまま
+    return plans;
+  }, [recommendedPlan, plans]);
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="bg-white rounded-3xl p-4 sm:p-6 max-w-4xl mx-auto w-full max-h-[90vh] overflow-y-auto">
+    <Modal isOpen={isOpen} onClose={onClose} wide={true}>
+      <div className="relative bg-white rounded-3xl p-4 sm:p-6 max-w-4xl lg:max-w-6xl mx-auto w-full max-h-[90vh] overflow-y-auto">
+        {/* バツ閉じボタン */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-3xl text-gray-400 hover:text-gray-700 z-10 bg-white/80 rounded-full w-10 h-10 flex items-center justify-center shadow"
+          aria-label="閉じる"
+          style={{lineHeight:'1'}}>
+          ×
+        </button>
         <div className="text-center mb-6">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">料金プランを選択</h2>
           <p className="text-sm sm:text-base text-gray-600">イベントの規模に合わせて最適なプランをお選びください</p>
@@ -242,8 +263,8 @@ export default function PlanSelectionModal({ isOpen, onClose, onPlanSelected }) 
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
-            {plans.map((plan) => (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 lg:gap-8">
+            {sortedPlans.map((plan) => (
               <div
                 key={plan.id}
                 className={`relative bg-white rounded-3xl shadow-xl overflow-hidden border transition-all duration-300 hover:shadow-2xl ${

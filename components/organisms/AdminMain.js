@@ -723,23 +723,25 @@ export default function AdminMain() {
         </div>
       </Modal>
       {/* プラン選択モーダル */}
-      <PlanSelectionModal 
-        isOpen={showPlanModal} 
-        onClose={() => {
-          setShowPlanModal(false);
-          setShowQuestions(false);
-        }} 
-        onPlanSelected={(plan) => {
-          setShowPlanModal(false);
-          if (plan.id === 'free') {
-            setSelectedPlanType('free');
+      <div className="lg:w-full">
+        <PlanSelectionModal 
+          isOpen={showPlanModal} 
+          onClose={() => {
+            setShowPlanModal(false);
             setShowQuestions(false);
-          } else if (plan.id === 'plus' || plan.id === 'pro') {
-            setSelectedPlanType(plan.id);
-            setShowQuestions(true);
-          }
-        }}
-      />
+          }} 
+          onPlanSelected={(plan) => {
+            setShowPlanModal(false);
+            if (plan.id === 'free') {
+              setSelectedPlanType('free');
+              setShowQuestions(false);
+            } else if (plan.id === 'plus' || plan.id === 'pro') {
+              setSelectedPlanType(plan.id);
+              setShowQuestions(true);
+            }
+          }}
+        />
+      </div>
       {/* Plus/Proプラン用ログイン必須モーダル */}
       <Modal isOpen={showPlanLoginRequiredModal} onClose={() => setShowPlanLoginRequiredModal(false)}>
         <div className="flex flex-col items-center p-6 w-full max-w-xs mx-auto text-center relative">
