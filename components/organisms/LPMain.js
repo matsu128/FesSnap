@@ -929,20 +929,44 @@ export default function LPMain() {
 function VideoWithPlayButton({ src }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
+  const [autoplayed, setAutoplayed] = useState(false);
+
+  // 初回マウント時のみ自動再生（Safari対応）
+  useEffect(() => {
+    if (!autoplayed) {
+      const video = videoRef.current;
+      if (video) {
+        video.muted = true;
+        video.currentTime = 0;
+        video.play().then(() => {
+          setPlaying(true);
+          setAutoplayed(true);
+        }).catch(() => {
+          setAutoplayed(true);
+        });
+      }
+    }
+  }, [autoplayed]);
+
+  // 動画終了時にplayingをfalseに
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const handleEnded = () => setPlaying(false);
+    video.addEventListener('ended', handleEnded);
+    return () => video.removeEventListener('ended', handleEnded);
+  }, []);
+
   const handlePlay = () => {
     const video = videoRef.current;
     if (video) {
-      video.muted = true; // Safari対策
-      video.load();      // Safari対策
+      video.muted = true;
       video.currentTime = 0;
-      const playPromise = video.play();
-      if (playPromise) {
-        playPromise.then(() => setPlaying(true)).catch(() => {});
-      } else {
-        setPlaying(true);
-      }
+      video.play();
+      setPlaying(true);
     }
   };
+
   return (
     <div className="w-full aspect-[9/16] bg-gray-100 rounded-xl overflow-hidden mb-2 flex items-center justify-center relative">
       <video
@@ -951,7 +975,7 @@ function VideoWithPlayButton({ src }) {
         className="w-full h-full object-cover"
         muted
         playsInline
-        loop
+        loop={false}
         controls={false}
         preload="auto"
         tabIndex={-1}
