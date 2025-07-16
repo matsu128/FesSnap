@@ -108,7 +108,7 @@ export default function AdminMain() {
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (canceled === 'true') {
       // 決済キャンセル時の処理
-      alert('決済がキャンセルされました');
+      setQrError('決済がキャンセルされました。もう一度お試しください。');
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);

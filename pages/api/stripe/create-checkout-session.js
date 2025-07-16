@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { planType, userId } = req.body;
+    const { planType, userId, eventId } = req.body;
 
     if (!planType || !userId) {
       return res.status(400).json({ error: '必要なパラメータが不足しています' });
@@ -97,11 +97,12 @@ export default async function handler(req, res) {
         },
       ],
       mode: 'payment',
-      success_url: `${req.headers.origin}/admin?success=true&session_id={CHECKOUT_SESSION_ID}&plan_type=${planType}`,
+      success_url: `${req.headers.origin}/admin?success=true&session_id={CHECKOUT_SESSION_ID}&plan_type=${planType}&event_id=${eventId}`,
       cancel_url: `${req.headers.origin}/admin?canceled=true`,
       metadata: {
         user_id: userId,
-        plan_type: planType
+        plan_type: planType,
+        event_id: eventId
       }
     });
 

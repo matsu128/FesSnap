@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    const { email } = req.query;
+    const { email, user_id } = req.query;
     if (email) {
       // Service Role Keyで管理者クライアントを作成
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -15,6 +15,22 @@ export default async function handler(req, res) {
       if (error) return res.status(500).json({ error: error.message });
       const exists = data?.users?.some(u => u.email === email);
       return res.status(200).json({ exists });
+    }
+    if (user_id) {
+      // user_plansからプラン情報を返す
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!supabaseUrl || !serviceRoleKey) {
+        return res.status(500).json({ error: 'Supabase管理者キーが設定されていません' });
+      }
+      const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+      const { data, error } = await supabaseAdmin
+        .from('user_plans')
+        .select('current_plan, plan_end_date, payment_status')
+        .eq('user_id', user_id)
+        .maybeSingle();
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json(data);
     }
     // ...既存のダミーユーザーjson返却は残す
     const fs = require('fs');

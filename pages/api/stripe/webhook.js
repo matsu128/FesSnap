@@ -11,6 +11,17 @@ export const config = {
   },
 };
 
+function addMonths(date, months) {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + months);
+  return d;
+}
+function addHalfYear(date) {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + 6);
+  return d;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -27,29 +38,44 @@ export default async function handler(req, res) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // 冪等性のためevent.idで重複処理防止（必要ならDBで管理）
-
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const userId = session.metadata?.user_id;
     const planType = session.metadata?.plan_type;
-    if (!userId || !planType) {
-      console.error('user_id or plan_type missing in session metadata');
-      return res.status(400).json({ error: 'user_id or plan_type missing' });
+    const eventId = session.metadata?.event_id;
+    const paymentIntentId = session.payment_intent;
+    const amount = session.amount_total ? session.amount_total / 100 : null;
+    const currency = session.currency || 'jpy';
+    const status = session.payment_status || 'succeeded';
+    if (!userId || !planType || !eventId) {
+      console.error('user_id, plan_type, or event_id missing in session metadata');
+      return res.status(400).json({ error: 'user_id, plan_type, or event_id missing' });
     }
     try {
-      // user_plansテーブルをupsert
-      const { error } = await supabase
-        .from('user_plans')
-        .upsert({
-          user_id: userId,
-          current_plan: planType,
-          payment_status: 'active',
-          // 必要ならplan_expire_at等もここで計算して追加
-        });
-      if (error) {
-        console.error('user_plans upsert error:', error.message);
-        return res.status(500).json({ error: 'DB update error' });
+      // payment_historyの冪等insert（event_id単位）
+      if (paymentIntentId) {
+        const { data: existing, error: findError } = await supabase
+          .from('payment_history')
+          .select('id')
+          .eq('stripe_payment_intent_id', paymentIntentId)
+          .eq('event_id', eventId)
+          .maybeSingle();
+        if (!existing) {
+          const { error: insertError } = await supabase
+            .from('payment_history')
+            .insert({
+              user_id: userId,
+              event_id: eventId,
+              stripe_payment_intent_id: paymentIntentId,
+              plan_type: planType,
+              amount: amount || 0,
+              currency,
+              status,
+            });
+          if (insertError) {
+            console.error('payment_history insert error:', insertError.message);
+          }
+        }
       }
       return res.status(200).json({ received: true });
     } catch (e) {
@@ -57,7 +83,5 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'DB exception' });
     }
   }
-
-  // 他のイベントは200でOK返す
   res.status(200).json({ received: true });
 } 

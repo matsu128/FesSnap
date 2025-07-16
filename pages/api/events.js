@@ -18,6 +18,23 @@ export default async function handler(req, res) {
       console.log('[API/events] タイトル未入力エラー');
       return res.status(400).json({ error: 'タイトル必須' });
     }
+    // 有料プランの場合はpayment_historyをチェック
+    if (plan_type === 'plus' || plan_type === 'pro') {
+      const { data: payment, error: paymentError } = await supabase
+        .from('payment_history')
+        .select('id')
+        .eq('event_id', req.body.event_id || null)
+        .eq('user_id', owner)
+        .eq('plan_type', plan_type)
+        .eq('status', 'succeeded')
+        .maybeSingle();
+      if (paymentError) {
+        return res.status(500).json({ error: '決済情報の取得に失敗しました' });
+      }
+      if (!payment) {
+        return res.status(403).json({ error: 'このイベントの決済が完了していません' });
+      }
+    }
     // プランに応じた制限を設定
     const planLimit = PLAN_LIMITS[plan_type] || PLAN_LIMITS.free;
     const expiresAt = new Date();
