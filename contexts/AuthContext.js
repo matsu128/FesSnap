@@ -34,6 +34,14 @@ export function AuthProvider({ children }) {
       setLoading(false);
       if (user) {
         localStorage.setItem('lastLoginAt', Date.now().toString());
+        // --- ここでリダイレクト先を判定 ---
+        if (typeof window !== 'undefined') {
+          const stored = localStorage.getItem('redirectAfterLogin');
+          if (stored) {
+            window.location.replace(stored);
+            localStorage.removeItem('redirectAfterLogin');
+          }
+        }
       }
     };
     checkLoginStatus();

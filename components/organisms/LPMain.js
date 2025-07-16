@@ -837,14 +837,7 @@ export default function LPMain() {
                           padding: 'clamp(0.75rem, 2vw, 1rem) clamp(2rem, 5vw, 3rem)',
                           fontSize: 'clamp(0.9rem, 2.5vw, 1rem)'
                         }}>
-                          {plan.price === '0円'
-                            ? '無料で始める'
-                            : plan.price === '15,000円'
-                              ? '15,000円で申込'
-                              : plan.price === '7,000円'
-                                ? '7,000円で申込'
-                                : `${plan.price}で申込`
-                          }
+                          詳細を見る
                         </button>
                       </Link>
                     </div>

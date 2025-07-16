@@ -41,8 +41,16 @@ function LineAuthPageInner() {
           await new Promise(res => setTimeout(res, 400));
         }
         if (user) {
-          console.log('LINE認証成功:', user);
-          router.replace('/');
+          // --- ここでリダイレクト先を判定 ---
+          let redirectUrl = '/';
+          if (typeof window !== 'undefined') {
+            const stored = localStorage.getItem('redirectAfterLogin');
+            if (stored) {
+              redirectUrl = stored;
+              localStorage.removeItem('redirectAfterLogin');
+            }
+          }
+          router.replace(redirectUrl);
         } else {
           console.log('LINE認証後もユーザー取得できず');
           router.replace('/?error=line_session_failed');

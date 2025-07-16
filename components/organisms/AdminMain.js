@@ -195,43 +195,35 @@ export default function AdminMain() {
     if (!user || !user.id) {
       // returnせず、ダミーUUIDでAPIリクエストを送る
     }
-    // 有料プランの場合はStripe決済
-    if (selectedPlanType !== 'free') {
-      try {
-        const response = await fetch('/api/stripe/create-checkout-session', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            planType: selectedPlanType,
-            userId: user.id
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || '決済セッションの作成に失敗しました');
-        }
-
-        const { sessionId } = await response.json();
-        
-        // Stripe決済ページにリダイレクト
-        const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
-        if (stripe) {
-          const { error } = await stripe.redirectToCheckout({
-            sessionId,
+    // 有料プランの場合は/stripeページの該当プランstripe決済ページに遷移
+    if (selectedPlanType === 'plus' || selectedPlanType === 'pro') {
+      // /stripeページのプランIDと同じものを使う
+      const planPriceIdMap = {
+        plus: 'price_1Rl5iCINMH35xP4jXDQJEXZf',
+        pro: 'price_1Rl5u3INMH35xP4jdbyrUZcn',
+      };
+      const priceId = planPriceIdMap[selectedPlanType];
+      if (priceId) {
+        // /stripeページのhandleStripeCheckoutと同じ処理
+        try {
+          const returnUrl = window.location.href;
+          const res = await fetch('/api/create-checkout-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ priceId, returnUrl }),
           });
-          if (error) {
-            setQrError('決済エラーが発生しました: ' + error.message);
+          const data = await res.json();
+          if (data.url) {
+            window.location.href = data.url;
+            return;
+          } else {
+            setQrError(data.error || '決済ページの生成に失敗しました。しばらくしてから再度お試しください。');
+            return;
           }
-        } else {
-          setQrError('Stripeが設定されていません');
+        } catch (e) {
+          setQrError('決済ページへの遷移中にエラーが発生しました。しばらくしてから再度お試しください。');
+          return;
         }
-        return;
-      } catch (error) {
-        setQrError('決済処理中にエラーが発生しました: ' + error.message);
-        return;
       }
     }
 

@@ -6,15 +6,6 @@ import Button from '../../components/atoms/Button';
 
 const plans = [
   {
-    name: 'Freeプラン', price: '0円', desc: '小規模イベント<br />（親しい友人の誕生日会など）', priceId: null, highlight: false,
-    features: [
-      '画像25枚（最大5人分想定）',
-      '7日間',
-      '無料で気軽に試せる',
-      '参加者数が少なくて<br />シンプル利用向き',
-    ],
-  },
-  {
     name: 'Plusプラン', price: '3,000円', desc: '中規模イベント<br />（小規模結婚式、子ども会、サークルイベント）', priceId: 'price_1Rl5iCINMH35xP4jXDQJEXZf', highlight: true,
     features: [
       '画像125枚（最大25人分想定）',
@@ -35,6 +26,15 @@ const plans = [
       '専用サポート対応',
     ],
   },
+  {
+    name: 'Freeプラン', price: '0円', desc: '小規模イベント<br />（親しい友人の誕生日会など）', priceId: null, highlight: false,
+    features: [
+      '画像25枚（最大5人分想定）',
+      '7日間',
+      '無料で気軽に試せる',
+      '参加者数が少なくて<br />シンプル利用向き',
+    ],
+  },
 ];
 
 export default function StripePage() {
@@ -43,7 +43,10 @@ export default function StripePage() {
   const [errorMsg, setErrorMsg] = useState('');
   const router = useRouter();
   const handleStripeCheckout = async (priceId) => {
-    if (!priceId) return alert('無料プランは決済不要です');
+    if (!priceId) {
+      router.push('/admin');
+      return;
+    }
     setLoading(true);
     setErrorMsg('');
     const returnUrl = window.location.href;

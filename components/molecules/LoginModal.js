@@ -279,9 +279,17 @@ function OAuthButton({ provider, label, icon, isLine }) {
         alert('LINE認証の設定が不完全です。管理者にお問い合わせください。');
         return;
       }
+      // --- ここで遷移元URLを保存 ---
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('redirectAfterLogin', window.location.href);
+      }
       const lineAuthUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
       window.location.href = lineAuthUrl;
     } else {
+      // --- ここで遷移元URLを保存 ---
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('redirectAfterLogin', window.location.href);
+      }
       supabase.auth.signInWithOAuth({ provider });
     }
   };

@@ -5,14 +5,14 @@ const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SEC
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: '許可されていないメソッドです' });
   }
 
   try {
     const { planType, userId } = req.body;
 
     if (!planType || !userId) {
-      return res.status(400).json({ error: 'Missing required parameters' });
+      return res.status(400).json({ error: '必要なパラメータが不足しています' });
     }
 
     // プラン情報の取得
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
     const plan = planConfig[planType];
     if (!plan) {
-      return res.status(400).json({ error: 'Invalid plan type' });
+      return res.status(400).json({ error: 'プランタイプが不正です' });
     }
 
     // 無料プランの場合は直接更新
@@ -39,13 +39,13 @@ export default async function handler(req, res) {
     // 有料プランの場合
     if (!stripe) {
       return res.status(400).json({ 
-        error: 'Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.' 
+        error: '決済システムが正しく設定されていません。管理者にお問い合わせください。' 
       });
     }
 
     // ユーザー情報の取得
     const { data: user, error: userError } = await supabase.auth.admin.getUserById(userId);
-    if (userError) throw userError;
+    if (userError) throw new Error('ユーザー情報の取得に失敗しました');
 
     // ユーザープラン情報の取得
     const { data: userPlan, error: planError } = await supabase
@@ -53,6 +53,7 @@ export default async function handler(req, res) {
       .select('stripe_customer_id')
       .eq('user_id', userId)
       .single();
+    if (planError) throw new Error('プラン情報の取得に失敗しました');
 
     let customerId = userPlan?.stripe_customer_id;
 
@@ -107,6 +108,6 @@ export default async function handler(req, res) {
     res.status(200).json({ sessionId: session.id });
   } catch (error) {
     console.error('Stripe session creation error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: '決済処理中にエラーが発生しました。しばらくしてから再度お試しください。' });
   }
 } 
