@@ -12,6 +12,8 @@ import Modal from '../atoms/Modal';
 import LoginModal from '../molecules/LoginModal';
 import html2canvas from 'html2canvas';
 import { useAuth } from '../../contexts/AuthContext';
+import QrWithLogo, { getFesSnapLogoDataUrl } from '../atoms/QrWithLogo';
+import QrModalWithTitle from '../atoms/QrModalWithTitle';
 
 export default function EventDetailMain() {
   const [event, setEvent] = useState(null);
@@ -164,55 +166,40 @@ export default function EventDetailMain() {
         <div className="flex w-full max-w-[400px] gap-4 mb-4 px-2 sm:px-0 items-center justify-center">
           <Card className="flex-1 flex items-center justify-center p-2">
             {qrUrl ? (
-              <img src={qrUrl} alt="QRコード" className="w-36 h-36 object-contain cursor-pointer" onClick={() => setShowQrModal(true)} />
+              <div className="relative cursor-pointer" onClick={() => setShowQrModal(true)} style={{ width: 180, height: 180 }}>
+                <QrWithLogo value={`${window.location.origin}/events/${eventId}/post`} logoDataUrl={getFesSnapLogoDataUrl(120, 36)} size={180} />
+              </div>
             ) : (
               <Icon type="qr" className="w-28 h-28 text-gray-400" />
             )}
           </Card>
           <Button onClick={handlePost} className="flex-1 text-base py-4 bg-slate-700">画像投稿</Button>
         </div>
+        {/* QRコード下の説明文 */}
+        {qrUrl && (
+          <div className="text-xs text-gray-400 mt-1">タップで拡大・保存</div>
+        )}
         {/* QR拡大・保存モーダル */}
         <Modal isOpen={showQrModal} onClose={() => setShowQrModal(false)}>
           <div className="flex flex-col items-center w-full relative">
-            {/* 右上バツボタン */}
             <button onClick={() => setShowQrModal(false)} className="absolute top-2 right-2 text-3xl text-gray-400 hover:text-gray-700 z-10">×</button>
-            {/* admin/と同じデザインの拡大表示 */}
-            <div ref={qrInfoRef} className="w-full max-w-[340px] mx-auto flex flex-col justify-between items-center mb-2 mt-1 bg-white rounded-xl p-2 shadow-md overflow-hidden" style={{ aspectRatio: '9/16', minHeight: 480, height: 480, fontFamily: "'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif" }}>
-              {/* 上部：タイトル・日付 */}
-              <div className="w-full flex flex-col items-center mb-1 mt-2">
-                <div className="font-extrabold mb-1 text-center break-words w-full tracking-wide" style={{fontSize:'2.1rem', color:'#193a6a', letterSpacing:'0.06em', lineHeight:1.08}}>{event.title}</div>
-              </div>
-              {/* 中央：QRコードのみ */}
-              <div className="flex flex-col w-full flex-1 justify-center items-center">
-                <div className="flex justify-center items-center w-full min-h-[160px]">
-                  {qrBase64 && (
-                    <img src={qrBase64} alt="QRコード" className="w-40 h-40 object-contain bg-white rounded-lg mx-auto" />
-                  )}
-                </div>
-              </div>
-              {/* 下部：ロゴ */}
-              <div className="w-full flex justify-center mb-1" style={{minHeight: '28px'}}>
-                <span
-                  className="font-extrabold tracking-wide select-none"
-                  style={{
-                    fontFamily: "'Baloo 2', 'Quicksand', 'Nunito', 'Rubik', 'Rounded Mplus 1c', 'Poppins', sans-serif",
-                    fontSize: '1.1rem',
-                    color: '#0077b6',
-                    letterSpacing: '0.06em',
-                    display: 'inline-block',
-                    textAlign: 'center',
-                    width: 'auto',
-                    margin: '0 auto',
-                  }}
-                >
-                  FesSnap
-                </span>
-              </div>
-            </div>
+            <QrModalWithTitle
+              title={event.title}
+              qr={`${window.location.origin}/events/${eventId}/post`}
+              logoDataUrl={getFesSnapLogoDataUrl(160, 48)}
+              size={220}
+            />
             <div className="flex gap-4 mt-4">
-              <Button onClick={handleShareQrInfo} className="bg-slate-700 flex items-center gap-1"><Icon type="download" className="w-5 h-5" />共有</Button>
+              <button 
+                onClick={handleShareQrInfo} 
+                className="bg-gradient-to-r from-slate-700 to-slate-800 flex items-center gap-1 text-white px-4 py-2 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              >
+                保存
+              </button>
             </div>
-            <div className="mt-3 text-xs text-gray-500 text-center">端末によっては画像を長押しして保存できます</div>
+            {typeof window !== 'undefined' && /iP(hone|od|ad)/.test(window.navigator.userAgent) && (
+              <div className="mt-3 text-xs text-gray-500 text-center">iPhoneの方は画像を長押しして「写真に追加」してください</div>
+            )}
           </div>
         </Modal>
         {/* 過去イベント画像（課金時のみ） */}
