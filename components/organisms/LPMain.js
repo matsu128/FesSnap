@@ -115,46 +115,42 @@ export default function LPMain() {
       const title = heroTitleRef.current;
       const chars = title.textContent.split('');
       title.innerHTML = chars.map(char => `<span class="char">${char}</span>`).join('');
-      
-      gsap.set('.char', { 
-        opacity: 0, 
-        y: 100, 
-        rotationX: 90,
-        transformOrigin: '50% 50% -50px'
+      // 下からふわっと
+      gsap.set('.char', {
+        opacity: 0,
+        y: 40,
+        rotationX: 0,
+        transformOrigin: '50% 50% 0px'
       });
-      
       gsap.to('.char', {
         opacity: 1,
         y: 0,
         rotationX: 0,
         duration: 0.8,
-        stagger: 0.1,
-        ease: 'back.out(1.7)',
-        delay: 0.5
+        stagger: 0.07,
+        ease: 'power2.out',
+        delay: 0.3
       });
     }
-
-    // Heroサブタイトル：左からスライドイン
+    // Heroサブタイトル：下からふわっと
     if (heroSubtitleRef.current) {
-      gsap.fromTo(heroSubtitleRef.current, 
-        { x: -100, opacity: 0 },
-        { x: 0, opacity: 1, duration: 1, ease: 'power2.out', delay: 0.5 }
+      gsap.fromTo(heroSubtitleRef.current,
+        { y: 40, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, ease: 'power2.out', delay: 0.7 }
       );
     }
-
-    // Hero説明文：下からフェードイン
+    // Hero説明文：下からふわっと
     if (heroDescriptionRef.current) {
       gsap.fromTo(heroDescriptionRef.current,
-        { y: 50, opacity: 0 },
-        { y: 0, opacity: 1, duration: 1, ease: 'power2.out', delay: 0.5 }
+        { y: 40, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, ease: 'power2.out', delay: 1.0 }
       );
     }
-
-    // Heroボタン：スケールアニメーション
+    // Heroボタン：下からふわっと
     if (heroButtonRef.current) {
       gsap.fromTo(heroButtonRef.current,
-        { scale: 0, opacity: 0 },
-        { scale: 1, opacity: 1, duration: 0.8, ease: 'back.out(1.7)', delay: 0.5 }
+        { y: 40, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, ease: 'power2.out', delay: 1.3 }
       );
     }
 
