@@ -44,23 +44,23 @@ export default function LPMain() {
   // ダミーイベント例
   const eventExamples = [
     {
-      title: 'サマーフェスティバル 2025', date: '2025年7月20日 - 東京', participants: '1,200人',
+      title: 'カフェでのボードゲーム会', date: '2025年9月12日 - 東京・渋谷', participants: '6人',
       img: 'https://readdy.ai/api/search-image?query=summer%20music%20festival%20with%20crowd%20enjoying%20concert%2C%20stage%20lights%2C%20evening%20atmosphere%2C%20vibrant%20colors%2C%20professional%20photography&width=400&height=250&seq=event1&orientation=landscape',
     },
     {
-      title: 'Tech Conference 2025', date: '2025年6月15日 - 大阪', participants: '850人',
+      title: '地域の朝市フォトコンテスト', date: '2025年10月5日 - 神奈川・横浜', participants: '15人',
       img: 'https://readdy.ai/api/search-image?query=tech%20conference%20with%20people%20networking%2C%20modern%20venue%2C%20presentation%20screens%2C%20professional%20business%20atmosphere&width=400&height=250&seq=event2&orientation=landscape',
     },
     {
-      title: 'グルメフェスタ 2025', date: '2025年8月5日 - 福岡', participants: '3,000人',
+      title: '家族でグルメフェスタ', date: '2025年8月5日 - 福岡', participants: '8人',
       img: 'https://readdy.ai/api/search-image?query=food%20festival%20with%20various%20food%20stalls%2C%20people%20enjoying%20street%20food%2C%20colorful%20decorations%2C%20daytime%20outdoor%20event&width=400&height=250&seq=event3&orientation=landscape',
     },
     {
-      title: '現代アート展 2025', date: '2025年9月10日 - 京都', participants: '500人',
+      title: '地域アート作品展', date: '2025年9月10日 - 京都', participants: '12人',
       img: 'https://readdy.ai/api/search-image?query=art%20exhibition%20with%20people%20viewing%20modern%20artworks%2C%20gallery%20space%2C%20elegant%20atmosphere%2C%20indoor%20lighting&width=400&height=250&seq=event4&orientation=landscape',
     },
     {
-      title: '東京マラソン 2025', date: '2025年10月3日 - 東京', participants: '10,000人',
+      title: '町内会ミニマラソン', date: '2025年10月3日 - 東京', participants: '20人',
       img: 'https://readdy.ai/api/search-image?query=sports%20event%20with%20runners%20at%20finish%20line%2C%20crowd%20cheering%2C%20outdoor%20stadium%2C%20sunny%20day&width=400&height=250&seq=event5&orientation=landscape',
     },
   ];
@@ -77,9 +77,9 @@ export default function LPMain() {
       comment: '企業イベントで導入しました。参加者全員が簡単に写真を共有できるので、公式カメラマンだけでは撮りきれない瞬間も記録できました。次回のイベントでも必ず使います。',
     },
     {
-      name: '山田 太郎', role: '音楽フェス参加者',
+      name: '佐々木 直人', role: 'カフェイベント参加者',
       img: 'https://readdy.ai/api/search-image?query=portrait%20of%20young%20japanese%20man%20with%20casual%20style%2C%20natural%20lighting%2C%20friendly%20smile%2C%20professional%20headshot&width=100&height=100&seq=test3&orientation=squarish',
-      comment: 'アプリをインストールする必要がないのが最高です！QRコードを読み込むだけですぐに使えて、イベント後も写真が残るので思い出として大切にしています。',
+      comment: '友人とカフェで開催したボードゲーム会で使いました。QRコードを読み込むだけで全員が写真を投稿できて、後からみんなで思い出を振り返るのがとても楽しかったです。アプリ不要なのも助かりました。',
     },
   ];
   // 料金プラン
