@@ -301,6 +301,23 @@ export default function LPMain() {
     return () => ScrollTrigger.getAll().forEach(t => t.kill());
   }, []);
 
+  // --- 使い方動画のグローバル再生トリガー ---
+  const [globalPlayTrigger, setGlobalPlayTrigger] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = () => {
+      setGlobalPlayTrigger(true);
+      window.removeEventListener('touchstart', handler);
+      window.removeEventListener('mousedown', handler);
+    };
+    window.addEventListener('touchstart', handler, { once: true });
+    window.addEventListener('mousedown', handler, { once: true });
+    return () => {
+      window.removeEventListener('touchstart', handler);
+      window.removeEventListener('mousedown', handler);
+    };
+  }, []);
+
   return (
     <>
       <Header type="menu" onMenuClick={() => setShowMenu(v => !v)} onLoginClick={() => setLoginModalOpen(true)} />
@@ -560,7 +577,7 @@ export default function LPMain() {
                 fontSize: 'clamp(1.1rem, 4vw, 1.25rem)',
                 marginBottom: 'clamp(0.5rem, 2vw, 0.75rem)'
               }}>1：イベント作成</h3>
-              <VideoWithPlayButton src="/create_event.mp4" />
+              <VideoWithPlayButton src="/create_event.mp4" globalPlayTrigger={globalPlayTrigger} />
               <Button className="mt-3 w-full bg-[#2563EB] text-white font-bold py-2 rounded-full shadow-md hover:bg-blue-700 transition" style={{
                 marginTop: 'clamp(0.75rem, 2vw, 1rem)',
                 padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)'
@@ -575,7 +592,7 @@ export default function LPMain() {
                 fontSize: 'clamp(1.1rem, 4vw, 1.25rem)',
                 marginBottom: 'clamp(0.5rem, 2vw, 0.75rem)'
               }}>2：画像投稿</h3>
-              <VideoWithPlayButton src="/publish_image_demo.mp4" />
+              <VideoWithPlayButton src="/publish_image_demo.mp4" globalPlayTrigger={globalPlayTrigger} />
               <Button className="mt-3 w-full bg-pink-500 text-white font-bold py-2 rounded-full shadow-md hover:bg-pink-600 transition" style={{
                 marginTop: 'clamp(0.75rem, 2vw, 1rem)',
                 padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)'
@@ -926,14 +943,14 @@ export default function LPMain() {
   );
 }
 
-function VideoWithPlayButton({ src }) {
+function VideoWithPlayButton({ src, globalPlayTrigger }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [autoplayed, setAutoplayed] = useState(false);
 
-  // 初回マウント時のみ自動再生（Safari対応）
+  // グローバルの再生トリガーで再生
   useEffect(() => {
-    if (!autoplayed) {
+    if (globalPlayTrigger && !autoplayed) {
       const video = videoRef.current;
       if (video) {
         video.muted = true;
@@ -946,7 +963,7 @@ function VideoWithPlayButton({ src }) {
         });
       }
     }
-  }, [autoplayed]);
+  }, [globalPlayTrigger, autoplayed]);
 
   // 動画終了時にplayingをfalseに
   useEffect(() => {
